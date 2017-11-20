@@ -1,6 +1,6 @@
-# Azure IoT Central Firmware
+# Microsoft IoT Central Firmware
 
-Reference firmware implementation repository for Azure IoT Central supported devices.
+Reference firmware implementation repository for Microsoft IoT Central supported devices.
 
 ## Contents
 

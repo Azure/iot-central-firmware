@@ -1,4 +1,4 @@
-# Azure IoT Central Reference Firmware for Raspberry Pi 2/3
+# Microsoft IoT Central Reference Firmware for Raspberry Pi 2/3
 
 ## Description:
 
