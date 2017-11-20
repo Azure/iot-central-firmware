@@ -1,5 +1,13 @@
+# Azure IoT Central Firmware
 
-# Contributing
+Reference firmware implementation repository for Azure IoT Central supported devices.
+
+## Contents
+
+- [Azure MXChip IoT DevKit](./AZ3166)
+- [Raspberry Pi 2/3](./RaspberryPi)
+
+## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
