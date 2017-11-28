@@ -6,5 +6,6 @@
 
 char *f2s(float f, int p);
 String urldecode(String str);
+bool SyncTimeToNTP();
 
 #endif /* UTILITY_H */

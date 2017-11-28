@@ -282,14 +282,12 @@ static int DeviceDirectMethodCallback(const char* method_name, const unsigned ch
 }
 
 // every desired property change gets echoed back as a reported property
-void echoDesired(const char *propertyName, const char *message, const char *status) {
+void echoDesired(const char *propertyName, const char *message, const char *status, int statusCode) {
     DynamicJsonBuffer jsonBuffer;
     JsonObject& root = jsonBuffer.parseObject(message);
-    //const char *propertyName = root.begin()->key;
     const char *value = root[propertyName]["value"];
     const char *desiredVersion = root["$version"];
     if (root.containsKey("desired")) {
-        //propertyName = root["desired"].as<JsonObject>().begin()->key;
         value = root["desired"][propertyName]["value"];
         desiredVersion = root["desired"]["$version"];   
     } else {
@@ -299,8 +297,9 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
     }
 
     char buff[4096];
-    String echoTemplate = F("{\"%s\":{\"value\":%s, \"status\":\"%s\", \"desiredVersion\":%s}}");
-    sprintf(buff, echoTemplate.c_str(), propertyName, value, status, desiredVersion);
+    String echoTemplate = F("{\"%s\":{\"value\":%s, \"statusCode\":%d, \"status\":\"%s\", \"desiredVersion\":%s}}");
+    sprintf(buff, echoTemplate.c_str(), propertyName, value, statusCode, status, desiredVersion);
+    Serial.printf(buff);
 
     if (sendReportedProperty(buff)) {
         Serial.printf("Desired property %s successfully echoed back as a reported property", propertyName);
@@ -321,7 +320,7 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
     for(int i = 0; i < desiredCallbackCount; i++) {
         if (strcmp(propName, desiredCallbackList[i].name) == 0) {
             status = desiredCallbackList[i].callback(payLoad, size, &methodResponse, &responseSize);
-            echoDesired(propertyName, payLoad, methodResponse);
+            echoDesired(propertyName, payLoad, methodResponse, status);
             free(methodResponse);
             break;
         }
@@ -350,10 +349,12 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state, co
             if (it->key[0] != '$') {
                 if (reported.containsKey(it->key) && (reported[it->key]["desiredVersion"] == desired["$version"])) {
                     Serial.printf("key: %s found in reported and versions match\r\n", it->key);
-                } else {
+                } else if (reported[it->key]["value"] != desired[it->key]["value"]){
                     Serial.printf("key: %s either not found in reported or versions do not match\r\n", it->key);
                     Serial.println(it->value.as<char*>());
                     callDesiredCallback(it->key, (const char*)payLoad, size);
+                } else {
+                    echoDesired(it->key, (const char*)payLoad, "completed", 200);
                 }
             }
         }

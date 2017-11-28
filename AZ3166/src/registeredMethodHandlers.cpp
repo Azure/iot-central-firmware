@@ -124,7 +124,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 
     int status = 200;
     String responseString = "completed";
-    *resp_size = responseString.length();
+    *resp_size = responseString.length()+1;
     if ((*response = (char*)malloc(*resp_size)) == NULL) {
         status = -1;
     } else {
@@ -201,7 +201,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
 
     int status = 200;
     String responseString = "completed";
-    *resp_size = responseString.length();
+    *resp_size = responseString.length()+1;
     if ((*response = (char*)malloc(*resp_size)) == NULL) {
         status = -1;
     } else {
@@ -278,7 +278,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
 
     int status = 200;
     String responseString = "completed";
-    *resp_size = responseString.length();
+    *resp_size = responseString.length()+1;
     if ((*response = (char*)malloc(*resp_size)) == NULL) {
         status = -1;
     } else {
@@ -291,13 +291,16 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
 int irOnDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
     Serial.println("activateIR desired property just got called");
 
+    Screen.clean();
+    Screen.print(0, "Firing IR beam");
+
     transmitIR();
 
     incrementDesiredCount();
 
     int status = 200;
     String responseString = "completed";
-    *resp_size = responseString.length();
+    *resp_size = responseString.length()+1;
     if ((*response = (char*)malloc(*resp_size)) == NULL) {
         status = -1;
     } else {

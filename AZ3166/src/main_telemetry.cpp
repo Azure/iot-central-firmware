@@ -3,7 +3,7 @@
 
 #include "Arduino.h"
 
-#include "mbed_memory_status.h"
+//#include "mbed_memory_status.h"
 
 #include <ArduinoJson.h>
 
@@ -18,7 +18,7 @@
 #include "../inc/registeredMethodHandlers.h"
 #include "../inc/oledAnimation.h"
 
-#define traceOn true
+#define traceOn false
 #define statePayloadTemplate "{\"%s\":\"%s\"}"
 
 // forward declarations
@@ -35,6 +35,8 @@ const int reportedSendInterval = 2000;
 static bool reset = false;
 const int switchDebounceTime = 250;
 static bool connected;
+unsigned long lastTimeSync = 0;
+unsigned long timeSyncPeriod = 7200000;
 unsigned long lastTelemetrySend = 0;
 unsigned long lastShakeTime = 0;
 unsigned long lastSwitchPress = 0;
@@ -50,6 +52,7 @@ void telemetrySetup(String iotCentralConfig) {
 
     // connect to the WiFi in config
     connected = initWiFi();
+    lastTimeSync = millis();
 
     // initialize the sensor array
     initSensors();
@@ -83,6 +86,18 @@ void telemetryLoop() {
     if (reset) {
        delay(1);
       return;
+    }
+
+    if (connected && (millis() - lastTimeSync > timeSyncPeriod)) {
+        // re-sync the time from ntp
+        // NTPClient ntp(WiFiInterface());
+        // NTPResult res = ntp.setTime("pool.ntp.org");
+        // if (res == NTP_OK) {
+        //     (void)Serial.printf("got the time");
+        // }
+        if (SyncTimeToNTP()) {
+            lastTimeSync = millis();
+        }
     }
 
     // look for button A pressed to signify state change

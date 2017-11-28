@@ -2,6 +2,8 @@
 // Licensed under the MIT license. 
 
 #include "Arduino.h"
+#include "SystemWiFi.h"
+#include "NTPClient.h"
 
 // As there is a problem of sprintf %f in Arduino, follow https://github.com/blynkkk/blynk-library/issues/14 to implement dtostrf
 char * dtostrf(double number, signed char width, unsigned char prec, char *s) {
@@ -104,4 +106,27 @@ String urldecode(String str) {
     }
 
     return encodedString;
+}
+
+bool SyncTimeToNTP() {
+    static const char* ntpHost[] = 
+    {
+        "pool.ntp.org",
+        "cn.pool.ntp.org",
+        "europe.pool.ntp.org",
+        "asia.pool.ntp.org",
+        "oceania.pool.ntp.org"
+    };
+
+    for (int i = 0; i < sizeof(ntpHost) / sizeof(ntpHost[0]); i++) {
+            NTPClient ntp(WiFiInterface());
+            NTPResult res = ntp.setTime((char*)ntpHost[i]);
+            if (res == NTP_OK) {
+                time_t t = time(NULL);
+                (void)Serial.printf("Time from %s, now is (UTC): %s\r\n", ntpHost[i], ctime(&t));
+                return true;
+        }     
+    }
+
+    return false;
 }

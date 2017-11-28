@@ -136,5 +136,6 @@ void transmitIR() {
         {
             Serial.println("Unable to transmit through IrDA");
         }
+        delay(150);
     }
 }
