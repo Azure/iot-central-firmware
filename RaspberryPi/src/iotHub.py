@@ -120,7 +120,13 @@ class IotHubClient:
 
 
     def echoBackReported(self, propertyName, payload, status):
-        reportedPayload = "{{\"{0}\":{{\"value\":{1}, \"status\":\"{2}\", \"response\": \"{3}\", \"desiredVersion\":{4}}}}}".format(propertyName, payload[propertyName]["value"], status[0], status[1], payload["$version"])
+        value = payload[propertyName]["value"]
+        if type(value) is bool:
+            if value:
+                value = "true"
+            else:
+                value = "false"
+        reportedPayload = "{{\"{0}\":{{\"value\":{1}, \"statusCode\":{2}, \"status\": \"{3}\", \"desiredVersion\":{4}}}}}".format(propertyName, value, status[0], status[1], payload["$version"])
         self.send_reported_property(reportedPayload)
 
 
@@ -148,8 +154,12 @@ class IotHubClient:
             for desired in complete["desired"]:
                 if desired != "$version" and desired in complete["reported"]:
                     if complete["desired"]["$version"] != complete["reported"][desired]["desiredVersion"]:
-                        if desired.upper() in self.desiredCallbackList:
-                            status = self.desiredCallbackList[desired.upper()](complete["desired"][desired])
+                        if complete["reported"][desired]["value"] != complete["desired"][desired]["value"]:
+                            if desired.upper() in self.desiredCallbackList:
+                                status = self.desiredCallbackList[desired.upper()](complete["desired"][desired])
+                                self.echoBackReported(desired, complete["desired"], status)
+                        else:
+                            status = (200, "completed")
                             self.echoBackReported(desired, complete["desired"], status)
 
             deviceState.setLastTwin(payload)

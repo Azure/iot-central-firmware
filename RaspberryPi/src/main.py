@@ -76,6 +76,9 @@ def initHub():
 
     # register callbacks for desired properties expected
     iotHubClient.registerDesiredProperty("fanspeed", registeredMethods.fanSpeedDesiredChange)
+    iotHubClient.registerDesiredProperty("setvoltage", registeredMethods.voltageDesiredChange)
+    iotHubClient.registerDesiredProperty("setcurrent", registeredMethods.currentDesiredChange)
+    iotHubClient.registerDesiredProperty("activateir", registeredMethods.irOnDesiredChange)
 
 
 def sendDataToHub(data):
@@ -241,7 +244,7 @@ def accelerometerStart():
             globals.display.show()
 
             #send the reported property for the rolled die number
-            payload = "{{\"dieNumber\":{{\"timestamp\":\"{0}\", \"value\":{1}}}}}".format(datetime.now(), dieNumber + 1)
+            payload = "{{\"dieNumber\": {1}}}".format(datetime.now(), dieNumber + 1)
             iotHubClient.send_reported_property(payload)
         else:
             time.sleep(0.1)

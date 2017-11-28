@@ -2,6 +2,137 @@ import time
 import globals
 import pygame
 import deviceState
+import random
+
+def voltageDesiredChange(payload):
+    A = [[0, 0, 0] for x in range(8)]
+    globals.display.suspend(True)
+    globals.sense.clear()
+    sleeptime = 0.3
+    for i in range(0, 7):
+        for x in range(0, 8):
+            A[x] = [random.randint(10, 255), random.randint(10, 255), random.randint(10, 255)]
+            bars = [
+                A[7], A[7], A[7], A[7], A[7], A[7], A[7], A[7],
+                A[6], A[6], A[6], A[6], A[6], A[6], A[6], A[6],
+                A[5], A[5], A[5], A[5], A[5], A[5], A[5], A[5],
+                A[4], A[4], A[4], A[4], A[4], A[4], A[4], A[4],
+                A[3], A[3], A[3], A[3], A[3], A[3], A[3], A[3],
+                A[2], A[2], A[2], A[2], A[2], A[2], A[2], A[2],
+                A[1], A[1], A[1], A[1], A[1], A[1], A[1], A[1],
+                A[0], A[0], A[0], A[0], A[0], A[0], A[0], A[0]
+                ]
+            globals.sense.set_pixels(bars)
+            time.sleep(sleeptime) 
+        A = [[0, 0, 0] for x in range(8)]
+
+    globals.display.suspend(False)           
+    globals.sense.clear()
+    globals.display.show()
+    return (200, "completed")
+
+def currentDesiredChange(payload):
+    A = [[0, 0, 0] for x in range(9)]
+    globals.display.suspend(True)
+    globals.sense.clear()
+    sleeptime = 0.3
+    for i in range(0, 7):
+        for x in range(0, 8):
+            A[x] = [random.randint(10, 255), random.randint(10, 255), random.randint(10, 255)]
+            bars = [
+                A[8], A[8], A[8], A[8], A[8], A[8], A[8], A[7],
+                A[8], A[8], A[8], A[8], A[8], A[8], A[6], A[7],
+                A[8], A[8], A[8], A[8], A[8], A[5], A[6], A[7],
+                A[8], A[8], A[8], A[8], A[4], A[5], A[6], A[7],
+                A[8], A[8], A[8], A[3], A[4], A[5], A[6], A[7],
+                A[8], A[8], A[2], A[3], A[4], A[5], A[6], A[7],
+                A[8], A[1], A[2], A[3], A[4], A[5], A[6], A[7],
+                A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7]
+                ]
+            globals.sense.set_pixels(bars)
+            time.sleep(sleeptime) 
+        A = [[0, 0, 0] for x in range(9)]
+        
+    globals.display.suspend(False)           
+    globals.sense.clear()
+    globals.display.show()
+    return (200, "completed")
+
+def irOnDesiredChange(payload):
+    r = random.randint(10, 255)
+    g = random.randint(10, 255)
+    b = random.randint(10, 255)
+    ir1 = [
+        [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b],
+        [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b],
+        [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b],
+        [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b],
+        [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b],
+        [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b],
+        [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b],
+        [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b]
+    ]
+
+    r = random.randint(10, 255)
+    g = random.randint(10, 255)
+    b = random.randint(10, 255)
+    ir2 = [
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [0, 0, 0],
+        [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0],
+        [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0],
+        [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0],
+        [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0],
+        [0, 0, 0], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+    ]
+
+    r = random.randint(10, 255)
+    g = random.randint(10, 255)
+    b = random.randint(10, 255)
+    ir3 = [
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0], [r, g, b], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [r, g, b], [r, g, b], [r, g, b], [r, g, b], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+    ]
+
+    r = random.randint(10, 255)
+    g = random.randint(10, 255)
+    b = random.randint(10, 255)
+    ir4 = [
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b], [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [r, g, b], [r, g, b], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0],
+        [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
+    ]
+
+    globals.display.suspend(True)
+    globals.sense.clear()
+    sleeptime = 0.3
+    for i in range(0, 7):
+        globals.sense.set_pixels(ir1)
+        time.sleep(sleeptime)
+        globals.sense.set_pixels(ir2)
+        time.sleep(sleeptime)
+        globals.sense.set_pixels(ir3)
+        time.sleep(sleeptime)    
+        globals.sense.set_pixels(ir4)
+        time.sleep(sleeptime) 
+
+    globals.display.suspend(False)           
+    globals.sense.clear()
+    globals.display.show()
+
+    return (200, "completed")
 
 def fanSpeedDesiredChange(payload):
     twin = deviceState.getLastTwinAsObject()

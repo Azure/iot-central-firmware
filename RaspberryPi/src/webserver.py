@@ -28,7 +28,7 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 
     def do_GET(self):
-        if self.path.upper() == "/START" || self.path.upper() == "/":
+        if self.path.upper() == "/START" or self.path.upper() == "/":
             self.set_headers(200, "text/html; charset=utf-8")
             content=open("../content/start.html").read()
 
