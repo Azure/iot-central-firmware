@@ -11,7 +11,7 @@ The aim of this firmware and code is two-fold:
 
 ## Features Implemented:
 
-## The board and it&#39;s features:
+## The board and its features:
 
 ## Connecting the device to Microsoft IoT Central:
 

@@ -26,7 +26,7 @@ The aim of this firmware and code is two-fold:
 
 ***
 
-## The board and it&#39;s features:
+## The board and its features:
 
 <img src="images/device.png" alt="Device features" style="width: 700px;"/>
 
@@ -73,19 +73,20 @@ Opening the code in Visual Studio Code and getting connected to the device:
 
 - Connect the development board to your computer via the USB cable
 - From the command line change directory into the directory you cloned the repo and use the command:  code .
-- Once VS Code loads you should set the serial port of the board.  Use `CTRL+SHIFT+P` macOS (`CMD+SHIFT+P`) and type **Arduino** then find and select **Arduino: Select Serial Port**. A list of serial ports will be displayed select the one the device is connected to.  In windows this can be found by looking at the device manager and looking in Ports for the COM port for the STMicroelectronics STLink Virtual COM Port.  On macOS the port will be the one with /dev/cu.usbmodemXXXX STMicroElectronics
-- Set the Serial board rate to 250000.  Use `CTRL+SHIFT+P` macOS (`CMD+SHIFT+P`) and type **Arduino** then find and select **Arduino: Change Baud rate** and select 250000 from the list.
+- Once VS Code loads you should set the serial port of the board.  Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and type **Arduino** then find and select **Arduino: Select Serial Port**. A list of serial ports will be displayed select the one the device is connected to.  In windows this can be found by looking at the device manager and looking in Ports for the COM port for the STMicroelectronics STLink Virtual COM Port.  On macOS the port will be the one with /dev/cu.usbmodemXXXX STMicroElectronics
+- Set the Serial board rate to 250000.  Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and type **Arduino** then find and select **Arduino: Change Baud rate** and select 250000 from the list.
 
 Building and uploading the code to the device:
 
-- To build the code use `CTRL+SHIFT+P` macOS (`CMD+SHIFT+P`) and type **Arduino** then find and select **Arduino: Upload**
+- To build the code use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and type **Arduino** then find and select **Arduino: Upload**
 - The source will build and be uploaded to the device, this can take several minutes.  If there are errors they will be displayed in the Output window
 - Once uploaded the device will restart and boot into the newly uploaded firmware and start executing
 
 ### Dependencies:
 
 Uses the following libraries:
--Libraries installed by the MXChip IoT DevKit (https://microsoft.github.io/azure-iot-developer-kit/):
+
+- Libraries installed by the MXChip IoT DevKit (https://microsoft.github.io/azure-iot-developer-kit/):
     - AureIoTHub - https://github.com/Azure/azure-iot-arduino
     - AzureIoTUtility - https://github.com/Azure/azure-iot-arduino-utility
     - AzureIoTProtocol_MQTT - https://github.com/Azure/azure-iot-arduino-protocol-mqtt
@@ -103,7 +104,7 @@ For more complete debugging you can select the debug tool on the left-hand toolb
 
 - Debugging the device can be a little unstable at times, placing breakpoints during debugging will sometimes not be honored and stepping through the code is quite slow.
 - When exiting debugging (pressing the stop button in the debugger toolbar) the device might be in an inconsistent state (programming LED flashing) this will result in uploads failing and new debugging sessions also failing.  To resolve this unplug the USB cable from the computer and plug it back in.  the device and COM port will reset and the device will function normally from that point on.
-- When debugging a shadow copy of the code is used and will be shown in the VS code editor.  Be aware that making changes in the shadow copy will not be persisted in the real source code and you will lose them in subsequent builds.  Believe me I have had this happen so many times, it is very frustrating and a poor feature of the Arduino VS Code extension.  – BE AWARE OF THIS!!
+- When debugging a shadow copy of the code is used and will be shown in the VS code editor.  Be aware that making changes in the shadow copy will not be persisted in the real source code and you will lose them in subsequent builds – BE AWARE OF THIS!!
 
 ***
 

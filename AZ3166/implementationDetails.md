@@ -2,23 +2,7 @@
 
 ## Description:
 
-If you are interested in implementation details and are already an IoT Hub user, this document will help you understand the details of how the device communicates with Microsoft IoT Central through IoT Hub.
-
-## The board and it&#39;s features:
-
-<img src="images/device.png" alt="Device features" style="width: 700px;"/>
-
-Pressing the B button will rotate through three screens of information in the following order "data transmission statistics" -&gt; "Device information" -&gt; "Network information" –&gt; back to "data transmission statistics".  The screens look like this:
-
-<img src="images/screens.png" alt="Device screens" style="width: 700px;"/>
-
-The Data transmission screen (first screen above) has the following information by line:
-
-- Count of sent telemetry events (includes telemetry payloads and state change telemetry payloads)
-- Count of failed telemetry events
-- Twin events desired / reported
-
-** **
+If you are interested in implementation details and are already an IoT Hub user, this document will help you understand the details of how the device communicates with Microsoft IoT Central through Azure IoT Hub.
 
 ## The device telemetry payload:
 
@@ -232,17 +216,5 @@ Then reconnect the device and after a number of telemetry sends (about five or s
 ```
 iothub-explorer get-twin <device-name>
 ```
-
-***
-
-## Calling the "message" cloud to device method:
-
-The second form of method is a cloud to device method.  The firmware supports a cloud to device method called "message".  The method takes a text message as a parameter in the payload.  We can issue the cloud to device method using iothub-explorer with the command:
-
-```
-iothub-explorer send <device-name> '{"methodName":"message", "payload":{"text":"Hello from Microsoft IoT Central"}}'
-```
-
-The device should then display the message briefly on the devices screen.
 
 ***
