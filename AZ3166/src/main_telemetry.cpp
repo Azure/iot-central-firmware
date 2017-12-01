@@ -2,9 +2,6 @@
 // Licensed under the MIT license. 
 
 #include "Arduino.h"
-
-//#include "mbed_memory_status.h"
-
 #include <ArduinoJson.h>
 
 #include "../inc/main_telemetry.h"
@@ -90,11 +87,6 @@ void telemetryLoop() {
 
     if (connected && (millis() - lastTimeSync > timeSyncPeriod)) {
         // re-sync the time from ntp
-        // NTPClient ntp(WiFiInterface());
-        // NTPResult res = ntp.setTime("pool.ntp.org");
-        // if (res == NTP_OK) {
-        //     (void)Serial.printf("got the time");
-        // }
         if (SyncTimeToNTP()) {
             lastTimeSync = millis();
         }
@@ -124,9 +116,6 @@ void telemetryLoop() {
         sendTelemetryPayload(payload.c_str());
 
         lastTelemetrySend = millis();
-
-        // memory usage check - debug
-        // print_heap_and_isr_stack_info();
     }
 
     // example of sending a device twin reported property when the accelerometer detects a double tap

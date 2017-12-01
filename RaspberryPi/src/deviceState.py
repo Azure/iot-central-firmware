@@ -1,8 +1,9 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. 
+
 import datetime
 import json
 from collections import OrderedDict
-
-#device = {}
 
 def init(name, firmwareVersion):
     global device

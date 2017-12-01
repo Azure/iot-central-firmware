@@ -3,7 +3,7 @@
 
 /***
  
-Full implementation of a device firmware for Azure IoT Central
+Full implementation of a device firmware for Microsoft IoT Central
 
 Implements the following features:
  •  Simple onboarding via a web UX
@@ -19,7 +19,7 @@ Implements the following features:
 
 Uses the following libraries:
  •	Libraries installed by the MXChip IoT DevKit (https://microsoft.github.io/azure-iot-developer-kit/):
-     •	zureIoTHub - https://github.com/Azure/azure-iot-arduino
+     •	AureIoTHub - https://github.com/Azure/azure-iot-arduino
      •	AzureIoTUtility - https://github.com/Azure/azure-iot-arduino-utility
      •	AzureIoTProtocol_MQTT - https://github.com/Azure/azure-iot-arduino-protocol-mqtt
 
@@ -79,8 +79,6 @@ void loop()
         Screen.print(0, "Device is reset");
         Screen.print(1, "Press reset");
         Screen.print(2, "to configure");
-
-        //initializeSetup();
     }
 
 	if (configured) {

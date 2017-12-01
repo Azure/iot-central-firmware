@@ -1,9 +1,8 @@
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. 
+
 from datetime import datetime
 import json
-
-# import ctypes
-# iothub_client = ctypes.CDLL( './iothub_client.so' )
-
 import iothub_client
 from iothub_client import IoTHubClient, IoTHubClientError, IoTHubTransportProvider, IoTHubClientResult
 from iothub_client import IoTHubMessage, IoTHubMessageDispositionResult, IoTHubError, DeviceMethodReturnValue
@@ -36,15 +35,13 @@ class IotHubClient:
             logger.log("Unexpected error {0} from IoTHub\n".format(iothub_error))
             return
 
+
     def iothub_client_init(self):
         # prepare iothub client
         client = IoTHubClient(self.connectionString, IoTHubTransportProvider.MQTT)
 
         # set the time until a message times out
         client.set_option("messageTimeout", self.MESSAGE_TIMEOUT)
-
-        # some embedded platforms need certificate information
-        #set_certificates(client)
 
         client.set_option("logtrace", 0)
         client.set_message_callback(self.receive_message_callback, self.RECEIVE_CONTEXT)
@@ -72,7 +69,6 @@ class IotHubClient:
         self.desiredCallbackList[propertyName.upper()] = callback
 
 
-    # TODO: add this info to the statistics page
     def connection_status_callback(self, result, reason, user_context):
         logger.log("Connection status changed[{0}] with:".format(user_context))
         logger.log("    reason: {0}".format(reason))
@@ -81,7 +77,6 @@ class IotHubClient:
         logger.log("    Total calls confirmed: {0}\n".format(self.connectionCallbackCount))
 
 
-    # COMPLETE:
     def receive_message_callback(self, message, counter):
         message_buffer = message.get_bytearray()
         size = len(message_buffer)
@@ -111,7 +106,6 @@ class IotHubClient:
         return IoTHubMessageDispositionResult.ACCEPTED
 
 
-    # TODO: add this info to the statistics page
     def send_reported_state_callback(self, status_code, user_context):
         logger.log("Confirmation[{0}] for reported state received with:".format(user_context))
         logger.log("    status_code: {0}".format(status_code))
@@ -130,7 +124,6 @@ class IotHubClient:
         self.send_reported_property(reportedPayload)
 
 
-    # COMPLETE:
     def device_twin_callback(self, update_state, payload, user_context):
         logger.log("Twin callback called with:")
         logger.log("updateStatus: {0}".format(update_state))
@@ -165,7 +158,6 @@ class IotHubClient:
             deviceState.setLastTwin(payload)
 
 
-    # COMPLETE:
     def device_method_callback(self, method_name, payload, user_context):
         logger.log("\nMethod callback called with:\nmethodName = {0}\npayload = {1}\ncontext = {2}".format(method_name, payload, user_context))
         deviceState.incDirectCount()
@@ -194,7 +186,6 @@ class IotHubClient:
         return device_method_return_value
 
 
-    # TODO: add this info to the statistics page
     def send_confirmation_callback(self, message, result, user_context):
         logger.log("Confirmation[{0}] received for message with result = {1}".format(user_context, result))
         map_properties = message.properties()
@@ -206,7 +197,6 @@ class IotHubClient:
         logger.log("    Total calls confirmed: {0}\n".format(self.sendCallbackCount))
 
 
-    # COMPLETE:
     def send_message(self, payload):
         message = IoTHubMessage(bytearray(payload, 'utf8'))
 

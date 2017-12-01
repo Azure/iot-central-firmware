@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. 
+
 import time
 import json
 from datetime import datetime
@@ -107,8 +110,6 @@ def sendTelemetryStart():
     initSensors()
 
     initHub()
-
-    #display = SenseHatCounter()
 
     while not kill_received:
         globals.display.increment(1)

@@ -1,5 +1,6 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
+# Copyright (c) Microsoft. All rights reserved.
+# Licensed under the MIT license. 
+
 
 import globals
 import sys
