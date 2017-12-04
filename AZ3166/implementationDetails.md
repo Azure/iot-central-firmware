@@ -155,14 +155,13 @@ The device name can be obtained from the device screen on the devices display by
 
 ***
 
-## Sending the "doubleTap" reported property:
+## Sending the "die number" reported property:
 
-Tapping the board on the desk a couple of times will generate a doubletap event from the accelerometer sensor and a reported property is set that contains a timestamp of the double tap event.  The right-hand number on the display for the twin line will also be incremented when the reported property is written to the twin.  The reported property looks like this:
+Shaking the board a couple of times will generate a dieNumnber event from the accelerometer sensor and a reported property is set that contains the valie of the die from the roll.  The right-hand number on the display for the twin line will also be incremented when the reported property is written to the twin.  The reported property looks like this:
 
 ```
 reported:
-    doubleTap:
-      timestamp: Sat Sep 30 17:01:32 2017
+    dieNumber: <number from 1 .. 6>
 ```
 
 The reported property can be checked by issuing the following iothub-explorer command to display the current twin setting:
@@ -201,7 +200,8 @@ properties:
   reported:
     fanSpeed:
       value:          100
-      status:         complete
+      status:         completed
+      statusCode:     200
       desiredVersion: 4
 ```
 
@@ -216,5 +216,13 @@ Then reconnect the device and after a number of telemetry sends (about five or s
 ```
 iothub-explorer get-twin <device-name>
 ```
+
+## Setting other desired properties:
+
+Three other settings are available in the firmware currently, they follow the same format as that of fan speed above.
+
+- Voltage:    voltage value in volts between 0 and 240
+- Current:    current value in amps between 0 and 120
+- ActivateIR: activates the IR blaster on the MXChip board and sends a brief burst of IR blips.  This setting is a boolean on/off represented by  toggle in the Microsoft IoT Central application UX
 
 ***
