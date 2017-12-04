@@ -42,7 +42,7 @@ The Data transmission screen (first screen above) has the following information 
 - Count of failed telemetry events
 - Twin events desired / reported
 
-** **
+***
 
 ## Connecting the device to Microsoft IoT Central:
 
@@ -102,7 +102,7 @@ You can debug via Serial print commands in the code or with the ST-Link debugger
 
 For more complete debugging you can select the debug tool on the left-hand toolbar of VS Code.  Then set any breakpoints in the code as normal and press the debug play button in the top left-hand corner.  The debugger will start shortly and breakpoints will be observed.  When a breakpoint fires you can look at variable values and step through the code like any normal debugging session.
 
-### Note :
+### Note:
 
 - Debugging the device can be a little unstable at times, placing breakpoints during debugging will sometimes not be honored and stepping through the code is quite slow.
 - When exiting debugging (pressing the stop button in the debugger toolbar) the device might be in an inconsistent state (programming LED flashing) this will result in uploads failing and new debugging sessions also failing.  To resolve this unplug the USB cable from the computer and plug it back in.  the device and COM port will reset and the device will function normally from that point on.
