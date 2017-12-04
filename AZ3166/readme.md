@@ -18,8 +18,10 @@ The aim of this firmware and code is two-fold:
 - Display shows count of messages, errors, twin events, network information, and device name (cycle through screens with B button)
 - Telemetry sent for all onboard sensors (configurable)
 - State change telemetry sent when button A pressed and the device cycles through the three states (NORMAL, CAUTION, DANGER)
-- Reported twin property sent for double tap of device (uses accelerometer sensor data)
+- Reported twin property die number is sent when shaking the device  (uses accelerometer sensor data)
 - Desired twin property to simulate turning on a fan (fan sound plays from onboard headphone jack)
+- Desired twin properties of current and voltage of the device (trigger a bar graph animation)
+- Desired twin property of IR blaster that sends a short burst from the IR emmitter on the board
 - Cloud to device messages (supports sending a message to display on the screen)
 - Direct twin method calls (supports asking the device to play a rainbow sequence on the RGB LED)
 - LED status of network, Azure IoT send events, Azure IoT error events, and current device state (NORMAL=green, CAUTION=amber, DANGER=red)
