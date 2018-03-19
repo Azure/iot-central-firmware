@@ -94,8 +94,8 @@
                         <ColumnDefinition Width="200"/>
                         <ColumnDefinition Width="100"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Margin="5" Text="Set Temperature"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Margin="5" Text="--" x:Name="SetTemperatureBlock"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Margin="5" Text="Set Fan Speed"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Margin="5" Text="--" x:Name="SetFanSpeedBlock"/>
                 </Grid>
             </StackPanel>
         </Grid>

@@ -28,7 +28,7 @@ namespace IoTHubForegroundClient
         static double basePressure = 500;
         static double baseHumidity = 50;
 
-        const string SetTemperature = "setTemperature";
+        const string SetFanSpeed = "fanSpeed";
         const string SettingValue = "value";
 
         bool _running = false;
@@ -198,8 +198,8 @@ namespace IoTHubForegroundClient
             {
                 switch (setting)
                 {
-                    case SetTemperature:
-                        SetTemperatureBlock.Text = value.ToString("F", CultureInfo.InvariantCulture);
+                    case SetFanSpeed:
+                        SetFanSpeedBlock.Text = value.ToString("F", CultureInfo.InvariantCulture);
                         break;
                 }
             });
@@ -210,15 +210,15 @@ namespace IoTHubForegroundClient
             try
             {
                 Debug.WriteLine("Received settings change...");
-                if (desiredProperties.Contains(SetTemperature))
+                if (desiredProperties.Contains(SetFanSpeed))
                 {
-                    JObject setting = (JObject)desiredProperties[SetTemperature];
+                    JObject setting = (JObject)desiredProperties[SetFanSpeed];
                     JValue settingValue = (JValue)setting[SettingValue];
                     if (settingValue.Type == JTokenType.Float || settingValue.Type == JTokenType.Integer)
                     {
-                        ShowSetting(SetTemperature, Double.Parse(settingValue.Value.ToString()));
+                        ShowSetting(SetFanSpeed, Double.Parse(settingValue.Value.ToString()));
                         // Act on setting change, then
-                        AcknowledgeSettingChange(desiredProperties, SetTemperature);
+                        AcknowledgeSettingChange(desiredProperties, SetFanSpeed);
                     }
                 }
 
