@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
 /***
- 
-Full implementation of a device firmware for Microsoft IoT Central
+
+Full implementation of a device firmware for Azure IoT Central
 
 Implements the following features:
  •  Simple onboarding via a web UX
@@ -49,7 +49,7 @@ void setup()
 
     iotCentralConfig = readIotCentralConfig();
 
-    if (iotCentralConfig[0] == 0x00) { 
+    if (iotCentralConfig[0] == 0x00) {
         (void)Serial.printf("No configuration found entering config mode.\r\n");
         initializeSetup();
     } else {
@@ -66,7 +66,7 @@ void loop()
         Screen.clean();
         Screen.print(0, "Device resetting");
         clearAllConfig();
-        
+
         if (configured) {
             telemetryCleanup();
         } else {

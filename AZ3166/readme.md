@@ -1,13 +1,13 @@
-# Microsoft IoT Central Reference Firmware for AZ3166 dev kit
+# Azure IoT Central Reference Firmware for AZ3166 dev kit
 
 ## Description:
 
-An example of writing a firmware solution to send data to Microsoft IoT Central and to receive events back from Microsoft IoT Central to be processed by the device.  You are free to take this code and the concepts used, and use them as a basis for your own firmware for Microsoft IoT Central.
+An example of writing a firmware solution to send data to Azure IoT Central and to receive events back from Azure IoT Central to be processed by the device.  You are free to take this code and the concepts used, and use them as a basis for your own firmware for Azure IoT Central.
 
 The aim of this firmware and code is two-fold:
 
-- To provide a good "out of the box" experience for someone wanting to connect a device to Microsoft IoT Central and see real data sent to Microsoft IoT Central.  The firmware was designed to simplify the onboarding experience via a web UX configuration and allow non-developer users to get a device onto Microsoft IoT Central very easily.
-- To illustrate how to write a functioning firmware for an mbed device that supports the features of Microsoft IoT Central.  The code pulls together many of the individual samples available in the Azure IoT device C SDK into a cohesive story, using relatively simple code.  The code was written in C using the Arduino libraries in an attempt to make it accessible to all development levels from hobbyist to professional.  Tooling for the code is done with Visual Studio Code and the Arduino plugin allowing for visual debugging in the IDE of the code.
+- To provide a good "out of the box" experience for someone wanting to connect a device to Azure IoT Central and see real data sent to Azure IoT Central.  The firmware was designed to simplify the onboarding experience via a web UX configuration and allow non-developer users to get a device onto Azure IoT Central very easily.
+- To illustrate how to write a functioning firmware for an mbed device that supports the features of Azure IoT Central.  The code pulls together many of the individual samples available in the Azure IoT device C SDK into a cohesive story, using relatively simple code.  The code was written in C using the Arduino libraries in an attempt to make it accessible to all development levels from hobbyist to professional.  Tooling for the code is done with Visual Studio Code and the Arduino plugin allowing for visual debugging in the IDE of the code.
 
 ***
 
@@ -44,9 +44,9 @@ The Data transmission screen (first screen above) has the following information 
 
 ***
 
-## Connecting the device to Microsoft IoT Central:
+## Connecting the device to Azure IoT Central:
 
-Please visit our [general documentation site](https://aka.ms/iotcentral-doc-mxchip) for a tutorial on how to connect the device to Microsoft IoT Central. 
+Please visit our [general documentation site](https://aka.ms/iotcentral-doc-mxchip) for a tutorial on how to connect the device to Azure IoT Central.
 
 ***
 

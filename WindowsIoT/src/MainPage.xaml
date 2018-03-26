@@ -19,7 +19,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Margin="20" Text="Microsoft IoT Central Client Sample" FontSize="32"/>
+        <TextBlock Grid.Row="0" Margin="20" Text="Azure IoT Central Client Sample" FontSize="32"/>
         <Grid Grid.Row="1" Margin="20,0,0,0" >
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="150"/>
