@@ -9,22 +9,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Microsoft IoT Central Device Stats</title>
+    <title>Azure IoT Central Device Stats</title>
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <body>
     <header>
-        <h1 class="logo">Microsoft IoT Central Live Device Statistics</h1>
+        <h1 class="logo">Azure IoT Central Live Device Statistics</h1>
     </header>
     <header id="connected" style="visibility:collapse; display:none; background-color: red;">
-        <h1 class="logo" style="background-color:red; color: white; text-align:center;">Device disconnected from network and is currently unavailable</h1>        
+        <h1 class="logo" style="background-color:red; color: white; text-align:center;">Device disconnected from network and is currently unavailable</h1>
     </header>
- 
+
     <section class="container">
         <div id="content" class="row">
             <div class="col-sm-10 col-sm-offset-1 col-md-4 col-md-offset-4" style="text-align:center;">
-                <h5>Microsoft IoT Central device telemetry and connection statistics (this page will auto refresh)</h5>
+                <h5>Azure IoT Central device telemetry and connection statistics (this page will auto refresh)</h5>
             </div>
         </div>
         <div id="content" class="row">
@@ -75,7 +75,7 @@
 </body>
 <script>
     var intervalID;
-    var hidden, state, visibilityChange; 
+    var hidden, state, visibilityChange;
     var errorBanner = document.getElementById("connected");
 
     if (typeof document.hidden !== "undefined") {
@@ -97,7 +97,7 @@
     }
 
     intervalID = window.setInterval(UrlExists, {{interval}});
-    
+
     document.addEventListener(visibilityChange, function() {
         if (document[state] == hidden) {
             clearInterval(intervalID);

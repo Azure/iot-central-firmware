@@ -1,8 +1,8 @@
-# Microsoft IoT Central Reference Firmware for AZ3166 dev kit
+# Azure IoT Central Reference Firmware for AZ3166 dev kit
 
 ## Description:
 
-If you are interested in implementation details and are already an IoT Hub user, this document will help you understand the details of how the device communicates with Microsoft IoT Central through Azure IoT Hub.
+If you are interested in implementation details and are already an IoT Hub user, this document will help you understand the details of how the device communicates with Azure IoT Central through Azure IoT Hub.
 
 ## The device telemetry payload:
 
@@ -50,7 +50,7 @@ Each telemetry also has a timestamp property associated with it in the format
 
 ## General onboarding the device onto an IoT Hub:
 
-For testing purposes, you may want to add the device to a general IoT Hub, so you can observe the device in action easier as you have access to the hub and device connection string.  The following steps will get the device connected to your hub and sending data.  Many of these steps will be repeated when adding the device to Microsoft IoT Central.
+For testing purposes, you may want to add the device to a general IoT Hub, so you can observe the device in action easier as you have access to the hub and device connection string.  The following steps will get the device connected to your hub and sending data.  Many of these steps will be repeated when adding the device to Azure IoT Central.
 
 ### Step 1:
 
@@ -77,7 +77,7 @@ Select from the dropdown the WiFi network your device should connect to.  The li
 Click the "Configure Device" button on the page when you are ready and the configuration data will be sent to the device and saved in the EEPROM on the device, so it will not be lost during power cycles of the device. You should now see the following web page:
 
  <img src="images/configdone.png" alt="Device configuration complete web page" style="width: 700px;"/>
- 
+
 
 ### Step 3:
 
@@ -109,9 +109,9 @@ After executing the command you should start to see the telemetry data being str
 
 ***
 
-## Connecting the device to Microsoft IoT Central:
+## Connecting the device to Azure IoT Central:
 
-Please visit our [general documentation site](https://aka.ms/iotcentral-doc-mxchip) for a tutorial on how to connect the device to Microsoft IoT Central. 
+Please visit our [general documentation site](https://aka.ms/iotcentral-doc-mxchip) for a tutorial on how to connect the device to Azure IoT Central.
 
 ***
 
@@ -129,7 +129,7 @@ The device name can be obtained from the device screen on the devices display by
 
 ## Sending State telemetry updates:
 
-Status changes are a form of telemetry sent by a device to Microsoft IoT Central.  The device firmware is coded to send a device state change when the A button is pressed.  This rotates the device through three states: Normal, Caution, and Danger.  Each state change sends a telemetry payload that looks like this:
+Status changes are a form of telemetry sent by a device to Azure IoT Central.  The device firmware is coded to send a device state change when the A button is pressed.  This rotates the device through three states: Normal, Caution, and Danger.  Each state change sends a telemetry payload that looks like this:
 
 ```
 {
@@ -223,6 +223,6 @@ Three other settings are available in the firmware currently, they follow the sa
 
 - Voltage:    voltage value in volts between 0 and 240
 - Current:    current value in amps between 0 and 120
-- ActivateIR: activates the IR blaster on the MXChip board and sends a brief burst of IR blips.  This setting is a boolean on/off represented by  toggle in the Microsoft IoT Central application UX
+- ActivateIR: activates the IR blaster on the MXChip board and sends a brief burst of IR blips.  This setting is a boolean on/off represented by  toggle in the Azure IoT Central application UX
 
 ***

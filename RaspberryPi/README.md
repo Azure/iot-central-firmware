@@ -1,13 +1,13 @@
-# Microsoft IoT Central Reference Firmware for Raspberry Pi 2/3
+# Azure IoT Central Reference Firmware for Raspberry Pi 2/3
 
 ## Description:
 
-An example of writing a firmware solution to send data to Microsoft IoT Central and to receive events back from Microsoft IoT Central to be processed by the device.  You are free to take this code and the concepts used, and use them as a basis for your own firmware for Microsoft IoT Central.
+An example of writing a firmware solution to send data to Azure IoT Central and to receive events back from Azure IoT Central to be processed by the device.  You are free to take this code and the concepts used, and use them as a basis for your own firmware for Azure IoT Central.
 
 The aim of this firmware and code is two-fold:
 
-- To provide a good "out of the box" experience for someone wanting to connect a device to Microsoft IoT Central and see real data sent to Microsoft IoT Central.  The firmware was designed to simplify the onboarding experience via a web UX configuration and allow non-developer users to get a device onto Microsoft IoT Central very easily.
-- To illustrate how to write a functioning firmware for a Raspberry Pi.  The code pulls together many of the individual samples available in the Azure IoT device SDK into a cohesive story, using relatively simple code.  
+- To provide a good "out of the box" experience for someone wanting to connect a device to Azure IoT Central and see real data sent to Azure IoT Central.  The firmware was designed to simplify the onboarding experience via a web UX configuration and allow non-developer users to get a device onto Azure IoT Central very easily.
+- To illustrate how to write a functioning firmware for a Raspberry Pi.  The code pulls together many of the individual samples available in the Azure IoT device SDK into a cohesive story, using relatively simple code.
 
 ## Features Implemented:
 
@@ -34,19 +34,19 @@ You will need the following hardware for the project:
 - Keyboard, mouse, HDMI monitor, micro USB cable, and USB power supply (you can use your computer to power the Rapberry Pi 3)
 - An active internet connection (either via Ethernet cable or WiFi)
 
-*&nbsp;if you don't have a Pi Sense Hat you can use the built in [Sense Hat emulator](http://sense-emu.readthedocs.io/en/v1.0/) built into the Raspberry Pi operating system 
+*&nbsp;if you don't have a Pi Sense Hat you can use the built in [Sense Hat emulator](http://sense-emu.readthedocs.io/en/v1.0/) built into the Raspberry Pi operating system
 
 You should install the latest Raspian operationg system by following these instructions (https://www.raspberrypi.org/learning/software-guide/)
 
 <img src="images/device.jpg" alt="Device features" style="width: 800px;"/>
 
-## Connecting the device to Microsoft IoT Central:
+## Connecting the device to Azure IoT Central:
 
-Please visit our [general documentation site](https://aka.ms/iotcentral-doc-raspi) for a tutorial on how to connect the device to Microsoft IoT Central. 
+Please visit our [general documentation site](https://aka.ms/iotcentral-doc-raspi) for a tutorial on how to connect the device to Azure IoT Central.
 
 ## Resetting the Device:
 
-At any point you can reconfigure the device by going to the configuration web page at (http://&lt;ip-of-raspberry-pi&gt;/start) and changing any of the values.  After making changes to the device it is necessary to stop and restart the python process to ensure the new configuration is picked up. 
+At any point you can reconfigure the device by going to the configuration web page at (http://&lt;ip-of-raspberry-pi&gt;/start) and changing any of the values.  After making changes to the device it is necessary to stop and restart the python process to ensure the new configuration is picked up.
 
 ## Contributing
 

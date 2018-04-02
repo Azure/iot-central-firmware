@@ -1,35 +1,35 @@
 ﻿# Azure IoT Hub Client Sample
 
-# Walk-through: Connecting to Microsoft IoT Central
+# Walk-through: Connecting to Azure IoT Central
 
 01/10/2018 5 minutes to read
 
-[Additional documentation for this sample](https://blogs.windows.com/buildingapps/2015/12/09/windows-iot-core-and-azure-iot-hub-putting-the-i-in-iot/) 
+[Additional documentation for this sample](https://blogs.windows.com/buildingapps/2015/12/09/windows-iot-core-and-azure-iot-hub-putting-the-i-in-iot/)
 
-#### Contributors 
+#### Contributors
 
 - David Campbell
 - George Mileka
 
 #### In this article
 
-This article describes how, as a device developer, to connect a device running a Windows 10 IoT Core device (like Raspberry Pi) to your Microsoft IoT Central application using the C# programming language.
+This article describes how, as a device developer, to connect a device running a Windows 10 IoT Core device (like Raspberry Pi) to your Azure IoT Central application using the C# programming language.
 
 ### Before you begin
 
 To complete the steps in this article, you need the following:
 
-- A Microsoft IoT Central application created from the Sample Devkits application template. For more information, see [Create your Microsoft IoT Central Application](https://docs.microsoft.com/en-us/microsoft-iot-central/howto-create-application).
-- A device running the Windows 10 IoT Core operating system.  For this walkthrough, we will use a Raspberry Pi.  
-- Visual Studio installed (only needed if you are going to build/deploy the source code). 
+- A Azure IoT Central application created from the Sample Devkits application template. For more information, see [Create your Azure IoT Central Application](https://docs.microsoft.com/en-us/microsoft-iot-central/howto-create-application).
+- A device running the Windows 10 IoT Core operating system.  For this walkthrough, we will use a Raspberry Pi.
+- Visual Studio installed (only needed if you are going to build/deploy the source code).
   - With 'The Universal Windows Platform development' workload installed.
 
-## Add a Real Device in Microsoft IoT Central
+## Add a Real Device in Azure IoT Central
 
-In Microsoft IoT Central, 
+In Azure IoT Central,
 
 - Add a real device from the Raspberry Pi device template.
-- Make a note of the device connection string. For more information, see Add a real device to your [Microsoft IoT Central application](https://docs.microsoft.com/en-us/microsoft-iot-central/tutorial-add-device).
+- Make a note of the device connection string. For more information, see Add a real device to your [Azure IoT Central application](https://docs.microsoft.com/en-us/microsoft-iot-central/tutorial-add-device).
 
 ## Setup A Physical Device
 
@@ -37,7 +37,7 @@ To setup a physical device, we need:
 
 - A device running Windows IoT Core operating system.
   - To do that, follow the steps described [here](https://developer.microsoft.com/en-us/windows/iot/getstarted/prototype/setupdevice).
-- A client application that can communicate with Microsoft IoT Central.
+- A client application that can communicate with Azure IoT Central.
   - You can either build your own custom application using the Azure SDK and deploy it to your device (using Visual Studio). OR
   - You can download a pre-built sample and simply deploy and run it on the device.
 
@@ -61,7 +61,7 @@ The application should launch on the device, and will look something like this:
 
 <img src="IoTHubForegroundClientScreenshot.png">
 
-In Microsoft IoT Central, you can see how the code running on the Raspberry Pi interacts with the application:
+In Azure IoT Central, you can see how the code running on the Raspberry Pi interacts with the application:
 
 - On the Measurements page for your real device, you can see the telemetry.
 - On the Properties page, you can see the value of the reported Die Number property.
