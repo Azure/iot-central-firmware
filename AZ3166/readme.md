@@ -77,6 +77,7 @@ Opening the code in Visual Studio Code and getting connected to the device:
 - From the command line change directory into the directory you cloned the repo and use the command:  code .
 - Once VS Code loads you should set the serial port of the board.  Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and type **Arduino** then find and select **Arduino: Select Serial Port**. A list of serial ports will be displayed select the one the device is connected to.  In windows this can be found by looking at the device manager and looking in Ports for the COM port for the STMicroelectronics STLink Virtual COM Port.  On macOS the port will be the one with /dev/cu.usbmodemXXXX STMicroElectronics
 - Set the Serial board rate to 250000.  Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and type **Arduino** then find and select **Arduino: Change Baud rate** and select 250000 from the list.
+- Select the board type. Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and type **Arduino** and then find and select **Arduino: Change Board Type** and select **MXCHIP AZ3166** from the list.
 
 Building and uploading the code to the device:
 
