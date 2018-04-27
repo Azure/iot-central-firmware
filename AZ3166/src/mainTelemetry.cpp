@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
-#include "Arduino.h"
-#include <ArduinoJson.h>
+#include "../inc/globals.h"
 
-#include "../inc/main_telemetry.h"
+#include "../inc/mainTelemetry.h"
 #include "../inc/config.h"
 #include "../inc/wifi.h"
 #include "../inc/sensors.h"
@@ -19,9 +18,7 @@
 #define statePayloadTemplate "{\"%s\":\"%s\"}"
 
 // forward declarations
-void showState();
 void sendTelemetryPayload(const char *payload);
-void showState();
 void sendStateChange();
 void buildTelemetryPayload(String *payload);
 void rollDieAnimation(int value);
@@ -33,7 +30,7 @@ static bool reset = false;
 const int switchDebounceTime = 250;
 static bool connected;
 unsigned long lastTimeSync = 0;
-unsigned long timeSyncPeriod = 7200000;
+unsigned long timeSyncPeriod = 24 * 60 * 60 * 1000; // 24 Hours
 unsigned long lastTelemetrySend = 0;
 unsigned long lastShakeTime = 0;
 unsigned long lastSwitchPress = 0;
@@ -42,7 +39,7 @@ static int lastInfoPage = -1;
 uint8_t telemetryState = 0xFF;
 
 
-void telemetrySetup(String iotCentralConfig) {
+void telemetrySetup(const char* iotCentralConfig) {
     reset = false;
 
     randomSeed(analogRead(0));
@@ -68,17 +65,17 @@ void telemetrySetup(String iotCentralConfig) {
     registerDesiredProperty("activateIR", irOnDesiredChange);
 
     // show the state of the device on the RGB LED
-    showState();
+    DeviceControl::showState();
 
     // clear all the stat counters
     clearCounters();
 
+    assert(iotCentralConfig != NULL);
     telemetryState = iotCentralConfig[2];
 }
 
 
 void telemetryLoop() {
-
     // if we are about to reset then stop sending/processing any telemetry
     if (reset) {
        delay(1);
@@ -94,15 +91,19 @@ void telemetryLoop() {
 
     // look for button A pressed to signify state change
     // when the A button is pressed the device state rotates to the next value and a state telemetry message is sent
-    if (IsButtonClicked(USER_BUTTON_A) && (millis() - lastSwitchPress > switchDebounceTime)) {
-        incrementDeviceState();
-        showState();
+    if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
+        (millis() - lastSwitchPress > switchDebounceTime)) {
+
+        DeviceControl::incrementDeviceState();
+        DeviceControl::showState();
         sendStateChange();
         lastSwitchPress = millis();
     }
-   
+
     // look for button B pressed to page through info screens
-    if (IsButtonClicked(USER_BUTTON_B) && (millis() - lastSwitchPress > switchDebounceTime)) {
+    if (DeviceControl::IsButtonClicked(USER_BUTTON_B) &&
+        (millis() - lastSwitchPress > switchDebounceTime)) {
+
         currentInfoPage = (currentInfoPage + 1) % 3;
         lastSwitchPress = millis();
     }
@@ -112,9 +113,7 @@ void telemetryLoop() {
         String payload; // max payload size for Azure IoT
 
         buildTelemetryPayload(&payload);
-
         sendTelemetryPayload(payload.c_str());
-
         lastTelemetrySend = millis();
     }
 
@@ -124,7 +123,7 @@ void telemetryLoop() {
         randomSeed(analogRead(0));
         int die = random(1, 7);
         shakeProperty.replace("{{die}}", String(die));
-    
+
         Screen.clean();
         rollDieAnimation(die);
 
@@ -145,18 +144,25 @@ void telemetryLoop() {
     }
     switch (currentInfoPage) {
         case 0: // message counts - page 1
-            char buff[64];
-            sprintf(buff, "%s\r\nsent: %d\r\nfail: %d\r\ntwin: %d/%d", connected?"-- Connected --":"- disconnected -", getTelemetryCount(), getErrorCount(), getDesiredCount(), getReportedCount());
+        {
+            char buff[STRING_BUFFER_128] = {0};
+            snprintf(buff, STRING_BUFFER_128 - 1,
+                    "%s\r\nsent: %d\r\nfail: %d\r\ntwin: %d/%d",
+                    connected ? "-- Connected --":"- disconnected -",
+                    getTelemetryCount(), getErrorCount(), getDesiredCount(),
+                    getReportedCount());
+
             Screen.print(0, buff);
+        }
             break;
         case 1: // Device information
             displayDeviceInfo();
             break;
-        case 2:  // Network information    
+        case 2:  // Network information
             displayNetworkInfo();
             break;
     }
-    
+
     delay(1);  // good practice to help prevent lockups
 }
 
@@ -253,10 +259,10 @@ void sendTelemetryPayload(const char *payload) {
 }
 
 void sendStateChange() {
-    char stateChangePayload[4096];
-    char value[10];
+    char stateChangePayload[STRING_BUFFER_4096];
+    char value[STRING_BUFFER_16] = {0};
 
-    switch(getDeviceState()) {
+    switch(DeviceControl::getDeviceState()) {
         case NORMAL:
             strcpy(value, "NORMAL");
             break;
@@ -270,13 +276,16 @@ void sendStateChange() {
             strcpy(value, "UNKNOWN");
     }
 
-    sprintf(stateChangePayload, statePayloadTemplate, "deviceState", value);
+    unsigned length = snprintf(stateChangePayload, STRING_BUFFER_4096 - 1,
+                              statePayloadTemplate, "deviceState", value);
+    stateChangePayload[length] = char(0);
+
     sendTelemetryPayload(stateChangePayload);
 }
 
 void rollDieAnimation(int value) {
 
-    char die1[] = { 
+    char die1[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '.', '.', '.', '.', '.', '.', '>',
         '<', '.', '.', '.', '.', '.', '.', '>',
@@ -285,8 +294,8 @@ void rollDieAnimation(int value) {
         '<', '.', '.', '.', '.', '.', '.', '>',
         '<', '.', '.', '.', '.', '.', '.', '>',
         '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-    
-    char die2[] = { 
+
+    char die2[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '!', '@', '.', '.', '.', '.', '>',
         '<', '#', '$', '.', '.', '.', '.', '>',
@@ -296,7 +305,7 @@ void rollDieAnimation(int value) {
         '<', '.', '.', '.', '.', '#', '$', '>',
         '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
 
-    char die3[] = { 
+    char die3[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '!', '@', '.', '.', '.', '.', '>',
         '<', '#', '$', '.', '.', '.', '.', '>',
@@ -306,7 +315,7 @@ void rollDieAnimation(int value) {
         '<', '.', '.', '.', '.', '#', '$', '>',
         '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
 
-    char die4[] = { 
+    char die4[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '!', '@', '.', '.', '!', '@', '>',
         '<', '#', '$', '.', '.', '#', '$', '>',
@@ -316,7 +325,7 @@ void rollDieAnimation(int value) {
         '<', '#', '$', '.', '.', '#', '$', '>',
         '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
 
-    char die5[] = { 
+    char die5[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '!', '@', '.', '.', '!', '@', '>',
         '<', '#', '$', '.', '.', '#', '$', '>',
@@ -326,7 +335,7 @@ void rollDieAnimation(int value) {
         '<', '#', '$', '.', '.', '#', '$', '>',
         '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
 
-    char die6[] = { 
+    char die6[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '!', '@', '.', '.', '!', '@', '>',
         '<', '#', '$', '.', '.', '#', '$', '>',

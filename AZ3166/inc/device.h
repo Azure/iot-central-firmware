@@ -1,15 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
 #ifndef DEVICE_H
 #define DEVICE_H
 
-typedef enum {NORMAL, CAUTION, DANGER} DeviceState;
+#include "globals.h"
 
-bool IsButtonClicked(unsigned char ulPin);
+// SINGLETON
+class DeviceControl
+{
+    static DeviceState deviceState;
+    DeviceControl() { }
 
-void incrementDeviceState();
-DeviceState getDeviceState();
-void showState();
+public:
+    static bool IsButtonClicked(unsigned char ulPin);
+    static void incrementDeviceState();
+    static DeviceState getDeviceState();
+    static void showState();
+};
 
 #endif /* DEVICE_H */

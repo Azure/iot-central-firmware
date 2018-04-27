@@ -1,18 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
-#include "Arduino.h"
-#include "AzureIotHub.h"
+#include "../inc/globals.h"
+#include <AzureIotHub.h>
+#include <time.h>
 
-#include <ArduinoJson.h>
-
-#include "../inc/iotCentral.h"
+#include "../inc/utility.h"
 #include "../inc/config.h"
 #include "../inc/iotHubClient.h"
 #include "../inc/stats.h"
 #include "../inc/wifi.h"
-
-#define MAX_CALLBACK_COUNT 32
 
 // forward declarations
 static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HANDLE message, void *userContextCallback);
@@ -29,12 +26,11 @@ typedef struct CALLBACK_LOOKUP_TAG {
     methodCallback callback;
 } CALLBACK_LOOKUP;
 
-static int callbackCounter;
+static int callbackCounter = 0;
 static int receiveContext = 0;
 static int receiveTwinContext = 0;
 static int statusContext = 0;
 static int trackingId = 0;
-static int reconnect = false;
 static bool saveTraceOn = false;
 static CALLBACK_LOOKUP methodCallbackList[MAX_CALLBACK_COUNT];
 static int methodCallbackCount = 0;
@@ -52,64 +48,68 @@ typedef struct EVENT_INSTANCE_TAG {
 
 void initIotHubClient(bool traceOn) {
     saveTraceOn = traceOn;
-    String connString = readConnectionString();;
+
+    char connectionString[AZ_IOT_HUB_MAX_LEN];
+    readConnectionString(connectionString, AZ_IOT_HUB_MAX_LEN);
+
+    String connString(connectionString);
     deviceId = connString.substring(connString.indexOf("DeviceId=") + 9, connString.indexOf(";SharedAccess"));
     hubName = connString.substring(connString.indexOf("HostName=") + 9, connString.indexOf(";DeviceId="));
     hubName = hubName.substring(0, hubName.indexOf("."));
 
     if (platform_init() != 0) {
-        (void)Serial.printf("Failed to initialize the platform.\r\n");
+        Serial.println("Failed to initialize the platform.");
         return;
     }
 
     if ((iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connString.c_str(), MQTT_Protocol)) == NULL) {
-        (void)Serial.printf("ERROR: iotHubClientHandle is NULL!\r\n");
+        Serial.println("ERROR: iotHubClientHandle is NULL!");
         return;
     }
 
     IoTHubClient_LL_SetRetryPolicy(iotHubClientHandle, IOTHUB_CLIENT_RETRY_EXPONENTIAL_BACKOFF, 1200);
-
     IoTHubClient_LL_SetOption(iotHubClientHandle, "logtrace", &saveTraceOn);
 
-    if (IoTHubClient_LL_SetOption(iotHubClientHandle, "TrustedCerts", certificates) != IOTHUB_CLIENT_OK) {
-        (void)Serial.printf("Failed to set option \"TrustedCerts\"\r\n");
+    if (IoTHubClient_LL_SetOption(iotHubClientHandle, "TrustedCerts",
+        certificates /* src/cores/arduino/az_iot/azureiotcerts.h */) != IOTHUB_CLIENT_OK) {
+
+        Serial.println("Failed to set option \"TrustedCerts\"");
         return;
     }
 
-    // Setting Message call back, so we can receive Commands. 
+    // Setting Message call back, so we can receive Commands.
     if (IoTHubClient_LL_SetMessageCallback(iotHubClientHandle, receiveMessageCallback, &receiveContext) != IOTHUB_CLIENT_OK) {
-        (void)Serial.printf("ERROR: IoTHubClient_LL_SetMessageCallback..........FAILED!\r\n");
+        Serial.println("ERROR: IoTHubClient_LL_SetMessageCallback..........FAILED!");
         return;
     }
 
-    // Setting twin call back, so we can receive desired properties. 
+    // Setting twin call back, so we can receive desired properties.
     if (IoTHubClient_LL_SetDeviceTwinCallback(iotHubClientHandle, deviceTwinGetStateCallback, &receiveTwinContext) != IOTHUB_CLIENT_OK) {
-        (void)Serial.printf("ERROR: IoTHubClient_LL_SetDeviceTwinCallback..........FAILED!\r\n");
+        Serial.println("ERROR: IoTHubClient_LL_SetDeviceTwinCallback..........FAILED!");
         return;
     }
 
     // Twin direct method callback, so we can receive direct method calls
     if (IoTHubClient_LL_SetDeviceMethodCallback(iotHubClientHandle, DeviceDirectMethodCallback, &receiveContext) != IOTHUB_CLIENT_OK) {
-        (void)printf("ERROR: IoTHubClient_LL_SetDeviceMethodCallback..........FAILED!\r\n");
+        Serial.println("ERROR: IoTHubClient_LL_SetDeviceMethodCallback..........FAILED!");
         return;
     }
 
     // Connection status change callback
     if (IoTHubClient_LL_SetConnectionStatusCallback(iotHubClientHandle, connectionStatusCallback, &statusContext) != IOTHUB_CLIENT_OK) {
-        (void)Serial.printf("ERROR: IoTHubClient_LL_SetConnectionStatusCallback..........FAILED!\r\n");
+        Serial.println("ERROR: IoTHubClient_LL_SetConnectionStatusCallback..........FAILED!");
         return;
     }
 }
 
 bool sendTelemetry(const char *payload) {
     checkConnection();
-    
-    IOTHUB_CLIENT_RESULT hubResult = IOTHUB_CLIENT_RESULT::IOTHUB_CLIENT_OK;
 
+    IOTHUB_CLIENT_RESULT hubResult = IOTHUB_CLIENT_RESULT::IOTHUB_CLIENT_OK;
     EVENT_INSTANCE *currentMessage = (EVENT_INSTANCE*)malloc(sizeof(EVENT_INSTANCE));
     currentMessage->messageHandle = IoTHubMessage_CreateFromByteArray((const unsigned char*)payload, strlen(payload));
     if (currentMessage->messageHandle == NULL) {
-        (void)Serial.printf("ERROR: iotHubMessageHandle is NULL!\r\n");
+        Serial.println("ERROR: iotHubMessageHandle is NULL!");
         free(currentMessage);
         return false;
     }
@@ -118,24 +118,26 @@ bool sendTelemetry(const char *payload) {
     MAP_HANDLE propMap = IoTHubMessage_Properties(currentMessage->messageHandle);
 
     // add a timestamp to the message - illustrated for the use in batching
-    time_t seconds = time(NULL);
-    String temp = ctime(&seconds);
-    temp.replace("\n","\0");
-    if (Map_AddOrUpdate(propMap, "timestamp", temp.c_str()) != MAP_OK)
+    time_t now_utc = time(NULL); // utc time
+    char timeBuffer[STRING_BUFFER_128];
+    unsigned outputLength = snprintf(timeBuffer, STRING_BUFFER_128, "%s", ctime(&now_utc));
+    assert(outputLength && outputLength < STRING_BUFFER_128 && timeBuffer[outputLength - 1] == '\n');
+    timeBuffer[outputLength - 1] = char(0); // replace `\n` with `\0`
+    if (Map_AddOrUpdate(propMap, "timestamp", timeBuffer) != MAP_OK)
     {
         Serial.println("ERROR: Adding message property failed");
     }
-    
+
     // submit the message to the Azure IoT hub
     hubResult = IoTHubClient_LL_SendEventAsync(iotHubClientHandle, currentMessage->messageHandle, sendConfirmationCallback, currentMessage);
     if (hubResult != IOTHUB_CLIENT_OK) {
-        (void)Serial.printf("ERROR: IoTHubClient_LL_SendEventAsync..........FAILED (%s)!\r\n", hubResult);
+        Serial.printf("ERROR: IoTHubClient_LL_SendEventAsync..........FAILED hubResult is (%d)!\r\n", hubResult);
         incrementErrorCount();
         IoTHubMessage_Destroy(currentMessage->messageHandle);
         free(currentMessage);
         return false;
     }
-    (void)Serial.printf("IoTHubClient_LL_SendEventAsync accepted message for transmission to IoT Hub.\r\n");
+    Serial.println("IoTHubClient_LL_SendEventAsync [CHECK]"); // keep happy messages small (serial monitor is failing for latter errors)
 
     // yield to process any work to/from the hub
     hubClientYield();
@@ -145,10 +147,11 @@ bool sendTelemetry(const char *payload) {
 
 bool sendReportedProperty(const char *payload) {
     checkConnection();
-    
+
     bool retValue = true;
-    
-    IOTHUB_CLIENT_RESULT result = IoTHubClient_LL_SendReportedState(iotHubClientHandle, (const unsigned char*)payload, strlen(payload), deviceTwinConfirmationCallback, NULL);
+
+    IOTHUB_CLIENT_RESULT result = IoTHubClient_LL_SendReportedState(iotHubClientHandle,
+        (const unsigned char*)payload, strlen(payload), deviceTwinConfirmationCallback, NULL);
 
     if (result != IOTHUB_CLIENT_OK) {
         LogError("Failure sending reported property!!!");
@@ -161,29 +164,33 @@ bool sendReportedProperty(const char *payload) {
 // register callbacks for direct and cloud to device messages
 bool registerMethod(const char *methodName, methodCallback callback) {
     if (methodCallbackCount < MAX_CALLBACK_COUNT) {
-        methodCallbackList[methodCallbackCount].name = (char*)malloc(strlen(methodName) + 1);
-        strcpy(methodCallbackList[methodCallbackCount].name, (char*)methodName);
-        methodCallbackList[methodCallbackCount].name = strupr(methodCallbackList[methodCallbackCount].name);
+        const uint32_t methodNameLength = strlen(methodName);
+        methodCallbackList[methodCallbackCount].name = (char*) malloc(methodNameLength + 1);
+        strncpy(methodCallbackList[methodCallbackCount].name, methodName, methodNameLength);
+        methodCallbackList[methodCallbackCount].name[methodNameLength] = char(0);
+        strupr(methodCallbackList[methodCallbackCount].name);
         methodCallbackList[methodCallbackCount].callback = callback;
         methodCallbackCount++;
         return true;
-    } else {
-        return false;
     }
+
+    return false;
 }
 
 // register callbacks for desired properties
 bool registerDesiredProperty(const char *propertyName, methodCallback callback) {
     if (desiredCallbackCount < MAX_CALLBACK_COUNT) {
-        desiredCallbackList[desiredCallbackCount].name = (char*)malloc(strlen(propertyName) + 1);
-        strcpy(desiredCallbackList[desiredCallbackCount].name, (char*)propertyName);
-        desiredCallbackList[desiredCallbackCount].name = strupr(desiredCallbackList[desiredCallbackCount].name);
+        const uint32_t propertyNameLength = strlen(propertyName);
+        desiredCallbackList[desiredCallbackCount].name = (char*) malloc(propertyNameLength + 1);
+        strncpy(desiredCallbackList[desiredCallbackCount].name, (char*)propertyName, propertyNameLength);
+        desiredCallbackList[desiredCallbackCount].name[propertyNameLength] = char(0);
+        strupr(desiredCallbackList[desiredCallbackCount].name);
         desiredCallbackList[desiredCallbackCount].callback = callback;
         desiredCallbackCount++;
         return true;
-    } else {
-        return false;
     }
+
+    return false;
 }
 
 void closeIotHubClient(void)
@@ -196,7 +203,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HA
     int *counter = (int *)userContextCallback;
     const char *buffer;
     size_t size;
-    
+
     // get message content
     if (IoTHubMessage_GetByteArray(message, (const unsigned char **)&buffer, &size) != IOTHUB_MESSAGE_OK) {
         (void)Serial.printf("unable to retrieve the message data\r\n");
@@ -207,28 +214,35 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HA
     // message format expected:
     // {
     //     "methodName" : "<method name>",
-    //     "payload" : {    
+    //     "payload" : {
     //         "input1": "someInput",
     //         "input2": "anotherInput"
     //         ...
     //     }
     // }
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(buffer);
-
-    String methodName = root["methodName"];
+    JSObject json(buffer);
+    String methodName = json.getStringByName("methodName");
+    if (methodName.length() == 0) {
+        LOG_ERROR("Object doesn't have a member 'methodName'");
+        return IOTHUBMESSAGE_REJECTED;
+    }
     methodName.toUpperCase();
 
-    int status = 0;
     char *methodResponse;
     size_t responseSize;
 
     // lookup if the method has been registered to a function
     for(int i = 0; i < methodCallbackCount; i++) {
         if (methodName == methodCallbackList[i].name) {
-            String params = root["payload"];
-            status = methodCallbackList[i].callback((const char*)params.c_str(), params.length(), &methodResponse, &responseSize);
+            const char* params = json.getStringByName("payload");
+            if (params == NULL) {
+                LOG_ERROR("Object doesn't have a member 'payload'");
+                return IOTHUBMESSAGE_REJECTED;
+            }
+
+            methodCallbackList[i].callback(params, strlen(params),
+                &methodResponse, &responseSize);
             break;
         }
     }
@@ -237,10 +251,9 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HA
     return IOTHUBMESSAGE_ACCEPTED;
 }
 
-static int DeviceDirectMethodCallback(const char* method_name, const unsigned char* payload, size_t size, unsigned char** response, size_t* resp_size, void* userContextCallback)
+static int DeviceDirectMethodCallback(const char* method_name, const unsigned char* payload,
+    size_t size, unsigned char** response, size_t* resp_size, void* /* userContextCallback */)
 {
-    (void)userContextCallback;
-
     // message format expected:
     // {
     //     "methodName": "reboot",
@@ -266,16 +279,19 @@ static int DeviceDirectMethodCallback(const char* method_name, const unsigned ch
         }
     }
 
-    Serial.printf("Device Method %s called\r\n"), method_name;
+    Serial.printf("Device Method %s called\r\n", method_name);
 
-    String responseString = "{ \"Response\":{{response}}}";
-    responseString.replace("{{response}}", methodResponse);
-
-    *resp_size = responseString.length();
-    if ((*response = (unsigned char*)malloc(*resp_size)) == NULL) {
+    const char * message_template = "{\"Response\":%s}";
+    const int template_size = strlen(message_template) - 2 /* %s */;
+    uint32_t message_size = responseSize + template_size;
+    char *tmp_string = (char*) malloc(message_size + 1);
+    if (tmp_string == NULL) {
         status = -1;
     } else {
-        responseString.toCharArray((char*)*response, *resp_size + 1);
+        snprintf(tmp_string, message_size, message_template, methodResponse);
+        tmp_string[message_size] = char(0);
+        *response = reinterpret_cast<unsigned char*>(tmp_string);
+        *resp_size = message_size;
     }
 
     return status;
@@ -283,39 +299,68 @@ static int DeviceDirectMethodCallback(const char* method_name, const unsigned ch
 
 // every desired property change gets echoed back as a reported property
 void echoDesired(const char *propertyName, const char *message, const char *status, int statusCode) {
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(message);
-    const char *value = root[propertyName]["value"];
-    const char *desiredVersion = root["$version"];
-    if (root.containsKey("desired")) {
-        value = root["desired"][propertyName]["value"];
-        desiredVersion = root["desired"]["$version"];   
-    } else {
-        propertyName = root.begin()->key;
-        value = root[propertyName]["value"];
-        desiredVersion = root["$version"];     
+    JSObject rootObject(message);
+    JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
+
+    const char* methodName = rootObject.getStringByName("methodName");
+    if (methodName == NULL) {
+        LOG_ERROR("Object doesn't have a member 'methodName'");
+        return;
     }
 
-    char buff[4096];
-    String echoTemplate = F("{\"%s\":{\"value\":%s, \"statusCode\":%d, \"status\":\"%s\", \"desiredVersion\":%s}}");
-    sprintf(buff, echoTemplate.c_str(), propertyName, value, statusCode, status, desiredVersion);
+    if (!rootObject.getObjectByName(propertyName, &propertyNameObject)) {
+        LOG_ERROR("Object doesn't have a member with propertyName");
+        return;
+    }
+
+    const char *value, *desiredVersion;
+    if (rootObject.getObjectByName("desired", &desiredObject)) {
+        if (!desiredObject.getObjectByName(propertyName, &desiredObjectPropertyName)) {
+            LOG_ERROR("desiredObject doesn't have a member with propertyName");
+            return;
+        }
+
+        value = desiredObjectPropertyName.getStringByName("value");
+        desiredVersion = desiredObject.getStringByName("$version");
+    } else {
+        propertyName = rootObject.getNameAt(0);
+
+        value = propertyNameObject.getStringByName("value");
+        desiredVersion = rootObject.getStringByName("$version");
+    }
+
+    char buff[STRING_BUFFER_1024];
+    char *tmp = buff;
+    const char* echoTemplate = "{\"%s\":{\"value\":%s, \"statusCode\":%d, \"status\":\"%s\", \"desiredVersion\":%s}}";
+    uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
+    if (buffer_size + 1 > STRING_BUFFER_1024) {
+        tmp = (char*) malloc(buffer_size + 1);
+        if (tmp == NULL) {
+            Serial.printf("Desired property %s failed to be echoed back as a reported property (OUT OF MEMORY)\r\n", propertyName);
+            incrementErrorCount();
+            return;
+        }
+    }
+
+    snprintf(buff, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
+    buff[buffer_size] = char(0);
     Serial.printf(buff);
 
     if (sendReportedProperty(buff)) {
-        Serial.printf("Desired property %s successfully echoed back as a reported property", propertyName);
+        Serial.printf("Desired property %s successfully echoed back as a reported property\r\n", propertyName);
         incrementReportedCount();
     } else {
-        Serial.printf("Desired property %s failed to be echoed back as a reported property", propertyName);
+        Serial.printf("Desired property %s failed to be echoed back as a reported property\r\n", propertyName);
         incrementErrorCount();
     }
 }
 
 void callDesiredCallback(const char *propertyName, const char *payLoad, size_t size) {
-    const char *propName = strdup(propertyName);
-    propName = strupr((char*)propName);
     int status = 0;
     char *methodResponse;
     size_t responseSize;
+    char *propName = strdup(propertyName);
+    strupr(propName);
 
     for(int i = 0; i < desiredCallbackCount; i++) {
         if (strcmp(propName, desiredCallbackList[i].name) == 0) {
@@ -325,16 +370,18 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
             break;
         }
     }
+    free(propName);
 }
 
 static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char* payLoad, size_t size, void* userContextCallback) {
     ((char*)payLoad)[size] = 0x00;
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payLoad);
+    JSObject payloadObject((const char *)payLoad);
 
     if (update_state == DEVICE_TWIN_UPDATE_PARTIAL) {
-        callDesiredCallback(root.begin()->key, (const char*)payLoad, size);
+        callDesiredCallback(payloadObject.getNameAt(0), reinterpret_cast<const char*>(payLoad), size);
     } else {
+        JSObject desired, reported;
+
         // loop through all the desired properties
         // look to see if the desired property has an associated reported property
         // if so look if the versions match, if they match do nothing
@@ -342,19 +389,41 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state, co
 
         Serial.println("Processing complete twin");
 
-        JsonObject& desired = root["desired"];
-        JsonObject& reported = root["reported"];
+        if (!payloadObject.getObjectByName("desired", &desired) ||
+            !payloadObject.getObjectByName("reported", &reported)) {
 
-        for (JsonObject::iterator it=desired.begin(); it!=desired.end(); ++it) {
-            if (it->key[0] != '$') {
-                if (reported.containsKey(it->key) && (reported[it->key]["desiredVersion"] == desired["$version"])) {
-                    Serial.printf("key: %s found in reported and versions match\r\n", it->key);
-                } else if (reported[it->key]["value"] != desired[it->key]["value"]){
-                    Serial.printf("key: %s either not found in reported or versions do not match\r\n", it->key);
-                    Serial.println(it->value.as<char*>());
-                    callDesiredCallback(it->key, (const char*)payLoad, size);
+            LOG_ERROR("Object doesn't have a member 'desired and/or reported'");
+        }
+
+        for (unsigned i = 0, count = desired.getCount(); i < count; i++) {
+            JSObject item;
+            const char * itemName = desired.getNameAt(i);
+            if (itemName[0] != '$') {
+                JSObject keyObject;
+                const char * version = NULL, * desiredVersion = NULL,
+                           * value = NULL, * desiredValue = NULL;
+                bool containsKey = reported.getObjectByName(itemName, &keyObject);
+
+                if (containsKey) {
+                    desiredVersion = reported.getStringByName("desiredVersion");
+                    version = desired.getStringByName("$version");
+                    desiredValue = reported.getStringByName("desiredValue");
+                    value = desired.getStringByName("value");
+                }
+
+                if (containsKey && strcmp(desiredVersion, version) == 0) {
+                    Serial.printf("key: %s found in reported and versions match\r\n", itemName);
+                } else if (containsKey && strcmp(desiredValue, value) != 0){
+                    Serial.printf("key: %s either not found in reported or versions do not match\r\n", itemName);
+                    JSObject itemValue;
+                    if (desired.getObjectAt(i, &itemValue) && itemValue.toString() != NULL) {
+                        Serial.println(itemValue.toString());
+                    } else {
+                        LOG_ERROR("desired doesn't have value at index");
+                    }
+                    callDesiredCallback(itemName, (const char*)payLoad, size);
                 } else {
-                    echoDesired(it->key, (const char*)payLoad, "completed", 200);
+                    echoDesired(itemName, (const char*)payLoad, GlobalConfig::completedString, 200);
                 }
             }
         }
@@ -362,69 +431,83 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state, co
 }
 
 static void deviceTwinConfirmationCallback(int status_code, void* userContextCallback) {
-    (void)(userContextCallback);
+    assert(userContextCallback == NULL); // NOOP for now, so it should be NULL
     LogInfo("DeviceTwin CallBack: Status_code = %u", status_code);
 }
 
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result, IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback) {
     if (reason == IOTHUB_CLIENT_CONNECTION_NO_NETWORK) {
-        (void)Serial.println("No network connection");
-        reconnect = true;      
+        Serial.println("No network connection");
+        GlobalConfig::needsReconnect = true;
     } else if (result == IOTHUB_CLIENT_CONNECTION_UNAUTHENTICATED && reason == IOTHUB_CLIENT_CONNECTION_EXPIRED_SAS_TOKEN) {
-        (void)Serial.println("Connection timeout");
-        reconnect = true;
+        Serial.println("Connection timeout");
+        GlobalConfig::needsReconnect = true;
     }
 }
 
 static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback) {
     EVENT_INSTANCE *eventInstance = (EVENT_INSTANCE *)userContextCallback;
-    (void)Serial.printf("Confirmation[%d] received for message tracking id = %d with result = %s\r\n", callbackCounter, eventInstance->messageTrackingId, ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
+    Serial.printf("Confirmation[%d] received for message tracking id = %d \
+        with result = %s\r\n", callbackCounter, eventInstance->messageTrackingId,
+        ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
     callbackCounter++;
     IoTHubMessage_Destroy(eventInstance->messageHandle);
     free(eventInstance);
 }
 
 static void checkConnection() {
-    if (reconnect) {
+    if (GlobalConfig::needsReconnect) {
         // simple reconnection of the client in the event of a disconnect
         Serial.println("Reconnecting to the IoT Hub");
         closeIotHubClient();
         initIotHubClient(saveTraceOn);
 
-        reconnect = false;
+        GlobalConfig::needsReconnect = false;
     }
 }
 
 void hubClientYield(void) {
     checkConnection();
-    
+
     int waitTime = 1;
     IoTHubClient_LL_DoWork(iotHubClientHandle);
     ThreadAPI_Sleep(waitTime);
 }
 
 // scrolling text global variables
-int displayCharPos = 0; 
+int displayCharPos = 0;
 int waitCount = 3;
-String displayHubName;
+bool needsCopying = true;
+static char displayHubName[AZ3166_DISPLAY_MAX_COLUMN + 1];
 
 void displayDeviceInfo() {
-    char buff[64]; 
-    // code to scroll the larger hubname if it exceeds 16 characters
-    if (waitCount >= 3) {
-        waitCount = 0;
-        if (hubName.length() > 16) {
-            displayHubName = hubName.substring(displayCharPos);
-            if (displayCharPos + 16 >= hubName.length())
-                displayCharPos = -1;
-            displayCharPos++;
-        } else {
-            displayHubName = hubName;
-        }
-    } else {
-        waitCount++;
-    }
+    char buff[STRING_BUFFER_128] = {0};
 
-    sprintf(buff, "Device:\r\n%s\r\n%.16s\r\nf/w: %s", deviceId.c_str(), displayHubName.c_str(), FW_VERSION);
+    if (needsCopying) {
+        // code to scroll the larger hubname if it exceeds 16 characters
+        if (waitCount >= 3) {
+            waitCount = 0;
+            const int hubNameLength = hubName.length();
+            if (hubNameLength > AZ3166_DISPLAY_MAX_COLUMN) {
+                unsigned length = min(hubNameLength - displayCharPos, AZ3166_DISPLAY_MAX_COLUMN);
+                memcpy(displayHubName, hubName.c_str() + displayCharPos, length);
+                displayHubName[length] = char(0); // future proof
+                if (AZ3166_DISPLAY_MAX_COLUMN + displayCharPos >= hubNameLength) {
+                    displayCharPos = 0;
+                } else {
+                    displayCharPos++;
+                }
+            } else { // hubNameLength > AZ3166_DISPLAY_MAX_COLUMN
+                memcpy(displayHubName, hubName.c_str(), hubName.length());
+                displayHubName[hubName.length()] = char(0); // future proof
+                needsCopying = false; // no need to do this again
+            } // hubNameLength > AZ3166_DISPLAY_MAX_COLUMN
+        } else {
+            waitCount++;
+        } // waitCount >= 3
+    } // needsCopying
+
+    snprintf(buff, STRING_BUFFER_128 - 1, "Device:\r\n%s\r\n%.16s\r\nf/w: %s",
+        deviceId.c_str(), displayHubName, AZIOTC_FW_VERSION);
     Screen.print(0, buff);
 }

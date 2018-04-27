@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
+#ifndef FAN_SOUND_H
+#define FAN_SOUND_H
+
 #define FAN_SOUND_DATA_SIZE 88405
 
 char fanSoundData[FAN_SOUND_DATA_SIZE] = {
@@ -11055,3 +11058,5 @@ char fanSoundData[FAN_SOUND_DATA_SIZE] = {
 127, 128, 128, 129, 130, 131, 133, 134, // 88384-88391
 135, 136, 136, 137, 137, 137, 137, 137, // 88392-88399
 136, 135, 134, 134, 132};// 88400-88404
+
+#endif // FAN_SOUND_H

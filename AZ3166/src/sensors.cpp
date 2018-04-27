@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
-#include "Arduino.h"
+#include "../inc/globals.h"
+
 
 #include "LSM6DSLSensor.h"
 #include "LIS2MDLSensor.h"
@@ -21,7 +22,6 @@ RGB_LED rgbLed;
 IRDASensor *irdaSensor;
 
 void initSensors() {
-
     // LSM6DSL
     i2c = new DevI2C(D14, D15);
     accelGyro = new LSM6DSLSensor(*i2c, D4, D5);
@@ -44,7 +44,7 @@ void initSensors() {
     // LPS22HB
     pressure = new LPS22HBSensor(*i2c);
     pressure->init(NULL);
-    
+
 
     // IrDA
     irdaSensor = new IRDASensor();
@@ -128,7 +128,7 @@ void turnLedOff() {
 
 void transmitIR() {
     //static unsigned char data[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-    
+
     unsigned char data = 1;
     for (int i = 0; i < 20; i++) {
         int irda_status = irdaSensor->IRDATransmit(&data, 1, 100);

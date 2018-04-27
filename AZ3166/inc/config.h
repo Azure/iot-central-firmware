@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
 #ifndef CONFIG_H
 #define CONFIG_H
@@ -11,13 +11,12 @@ void storeConnectionString(const char *connectionString);
 void storeIotCentralConfig(const char *iotCentralConfig, int size);
 
 void readWiFi(char* ssid, int ssidLen, char *password, int passwordLen);
-String readConnectionString();
-String readIotCentralConfig();
+void readConnectionString(char * connectionString, uint32_t buffer_size);
+void readIotCentralConfig(char * iotCentralConfig, uint32_t buffer_size);
 
 void clearWiFiEEPROM();
 void clearAzureEEPROM();
 void clearIotCentralEEPROM();
-
 #endif /* CONFIG_H */
 
 #define TEMP_CHECKED 0x80

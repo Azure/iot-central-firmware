@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
-#include "Arduino.h"
-#include "AudioClass.h"
+#include "../inc/globals.h"
+#include "../inc/utility.h"
+#include <AudioClass.h>
 
-#include <ArduinoJson.h>
 
 #include "../inc/sensors.h"
 #include "../inc/stats.h"
@@ -16,21 +16,23 @@
 // handler for the cloud to device (C2D) message
 int cloudMessage(const char *payload, size_t size, char **response, size_t* resp_size) {
     Serial.println("Cloud to device (C2D) message recieved");
-    
+
     // get parameters
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payload);
-    String text = root["text"];
+
+    JSObject json(payload);
+    const char * text = json.getStringByName("text");
+    if (text == NULL) {
+        LOG_ERROR("Object doesn't have a member 'text'");
+        return 0;
+    }
 
     // display the message on the screen
     Screen.clean();
     Screen.print(0, "New message:");
-    Screen.print(1, text.c_str(), true);
+    Screen.print(1, text, true);
     delay(2000);
 
-    int status = 200;
-
-    return status;
+    return 200; /* status */
 }
 
 int directMethod(const char *payload, size_t size, char **response, size_t* resp_size) {
@@ -40,15 +42,19 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
     turnLedOff();
     delay(100);
 
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& root = jsonBuffer.parseObject(payload);
-    int cycles = root["cycles"];
+    JSObject json(payload);
+    double retval = json.getNumberByName("cycles");
+    if (retval == INT_MAX || retval < 0) { // don't let overflow
+        LOG_ERROR("'cycles' is not a number");
+        return 0;
+    }
 
+    int cycles = (int) retval;
     for(int iter = 0; iter < cycles; iter++) {
         // Start off with red.
         rgbColour[0] = 255;
         rgbColour[1] = 0;
-        rgbColour[2] = 0;  
+        rgbColour[2] = 0;
 
         // Choose the colours to increment and decrement.
         for (int decColour = 0; decColour < 3; decColour += 1) {
@@ -69,23 +75,15 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
     delay(200);
     turnLedOff();
     delay(100);
-    showState();
+    DeviceControl::showState();
 
-    int status = 200;
-    String responseString = "\"completed\"";
-    *resp_size = responseString.length();
-    if ((*response = (char*)malloc(*resp_size)) == NULL) {
-        status = -1;
-    } else {
-        responseString.toCharArray((char*)*response, *resp_size + 1);
-    }
-
-    return status;
+    *response = (char*) GlobalConfig::completedString;
+    return 200; /* status */
 }
 
 // this is the callback method for the fanSpeed desired property
 int fanSpeedDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
-    char fan1[] = { 
+    char fan1[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', 'L', '.', '.', '.', '.', 'R', '.',
@@ -94,7 +92,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
         '.', '.', '.', 'X', 'X', '.', '.', '.',
         '.', '.', 'R', '.', '.', 'L', '.', '.',
         '.', 'R', '.', '.', '.', '.', 'L', '.'};
-    char fan2[] = { 
+    char fan2[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', 'V', 'v', '.', '.', '.',
@@ -122,22 +120,14 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 
     incrementDesiredCount();
 
-    int status = 200;
-    String responseString = "completed";
-    *resp_size = responseString.length()+1;
-    if ((*response = (char*)malloc(*resp_size)) == NULL) {
-        status = -1;
-    } else {
-        responseString.toCharArray((char*)*response, *resp_size);
-    }
-
-    return status;
+    *response = (char*) GlobalConfig::completedString;
+    return 200; /* status */
 }
 
 int voltageDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
     Serial.println("setVoltage desired property just got called");
 
-    char voltage0[] = { 
+    char voltage0[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -147,7 +137,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.'};
 
-    char voltage1[] = { 
+    char voltage1[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -156,8 +146,8 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
         '.', '.', '.', '.', '.', '.', '.', '.',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'};
-        
-    char voltage2[] = { 
+
+    char voltage2[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -167,7 +157,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'};
 
-    char voltage3[] = { 
+    char voltage3[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
@@ -177,7 +167,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'};
 
-    char voltage4[] = { 
+    char voltage4[] = {
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
@@ -199,22 +189,14 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
 
     incrementDesiredCount();
 
-    int status = 200;
-    String responseString = "completed";
-    *resp_size = responseString.length()+1;
-    if ((*response = (char*)malloc(*resp_size)) == NULL) {
-        status = -1;
-    } else {
-        responseString.toCharArray((char*)*response, *resp_size);
-    }
-
-    return status;
+    *response = (char*) GlobalConfig::completedString;
+    return 200; /* status */
 }
 
 int currentDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
     Serial.println("setCurrent desired property just got called");
 
-    char current0[] = { 
+    char current0[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -224,7 +206,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.'};
 
-    char current1[] = { 
+    char current1[] = {
         'g', 'g', '.', '.', '.', '.', '.', '.',
         'g', 'g', '.', '.', '.', '.', '.', '.',
         'g', 'g', '.', '.', '.', '.', '.', '.',
@@ -233,8 +215,8 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         'g', 'g', '.', '.', '.', '.', '.', '.',
         'g', 'g', '.', '.', '.', '.', '.', '.',
         'g', 'g', '.', '.', '.', '.', '.', '.'};
-        
-    char current2[] = { 
+
+    char current2[] = {
         'g', 'g', 'g', 'g', '.', '.', '.', '.',
         'g', 'g', 'g', 'g', '.', '.', '.', '.',
         'g', 'g', 'g', 'g', '.', '.', '.', '.',
@@ -244,7 +226,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         'g', 'g', 'g', 'g', '.', '.', '.', '.',
         'g', 'g', 'g', 'g', '.', '.', '.', '.'};
 
-    char current3[] = { 
+    char current3[] = {
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
@@ -254,7 +236,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.'};
 
-    char current4[] = { 
+    char current4[] = {
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
@@ -276,16 +258,8 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
 
     incrementDesiredCount();
 
-    int status = 200;
-    String responseString = "completed";
-    *resp_size = responseString.length()+1;
-    if ((*response = (char*)malloc(*resp_size)) == NULL) {
-        status = -1;
-    } else {
-        responseString.toCharArray((char*)*response, *resp_size);
-    }
-
-    return status;
+    *response = (char*) GlobalConfig::completedString;
+    return 200; /* status */
 }
 
 int irOnDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
@@ -298,14 +272,6 @@ int irOnDesiredChange(const char *message, size_t size, char **response, size_t*
 
     incrementDesiredCount();
 
-    int status = 200;
-    String responseString = "completed";
-    *resp_size = responseString.length()+1;
-    if ((*response = (char*)malloc(*resp_size)) == NULL) {
-        status = -1;
-    } else {
-        responseString.toCharArray((char*)*response, *resp_size);
-    }
-
-    return status;
+    *response = (char*) GlobalConfig::completedString;
+    return 200; /* status */
 }

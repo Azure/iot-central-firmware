@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
-#include "Arduino.h"
+#include "../inc/globals.h"
+
 #include "OledDisplay.h"
 
 #include "../inc/oledAnimation.h"
@@ -74,7 +75,7 @@ void clearScreen() {
 
 void renderNextFrame() {
     int columnPad = 3;
-    
+
     memset(buf, 0x00, 1024);
     char *image;
 
@@ -93,7 +94,7 @@ void renderNextFrame() {
             else if (image[(y * colLimit) + x] == 'G')
                 memcpy(buf + columnPad, blockGap, 8);
             else if (image[(y * colLimit) + x] == 'g')
-                memcpy(buf + columnPad, blockVGap, 8);                
+                memcpy(buf + columnPad, blockVGap, 8);
             else if (image[(y * colLimit) + x] == 'X')
                 memcpy(buf + columnPad, cross, 8);
             else if (image[(y * colLimit) + x] == 'L')
@@ -141,7 +142,7 @@ void renderNextFrame() {
         }
         columnPad = columnPad + 8;
     }
-    
+
     if (_moveLimit > 0)
         Screen.draw(xs + move - 8, ys, xs+move, 8, blankBuf);
 
@@ -156,7 +157,7 @@ void renderNextFrame() {
         move = move + 8;
     else
         move = 0;
-    
+
     if (_frameDelay > 0)
         delay(_frameDelay);
 }

@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
-#include "Arduino.h"
+#include "../inc/globals.h"
+
 #include "AZ3166WiFi.h"
 #include "EEPROMInterface.h"
 
-#include "../inc/main_initialize.h"
+#include "../inc/mainInitialize.h"
 #include "../inc/wifi.h"
 #include "../inc/webServer.h"
 #include "../inc/config.h"
@@ -16,34 +17,31 @@
 void processResultRequest(WiFiClient client, String request);
 void processStartRequest(WiFiClient client);
 
-static bool reset = false;
-
 void initializeSetup() {
-
-    reset = false;
+    assert(GlobalConfig::needsInitialize == true);
+    GlobalConfig::needsInitialize = false;
 
     // enter AP mode
     bool apRunning = initApWiFi();
+    Serial.printf("initApWifi: %d \r\n", apRunning);
 
     // setup web server
-    bool webServerRunning = startWebServer();
+    GlobalConfig::webServer.start();
 }
 
 void initializeLoop() {
-
     // if we are about to reset then stop processing any requests
-    if (reset) {
+    if (GlobalConfig::needsInitialize) {
         delay(1);
         return;
     }
 
-    Serial.println("list for incoming clients");
-    // listen for incoming clients
-    WiFiClient client = clientAvailable();
-    Serial.println("availabled");
-    if (client) 
+    Serial.println("initializeLoop: list for incoming clients");
+
+    WiFiClient client = GlobalConfig::webServer.getClient();
+    if (client) // ( _pTcpSocket != NULL )
     {
-        Serial.println("new client");
+        Serial.println("initializeLoop: new client");
         // an http request ends with a blank line
         boolean currentLineIsBlank = true;
         String request = "";
@@ -58,23 +56,24 @@ void initializeLoop() {
                 if (c == '\n' && currentLineIsBlank) {
                     String requestMethod = request.substring(0, request.indexOf("\r\n"));
                     requestMethod.toUpperCase();
-                    if (requestMethod.startsWith("GET /START")) {
+                    if (requestMethod.startsWith("GET / ")) {
+                        Serial.printf("Request to '/'\r\n");
+                        client.write((uint8_t*)HTTP_MAIN_PAGE_RESPONSE, sizeof(HTTP_MAIN_PAGE_RESPONSE) - 1);
+                        Serial.println("Responsed with HTTP_MAIN_PAGE_RESPONSE");
+                    } else if (requestMethod.startsWith("GET /START")) {
                         Serial.println("-> request GET /START");
                         processStartRequest(client);
-                    } else if (requestMethod.startsWith("GET /RESULT")) {
-                        Serial.println("-> request GET /RESULT");
+                    } else if (requestMethod.startsWith("GET /PROCESS")) {
+                        Serial.println("-> request GET /PROCESS");
                         processResultRequest(client, request);
                     } else if (requestMethod.startsWith("GET /COMPLETE")) {
                         Serial.println("-> request GET /COMPLETE");
-                        String response = String(HTTP_STATUS_200) + httpHeaderNocache + completePageHtml + "\r\n";
-                        client.write((uint8_t*)response.c_str(), strlen(response.c_str()));
+                        client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
                     } else {
                         // 404
-                        Serial.print("-> 404: ");
-                        Serial.println(request);
-                        String response = String(HTTP_STATUS_404) + httpHeaderNocache;
-                        client.write((uint8_t*)response.c_str(), strlen(response.c_str()));
-                        Serial.println(request);
+                        Serial.printf("Request to %s -> 404!\r\n", request.c_str());
+                        client.write((uint8_t*)HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE) - 1);
+                        Serial.println("Responsed with HTTP_404_RESPONSE");
                     }
                     break;
                 }
@@ -98,14 +97,20 @@ void initializeLoop() {
 }
 
 void initializeCleanup() {
-    reset = true;
-    stopWebServer();
+    GlobalConfig::needsInitialize = true;
+    GlobalConfig::webServer.stop();
     shutdownApWiFi();
 }
 
 void processStartRequest(WiFiClient client) {
-    int count;
+    int count = 0;
     String *networks = getWifiNetworks(count);
+    if (networks == NULL) {
+        LOG_ERROR("getWifiNetworks Out of Memory");
+        client.write((uint8_t*)HTTP_ERROR_PAGE_RESPONSE, sizeof(HTTP_ERROR_PAGE_RESPONSE) - 1);
+        return;
+    }
+
     String networkOptions = "";
     for(int i = 0; i < count; i++) {
         networkOptions.concat("<option value=\"");
@@ -114,22 +119,23 @@ void processStartRequest(WiFiClient client) {
         networkOptions.concat(networks[i]);
         networkOptions.concat("</option>");
     }
+    delete [] networks;
 
+    String startPageHtml = String(HTTP_START_PAGE_HTML);
     startPageHtml.replace("{{networks}}", networkOptions);
-    String response = String(HTTP_STATUS_200) + httpHeaderNocache + startPageHtml + "\r\n";
-    client.write((uint8_t*)response.c_str(), strlen(response.c_str()));
+    client.write((uint8_t*)startPageHtml.c_str(), startPageHtml.length());
 }
 
 void processResultRequest(WiFiClient client, String request) {
     String data = request.substring(request.indexOf('?') + 1, request.indexOf(" HTTP/"));
-    char buff[data.length()+1];
-    data.toCharArray(buff, data.length()+1);
-    char *pch = strtok(buff,"&");
+    const unsigned dataLength = data.length() + 1;
+    char buff[dataLength];
+    data.toCharArray(buff, dataLength);
+    char *pch = strtok(buff, "&");
     String ssid = "";
     String password = "";
     String connStr = "";
     uint8_t checkboxState = 0x00; // bit order - TEMP, HUMIDITY, PRESSURE, ACCELEROMETER, GYROSCOPE, MAGNETOMETER
-    int error = 0;
 
     while (pch != NULL)
     {
@@ -166,11 +172,10 @@ void processResultRequest(WiFiClient client, String request) {
     storeWiFi(ssid.c_str(), password.c_str());
     storeConnectionString(connStr.c_str());
     char configData[4];
-    sprintf(configData, "!#%c", checkboxState);
+    int configLength = snprintf(configData, 4, "!#%c", checkboxState);
+    configData[configLength] = 0;
     storeIotCentralConfig(configData, 3);
 
-    // redirect to the complete page
-    String response = String(HTTP_STATUS_302) + "\r\nLocation: /complete\r\n\r\n\r\n";
-
-    client.write((uint8_t*)response.c_str(), strlen(response.c_str()));
+    Serial.println("Successfully processed the configuration request.");
+    client.write((uint8_t*)HTTP_REDIRECT_RESPONSE, sizeof(HTTP_REDIRECT_RESPONSE) - 1);
 }
