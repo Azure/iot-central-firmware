@@ -286,3 +286,9 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# MacOS
+.DS_Store
+
+# VSCode
+.vscode/
