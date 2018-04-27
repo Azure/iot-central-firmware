@@ -1,6 +1,9 @@
 Third Party Software Notices and Information
 Do not translate or localize
-This project incorporates components from the projects listed below. The original copyright notices and the licenses under which Microsoft received such components are set forth below. Microsoft reserves all rights not expressly granted herein, whether by implication, estoppel or otherwise.
+This project incorporates components from the projects listed below.
+The original copyright notices and the licenses under which Microsoft received
+such components are set forth below. Microsoft reserves all rights not expressly
+granted herein, whether by implication, estoppel or otherwise.
 
 ****
 
