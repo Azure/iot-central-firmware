@@ -18,27 +18,27 @@ void processResultRequest(WiFiClient client, String request);
 void processStartRequest(WiFiClient client);
 
 void initializeSetup() {
-    assert(GlobalConfig::needsInitialize == true);
-    GlobalConfig::needsInitialize = false;
+    assert(Globals::needsInitialize == true);
+    Globals::needsInitialize = false;
 
     // enter AP mode
     bool apRunning = initApWiFi();
     Serial.printf("initApWifi: %d \r\n", apRunning);
 
     // setup web server
-    GlobalConfig::webServer.start();
+    Globals::webServer.start();
 }
 
 void initializeLoop() {
     // if we are about to reset then stop processing any requests
-    if (GlobalConfig::needsInitialize) {
+    if (Globals::needsInitialize) {
         delay(1);
         return;
     }
 
     Serial.println("initializeLoop: list for incoming clients");
 
-    WiFiClient client = GlobalConfig::webServer.getClient();
+    WiFiClient client = Globals::webServer.getClient();
     if (client) // ( _pTcpSocket != NULL )
     {
         Serial.println("initializeLoop: new client");
@@ -97,8 +97,8 @@ void initializeLoop() {
 }
 
 void initializeCleanup() {
-    GlobalConfig::needsInitialize = true;
-    GlobalConfig::webServer.stop();
+    Globals::needsInitialize = true;
+    Globals::webServer.stop();
     shutdownApWiFi();
 }
 

@@ -52,17 +52,30 @@ void telemetrySetup(const char* iotCentralConfig) {
     initSensors();
 
     // initialize the IoT Hub Client
-    initIotHubClient(traceOn);
+    assert(Globals::iothubClient == NULL);
+    Globals::iothubClient = new IoTHubClient(traceOn);
+    if (Globals::iothubClient == NULL || !Globals::iothubClient->wasInitialized()) {
+        reset = true;
+        Globals::isConfigured = false;
+        if (Globals::iothubClient != NULL) {
+            delete Globals::iothubClient;
+        }
+        Globals::iothubClient = NULL;
+        Screen.print(0, "Error:");
+        Screen.print(1, "");
+        Screen.print(2, "Please reset \r\n   the device.  \r\n");
+        return;
+    }
 
     // Register callbacks for cloud to device messages
-    registerMethod("message", cloudMessage);  // C2D message
-    registerMethod("rainbow", directMethod);  // direct method
+    Globals::iothubClient->registerMethod("message", cloudMessage);  // C2D message
+    Globals::iothubClient->registerMethod("rainbow", directMethod);  // direct method
 
     // register callbacks for desired properties expected
-    registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
-    registerDesiredProperty("setVoltage", voltageDesiredChange);
-    registerDesiredProperty("setCurrent", currentDesiredChange);
-    registerDesiredProperty("activateIR", irOnDesiredChange);
+    Globals::iothubClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
+    Globals::iothubClient->registerDesiredProperty("setVoltage", voltageDesiredChange);
+    Globals::iothubClient->registerDesiredProperty("setCurrent", currentDesiredChange);
+    Globals::iothubClient->registerDesiredProperty("activateIR", irOnDesiredChange);
 
     // show the state of the device on the RGB LED
     DeviceControl::showState();
@@ -127,7 +140,7 @@ void telemetryLoop() {
         Screen.clean();
         rollDieAnimation(die);
 
-        if (sendReportedProperty(shakeProperty.c_str())) {
+        if (Globals::iothubClient->sendReportedProperty(shakeProperty.c_str())) {
             Serial.println("Reported property dieNumber successfully sent");
             incrementReportedCount();
         } else {
@@ -156,7 +169,7 @@ void telemetryLoop() {
         }
             break;
         case 1: // Device information
-            displayDeviceInfo();
+            Globals::iothubClient->displayDeviceInfo();
             break;
         case 2:  // Network information
             displayNetworkInfo();
@@ -170,7 +183,7 @@ void telemetryCleanup() {
     reset = true;
 
     // cleanup the Azure IoT client
-    closeIotHubClient();
+    delete Globals::iothubClient;
 
     // cleanup the WiFi
     shutdownWiFi();
@@ -244,7 +257,7 @@ void buildTelemetryPayload(String *payload) {
 void sendTelemetryPayload(const char *payload) {
     // Serial.println(payload);
 
-    if (sendTelemetry(payload)) {
+    if (Globals::iothubClient->sendTelemetry(payload)) {
         // flash the Azure LED
         digitalWrite(LED_AZURE, 1);
         delay(500);

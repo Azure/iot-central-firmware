@@ -5,8 +5,8 @@
 #include "../inc/config.h"
 #include "../inc/webServer.h"
 
-bool GlobalConfig::needsReconnect = false;
-bool GlobalConfig::isConfigured = false;
-bool GlobalConfig::needsInitialize = true;
-AzWebServer GlobalConfig::webServer;
-const char * GlobalConfig::completedString = "completed";
+bool Globals::isConfigured = false;
+bool Globals::needsInitialize = true;
+AzWebServer Globals::webServer;
+const char * Globals::completedString = "completed";
+IoTHubClient * Globals::iothubClient = NULL;

@@ -77,7 +77,7 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
     delay(100);
     DeviceControl::showState();
 
-    *response = (char*) GlobalConfig::completedString;
+    *response = (char*) Globals::completedString;
     return 200; /* status */
 }
 
@@ -120,7 +120,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 
     incrementDesiredCount();
 
-    *response = (char*) GlobalConfig::completedString;
+    *response = (char*) Globals::completedString;
     return 200; /* status */
 }
 
@@ -189,7 +189,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
 
     incrementDesiredCount();
 
-    *response = (char*) GlobalConfig::completedString;
+    *response = (char*) Globals::completedString;
     return 200; /* status */
 }
 
@@ -258,7 +258,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
 
     incrementDesiredCount();
 
-    *response = (char*) GlobalConfig::completedString;
+    *response = (char*) Globals::completedString;
     return 200; /* status */
 }
 
@@ -272,6 +272,6 @@ int irOnDesiredChange(const char *message, size_t size, char **response, size_t*
 
     incrementDesiredCount();
 
-    *response = (char*) GlobalConfig::completedString;
+    *response = (char*) Globals::completedString;
     return 200; /* status */
 }

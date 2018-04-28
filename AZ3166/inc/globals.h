@@ -23,14 +23,15 @@
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
 class AzWebServer;
+class IoTHubClient;
 
-struct GlobalConfig
+struct Globals
 {
-    static  bool            needsReconnect; // default: false
     static  bool            isConfigured; // default: false
     static  bool            needsInitialize; // default: true
     static  AzWebServer     webServer;
     static  const char *    completedString; // \"completed\"
+    static  IoTHubClient *  iothubClient;
 };
 
 // IOT HUB

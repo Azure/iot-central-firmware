@@ -51,7 +51,7 @@ void setup()
         initializeSetup();
     } else {
         (void)Serial.printf("Configuration found entering telemetry mode.\r\n");
-        GlobalConfig::isConfigured = true;
+        Globals::isConfigured = true;
         telemetrySetup(iotCentralConfig);
     }
 }
@@ -66,13 +66,13 @@ void loop()
         Screen.print(0, "Device resetting");
         clearAllConfig();
 
-        if (GlobalConfig::isConfigured) {
+        if (Globals::isConfigured) {
             telemetryCleanup();
         } else {
             initializeCleanup();
         }
 
-        GlobalConfig::isConfigured = false;
+        Globals::isConfigured = false;
         delay(1000);  //artificial pause
         Screen.clean();
         Screen.print(0, "Device is reset");
@@ -80,7 +80,7 @@ void loop()
         Screen.print(2, "to configure");
     }
 
-	if (GlobalConfig::isConfigured) {
+	if (Globals::isConfigured) {
         telemetryLoop();
     } else {
         initializeLoop();
