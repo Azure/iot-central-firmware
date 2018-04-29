@@ -30,6 +30,11 @@ struct json_value_t {
     JSON_Value_Value value;
 };
 
+// detect if parson data types have changed.
+static_assert(sizeof(JSON_Value) == sizeof(json_value_t), "parson data types have changed?");
+static_assert(sizeof(JSON_Object) == sizeof(json_object_t), "parson data types have changed?");
+
+// unchanged. redef
 typedef struct json_object_t JSON_Object;
 typedef struct json_value_t JSON_Value;
 

@@ -283,6 +283,10 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
     char* methodResponse;
     size_t responseSize;
 
+    assert(response != NULL && resp_size != NULL);
+    *response = NULL;
+    *resp_size = 0;
+
     // lookup if the method has been registered to a function
     String methodName = method_name;
     methodName.toUpperCase();
