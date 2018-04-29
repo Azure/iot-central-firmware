@@ -129,7 +129,7 @@ void processStartRequest(WiFiClient client) {
 void processResultRequest(WiFiClient client, String request) {
     String data = request.substring(request.indexOf('?') + 1, request.indexOf(" HTTP/"));
     const unsigned dataLength = data.length() + 1;
-    char buff[dataLength];
+    char buff[dataLength] = {0};
     data.toCharArray(buff, dataLength);
     char *pch = strtok(buff, "&");
     String ssid = "";
@@ -171,7 +171,7 @@ void processResultRequest(WiFiClient client, String request) {
     // store the settings in EEPROM
     storeWiFi(ssid.c_str(), password.c_str());
     storeConnectionString(connStr.c_str());
-    char configData[4];
+    char configData[4] = {0};
     int configLength = snprintf(configData, 4, "!#%c", checkboxState);
     configData[configLength] = 0;
     storeIotCentralConfig(configData, 3);

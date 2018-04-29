@@ -28,7 +28,7 @@ static int statusContext = 0;
 static int trackingId = 0;
 
 void IoTHubClient::initIotHubClient() {
-    char connectionString[AZ_IOT_HUB_MAX_LEN];
+    char connectionString[AZ_IOT_HUB_MAX_LEN] = {0};
     readConnectionString(connectionString, AZ_IOT_HUB_MAX_LEN);
 
     String connString(connectionString);
@@ -128,7 +128,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
 
     // add a timestamp to the message - illustrated for the use in batching
     time_t now_utc = time(NULL); // utc time
-    char timeBuffer[STRING_BUFFER_128];
+    char timeBuffer[STRING_BUFFER_128] = {0};
     unsigned outputLength = snprintf(timeBuffer, STRING_BUFFER_128, "%s", ctime(&now_utc));
     assert(outputLength && outputLength < STRING_BUFFER_128 && timeBuffer[outputLength - 1] == '\n');
     timeBuffer[outputLength - 1] = char(0); // replace `\n` with `\0`
@@ -343,7 +343,7 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
         desiredVersion = rootObject.getStringByName("$version");
     }
 
-    char buff[STRING_BUFFER_1024];
+    char buff[STRING_BUFFER_1024] = {0};
     char *tmp = buff;
     const char* echoTemplate = "{\"%s\":{\"value\":%s, \"statusCode\":%d, \"status\":\"%s\", \"desiredVersion\":%s}}";
     uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
@@ -356,7 +356,7 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
         }
     }
 
-    snprintf(buff, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
+    snprintf(tmp, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
     buff[buffer_size] = char(0);
     Serial.printf(buff);
 
@@ -366,6 +366,10 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
     } else {
         Serial.printf("Desired property %s failed to be echoed back as a reported property\r\n", propertyName);
         incrementErrorCount();
+    }
+
+    if (buff != tmp) {
+        free(tmp);
     }
 }
 

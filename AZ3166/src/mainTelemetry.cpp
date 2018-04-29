@@ -272,7 +272,7 @@ void sendTelemetryPayload(const char *payload) {
 }
 
 void sendStateChange() {
-    char stateChangePayload[STRING_BUFFER_4096];
+    char stateChangePayload[STRING_BUFFER_4096] = {0};
     char value[STRING_BUFFER_16] = {0};
 
     switch(DeviceControl::getDeviceState()) {

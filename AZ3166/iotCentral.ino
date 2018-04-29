@@ -43,7 +43,7 @@ void setup()
     pinMode(LED_AZURE, OUTPUT);
     pinMode(LED_USER, OUTPUT);
 
-    char iotCentralConfig[IOT_CENTRAL_MAX_LEN];
+    char iotCentralConfig[IOT_CENTRAL_MAX_LEN] = {0};
     readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
 
     if (iotCentralConfig[0] == 0x00) {

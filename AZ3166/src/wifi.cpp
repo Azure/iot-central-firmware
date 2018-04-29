@@ -2,21 +2,19 @@
 // Licensed under the MIT license.
 
 #include "../inc/globals.h"
-
 #include "AZ3166WiFi.h"
-
 #include "../inc/config.h"
 
 bool initApWiFi() {
-    char ap_name[STRING_BUFFER_32];
-    byte mac[6];
+    char ap_name[STRING_BUFFER_32] = {0};
+    byte mac[6] = {0};
     WiFi.macAddress(mac);
     unsigned length = snprintf(ap_name, STRING_BUFFER_32 - 1, "AZ3166_%c%c%c%c%c%c",
             mac[0] % 26 + 65, mac[1]% 26 + 65, mac[2]% 26 + 65, mac[3]% 26 + 65,
             mac[4]% 26 + 65, mac[5]% 26 + 65);
     ap_name[length] = char(0);
 
-    char macAddress[STRING_BUFFER_32];
+    char macAddress[STRING_BUFFER_32] = {0};
     length = snprintf(macAddress, STRING_BUFFER_32 - 1, "mac:%02X%02X%02X%02X%02X%02X",
             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     macAddress[length] = char(0);
@@ -101,11 +99,16 @@ String * getWifiNetworks(int &count) {
 }
 
 void displayNetworkInfo() {
-    char buff[STRING_BUFFER_128];
+    char buff[STRING_BUFFER_128] = {0};
     IPAddress ip = WiFi.localIP();
-    byte mac[6];
+    byte mac[6] = {0};
+
     WiFi.macAddress(mac);
-    int length = snprintf(buff, STRING_BUFFER_128, "WiFi:\r\n%s\r\n%s\r\nmac:%02X%02X%02X%02X%02X%02X", WiFi.SSID(), ip.get_address(), mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    unsigned length = snprintf(buff, STRING_BUFFER_128,
+        "WiFi:\r\n%s\r\n%s\r\nmac:%02X%02X%02X%02X%02X%02X",
+        WiFi.SSID(), ip.get_address(),
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
     buff[length] = char(0);
     Screen.print(0, buff);
 }
