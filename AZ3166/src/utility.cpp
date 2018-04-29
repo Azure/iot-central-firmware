@@ -129,21 +129,6 @@ char * dtostrf(double number, signed char width, unsigned char prec, char *s) {
     return s;
 }
 
-char *f2s(float f, int p) {
-    char * pBuff;                         // use to remember which part of the buffer to use for dtostrf
-    const int iSize = 10;                 // number of bufffers, one for each float before wrapping around
-    static char sBuff[iSize][20];         // space for 20 characters including NULL terminator for each float
-    static int iCount = 0;                // keep a tab of next place in sBuff to use
-    pBuff = sBuff[iCount];                // use this buffer
-    if(iCount >= iSize -1){               // check for wrap
-        iCount = 0;                         // if wrapping start again and reset
-    }
-    else{
-        iCount++;                           // advance the counter
-    }
-    return dtostrf(f, 0, p, pBuff);       // call the library function
-}
-
 unsigned char h2int(char c) {
     if (c >= '0' && c <='9') {
         return((unsigned char)c - '0');
@@ -157,24 +142,24 @@ unsigned char h2int(char c) {
     return(0);
 }
 
-String urldecode(String str) {
-    String encodedString="";
+String urldecode(String &str) {
+    String encodedString = "";
     char c;
     char code0;
     char code1;
-    for (int i =0; i < str.length(); i++) {
-        c=str.charAt(i);
+    for (int i = 0; i < str.length(); i++) {
+        c = str.charAt(i);
         if (c == '+') {
-            encodedString+=' ';
+            encodedString += ' ';
         } else if (c == '%') {
             i++;
-            code0=str.charAt(i);
+            code0 = str.charAt(i);
             i++;
-            code1=str.charAt(i);
+            code1 = str.charAt(i);
             c = (h2int(code0) << 4) | h2int(code1);
-            encodedString+=c;
+            encodedString += c;
         } else {
-            encodedString+=c;
+            encodedString += c;
         }
     }
 
