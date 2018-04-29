@@ -7,6 +7,68 @@
 #include "globals.h"
 #include <parson/parson.h>
 
+class AutoString {
+    char * data;
+    unsigned length;
+    bool persistent;
+
+public:
+    AutoString(): data(NULL), length(0), persistent(false) { }
+
+    AutoString(const char * str, unsigned lengthStr): persistent(false) {
+        data = NULL;
+        length = 0;
+
+        initialize(str, lengthStr);
+    }
+
+    AutoString(unsigned lengthStr): persistent(false) {
+        data = NULL;
+        length = 0;
+
+        alloc(lengthStr);
+    }
+
+    void initialize(const char * str, unsigned lengthStr) {
+        if (str != NULL) {
+            data = strdup(str);
+            length = lengthStr;
+            assert(data != NULL);
+        }
+    }
+
+    void alloc(unsigned lengthStr) {
+        assert(lengthStr != 0 && data == NULL);
+        data = (char*) malloc(lengthStr + 1 /* * sizeof(char) */);
+        assert(data != NULL);
+        memset(data, 0, lengthStr);
+        length = lengthStr;
+    }
+
+    void set(unsigned index, char c) {
+        assert(index < length && data != NULL);
+        data[index] = c;
+    }
+
+    void clear() {
+        if (data != NULL) {
+            free (data);
+        }
+    }
+
+    ~AutoString() {
+        if (!persistent) {
+            this->clear();
+        }
+    }
+
+    void makePersistent() { persistent = true; }
+
+    char* operator*() { return data; }
+
+    unsigned getLength() { return length; }
+};
+
 class JSObject
 {
 private:
@@ -72,7 +134,7 @@ public:
     }
 };
 
-String urldecode(String &str);
+unsigned urldecode(const char * url, unsigned length, AutoString * outURL);
 bool SyncTimeToNTP();
 
 #endif /* INC_UTILITY_H */

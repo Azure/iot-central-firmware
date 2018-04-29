@@ -147,28 +147,31 @@ unsigned char h2int(char c) {
     return(0);
 }
 
-String urldecode(String &str) {
-    String encodedString = "";
-    char c;
-    char code0;
-    char code1;
-    for (int i = 0; i < str.length(); i++) {
-        c = str.charAt(i);
-        if (c == '+') {
-            encodedString += ' ';
-        } else if (c == '%') {
-            i++;
-            code0 = str.charAt(i);
-            i++;
-            code1 = str.charAt(i);
-            c = (h2int(code0) << 4) | h2int(code1);
-            encodedString += c;
-        } else {
-            encodedString += c;
-        }
+unsigned urldecode(const char * url, unsigned length, AutoString * outURL) {
+    assert(outURL != NULL);
+    unsigned resultLength = 0;
+
+    if (length == 0) {
+        return resultLength;
     }
 
-    return encodedString;
+    outURL->alloc(length);
+    for (unsigned i = 0; i < length; i++) {
+        char c = *(url + i);
+        if (c == '+') {
+            outURL->set(resultLength++, ' ');
+        } else {
+            if (c == '%') {
+                const char code0 = *(url + (++i));
+                const char code1 = *(url + (++i));
+                c = (h2int(code0) << 4) | h2int(code1);
+            }
+            outURL->set(resultLength++, c);
+        }
+    }
+    outURL->set(resultLength, 0);
+
+    return resultLength;
 }
 
 bool SyncTimeToNTP() {
@@ -182,12 +185,12 @@ bool SyncTimeToNTP() {
     };
 
     for (int i = 0; i < sizeof(ntpHost) / sizeof(ntpHost[0]); i++) {
-            NTPClient ntp(WiFiInterface());
-            NTPResult res = ntp.setTime((char*)ntpHost[i]);
-            if (res == NTP_OK) {
-                time_t t = time(NULL);
-                (void)Serial.printf("Time from %s, now is (UTC): %s\r\n", ntpHost[i], ctime(&t));
-                return true;
+        NTPClient ntp(WiFiInterface());
+        NTPResult res = ntp.setTime((char*)ntpHost[i]);
+        if (res == NTP_OK) {
+            time_t t = time(NULL);
+            (void)Serial.printf("Time from %s, now is (UTC): %s\r\n", ntpHost[i], ctime(&t));
+            return true;
         }
     }
 

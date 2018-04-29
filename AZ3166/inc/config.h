@@ -4,11 +4,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "utility.h"
+
 void clearAllConfig();
 
-void storeWiFi(const char *ssid, const char *password);
-void storeConnectionString(const char *connectionString);
-void storeIotCentralConfig(const char *iotCentralConfig, int size);
+void storeWiFi(AutoString &ssid, AutoString &password);
+void storeConnectionString(AutoString &connectionString);
+void storeIotCentralConfig(AutoString &iotCentralConfig);
 
 void readWiFi(char* ssid, int ssidLen, char *password, int passwordLen);
 void readConnectionString(char * connectionString, uint32_t buffer_size);

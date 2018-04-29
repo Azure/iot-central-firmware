@@ -3,14 +3,13 @@
 
 #include "../inc/globals.h"
 
-#include "AZ3166WiFi.h"
-#include "EEPROMInterface.h"
+#include <AZ3166WiFi.h>
+#include <EEPROMInterface.h>
 
 #include "../inc/mainInitialize.h"
 #include "../inc/wifi.h"
 #include "../inc/webServer.h"
 #include "../inc/config.h"
-#include "../inc/utility.h"
 #include "../inc/httpHtmlData.h"
 
 // forward declarations
@@ -132,9 +131,7 @@ void processResultRequest(WiFiClient client, String request) {
     char buff[dataLength] = {0};
     data.toCharArray(buff, dataLength);
     char *pch = strtok(buff, "&");
-    String ssid = "";
-    String password = "";
-    String connStr = "";
+    AutoString ssid, password, connStr;
     uint8_t checkboxState = 0x00; // bit order - TEMP, HUMIDITY, PRESSURE, ACCELEROMETER, GYROSCOPE, MAGNETOMETER
 
     while (pch != NULL)
@@ -142,39 +139,73 @@ void processResultRequest(WiFiClient client, String request) {
         String pair = String(pch);
         pair.trim();
         int idx = pair.indexOf("=");
-        String key = pair.substring(0, idx);
-        String value = pair.substring(idx+1);
+        if (idx == -1) {
+            LOG_ERROR("Broken Http Request. Responsed with HTTP_404_RESPONSE");
+            client.write((uint8_t*)HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE) - 1);
+            return;
+        }
 
-        if (key == "SSID") {
-            ssid = urldecode(value);
-        } else if (key == "PASS") {
-            password = urldecode(value);
-        } else if (key == "CONN") {
-            connStr = urldecode(value);
-        } else if (key == "TEMP") {
-            checkboxState = checkboxState | 0x80;
-        } else if (key == "HUM") {
-            checkboxState = checkboxState | 0x40;
-        } else if (key == "PRES") {
-            checkboxState = checkboxState | 0x20;
-        } else if (key == "ACCEL") {
-            checkboxState = checkboxState | 0x10;
-        } else if (key == "GYRO") {
-            checkboxState = checkboxState | 0x08;
-        } else if (key == "MAG") {
-            checkboxState = checkboxState | 0x04;
+        pch[idx] = char(0);
+        const char* key = pch;
+        const char * value = pair.c_str() + (idx + 1);
+        unsigned valueLength = pair.length() - (idx + 1);
+        bool unknown = false;
+
+        if (idx == 3) {
+            if (strncmp(key, "HUM", 3) == 0) {
+                checkboxState = checkboxState | 0x40;
+            } else if (strncmp(key, "MAG", 3) == 0) {
+                checkboxState = checkboxState | 0x04;
+            } else {
+                unknown = true;
+            }
+        } else if (idx == 4) {
+            if (strncmp(key, "SSID", 4) == 0) {
+                urldecode(value, valueLength, &ssid);
+            } else if (strncmp(key, "PASS", 4) == 0) {
+                urldecode(value, valueLength, &password);
+            } else if (strncmp(key, "CONN", 4) == 0) {
+                urldecode(value, valueLength, &connStr);
+            } else if (strncmp(key, "TEMP", 4) == 0) {
+                checkboxState = checkboxState | 0x80;
+            } else if (strncmp(key, "PRES", 4) == 0) {
+                checkboxState = checkboxState | 0x20;
+            } else if (strncmp(key, "ACCEL", 4) == 0) {
+                checkboxState = checkboxState | 0x10;
+            } else if (strncmp(key, "GYRO", 4) == 0) {
+                checkboxState = checkboxState | 0x08;
+            } else {
+                unknown = true;
+            }
+        } else {
+            unknown = true;
+        }
+
+        if (unknown) {
+            Serial.printf("Unkown key '%s'\r\n", key);
+            LOG_ERROR("Unknown request parameter. Responsed with START page");
+            processStartRequest(client);
+            return;
         }
 
         pch = strtok(NULL, "&");
     }
 
+    if (ssid.getLength() == 0 || password.getLength() == 0 || connStr.getLength() == 0) {
+        LOG_ERROR("Missing ssid, password or connStr. Responsed with START page");
+        processStartRequest(client);
+        return;
+    }
     // store the settings in EEPROM
-    storeWiFi(ssid.c_str(), password.c_str());
-    storeConnectionString(connStr.c_str());
-    char configData[4] = {0};
-    int configLength = snprintf(configData, 4, "!#%c", checkboxState);
-    configData[configLength] = 0;
-    storeIotCentralConfig(configData, 3);
+    assert(ssid.getLength() != 0 && password.getLength() != 0);
+    storeWiFi(ssid, password);
+
+    assert(connStr.getLength() != 0);
+    storeConnectionString(connStr);
+
+    AutoString configData(3);
+    snprintf(*configData, 3, "!#%c", checkboxState);
+    storeIotCentralConfig(configData);
 
     Serial.println("Successfully processed the configuration request.");
     client.write((uint8_t*)HTTP_REDIRECT_RESPONSE, sizeof(HTTP_REDIRECT_RESPONSE) - 1);

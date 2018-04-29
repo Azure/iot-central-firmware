@@ -347,33 +347,24 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
         desiredVersion = rootObject.getStringByName("$version");
     }
 
-    char buff[STRING_BUFFER_1024] = {0};
-    char *tmp = buff;
     const char* echoTemplate = "{\"%s\":{\"value\":%s, \"statusCode\":%d, \"status\":\"%s\", \"desiredVersion\":%s}}";
     uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
-    if (buffer_size + 1 > STRING_BUFFER_1024) {
-        tmp = (char*) malloc(buffer_size + 1);
-        if (tmp == NULL) {
-            Serial.printf("Desired property %s failed to be echoed back as a reported property (OUT OF MEMORY)\r\n", propertyName);
-            incrementErrorCount();
-            return;
-        }
+    AutoString buffer(buffer_size);
+    if (buffer.getLength() == 0) {
+        Serial.printf("Desired property %s failed to be echoed back as a reported property (OUT OF MEMORY)\r\n", propertyName);
+        incrementErrorCount();
+        return;
     }
 
-    snprintf(tmp, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
-    buff[buffer_size] = char(0);
-    Serial.printf(buff);
+    snprintf(*buffer, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
+    Serial.printf(*buffer);
 
-    if (Globals::iothubClient->sendReportedProperty(buff)) {
+    if (Globals::iothubClient->sendReportedProperty(*buffer)) {
         Serial.printf("Desired property %s successfully echoed back as a reported property\r\n", propertyName);
         incrementReportedCount();
     } else {
         Serial.printf("Desired property %s failed to be echoed back as a reported property\r\n", propertyName);
         incrementErrorCount();
-    }
-
-    if (buff != tmp) {
-        free(tmp);
     }
 }
 
@@ -381,18 +372,17 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
     int status = 0;
     char *methodResponse;
     size_t responseSize;
-    char *propName = strdup(propertyName);
-    strupr(propName);
+    AutoString propName(propertyName, strlen(propertyName));
+    strupr(*propName);
 
     for(int i = 0; i < desiredCallbackCount; i++) {
-        if (strcmp(propName, desiredCallbackList[i].name) == 0) {
+        if (strcmp(*propName, desiredCallbackList[i].name) == 0) {
             status = desiredCallbackList[i].callback(payLoad, size, &methodResponse, &responseSize);
             echoDesired(propertyName, payLoad, methodResponse, status);
             free(methodResponse);
             break;
         }
     }
-    free(propName);
 }
 
 void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
