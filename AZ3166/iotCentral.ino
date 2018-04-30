@@ -24,21 +24,17 @@ Uses the following libraries:
      •	AzureIoTProtocol_MQTT - https://github.com/Azure/azure-iot-arduino-protocol-mqtt
 
 •   Third party libraries used:
-     •	ArduinoJson - https://bblanchon.github.io/ArduinoJson/
+     •	Parson ( http://kgabis.github.com/parson/ ) Copyright (c) 2012 - 2017 Krzysztof Gabis
 
 ***/
 
-#include "Arduino.h"
+#include "inc/globals.h"
 #include "EEPROMInterface.h"
 
-#include "inc/iotCentral.h"
-#include "inc/main_initialize.h"
-#include "inc/main_telemetry.h"
+#include "inc/mainInitialize.h"
+#include "inc/mainTelemetry.h"
 #include "inc/config.h"
 #include "inc/device.h"
-
-bool configured = false;
-String iotCentralConfig;
 
 void setup()
 {
@@ -47,14 +43,15 @@ void setup()
     pinMode(LED_AZURE, OUTPUT);
     pinMode(LED_USER, OUTPUT);
 
-    iotCentralConfig = readIotCentralConfig();
+    char iotCentralConfig[IOT_CENTRAL_MAX_LEN] = {0};
+    readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
 
     if (iotCentralConfig[0] == 0x00) {
         (void)Serial.printf("No configuration found entering config mode.\r\n");
         initializeSetup();
     } else {
         (void)Serial.printf("Configuration found entering telemetry mode.\r\n");
-        configured = true;
+        Globals::isConfigured = true;
         telemetrySetup(iotCentralConfig);
     }
 }
@@ -62,18 +59,20 @@ void setup()
 void loop()
 {
     // reset the device if the A and B buttons are both pressed and held
-    if (IsButtonClicked(USER_BUTTON_A) && IsButtonClicked(USER_BUTTON_B)) {
+    if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
+        DeviceControl::IsButtonClicked(USER_BUTTON_B)) {
+
         Screen.clean();
         Screen.print(0, "Device resetting");
         clearAllConfig();
 
-        if (configured) {
+        if (Globals::isConfigured) {
             telemetryCleanup();
         } else {
             initializeCleanup();
         }
 
-        configured = false;
+        Globals::isConfigured = false;
         delay(1000);  //artificial pause
         Screen.clean();
         Screen.print(0, "Device is reset");
@@ -81,7 +80,7 @@ void loop()
         Screen.print(2, "to configure");
     }
 
-	if (configured) {
+	if (Globals::isConfigured) {
         telemetryLoop();
     } else {
         initializeLoop();

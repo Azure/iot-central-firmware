@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
+
+#include "../inc/globals.h"
 
 static int telemetryCount;
 static int reportedCount;
@@ -10,7 +12,7 @@ void clearCounters() {
     telemetryCount = 0;
     reportedCount = 0;
     desiredCount = 0;
-    errorCount = 0;  
+    errorCount = 0;
 }
 
 void incrementReportedCount() {

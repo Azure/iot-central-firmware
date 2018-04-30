@@ -1,13 +1,20 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
 #ifndef WEB_SERVER_H
 #define WEB_SERVER_H
 
-bool startWebServer();
-WiFiClient clientAvailable();
-String getRequest(WiFiClient client);
-String getPostBody(String request, WiFiClient client);
-bool stopWebServer();
+#include "Arduino.h"
+#include "AZ3166WiFi.h"
+
+class AzWebServer
+{
+    WiFiServer *webServer;
+public:
+    AzWebServer();
+    void start();
+    WiFiClient getClient();
+    void stop();
+};
 
 #endif /* WEB_SERVER_H */
