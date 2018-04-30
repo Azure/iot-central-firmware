@@ -134,7 +134,7 @@ void transmitIR() {
         int irda_status = irdaSensor->IRDATransmit(&data, 1, 100);
         if(irda_status != 0)
         {
-            Serial.println("Unable to transmit through IrDA");
+            LOG_ERROR("Unable to transmit through IrDA");
         }
         delay(150);
     }

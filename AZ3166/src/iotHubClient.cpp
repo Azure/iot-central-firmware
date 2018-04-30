@@ -46,7 +46,7 @@ void IoTHubClient::initIotHubClient() {
     memcpy(hubName, hubNameString.c_str(), hubNameString.length());
 
     if (platform_init() != 0) {
-        Serial.println("Failed to initialize the platform.");
+        LOG_ERROR("Failed to initialize the platform.");
         hasError = true;
         return;
     }
@@ -54,7 +54,7 @@ void IoTHubClient::initIotHubClient() {
     if ((iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(
         connString.c_str(), MQTT_Protocol)) == NULL) {
 
-        Serial.println("ERROR: iotHubClientHandle is NULL!");
+        LOG_ERROR("ERROR: iotHubClientHandle is NULL!");
         hasError = true;
         return;
     }
@@ -65,7 +65,7 @@ void IoTHubClient::initIotHubClient() {
     if (IoTHubClient_LL_SetOption(iotHubClientHandle, "TrustedCerts",
         certificates /* src/cores/arduino/az_iot/azureiotcerts.h */) != IOTHUB_CLIENT_OK) {
 
-        Serial.println("Failed to set option \"TrustedCerts\"");
+        LOG_ERROR("Failed to set option \"TrustedCerts\"");
         hasError = true;
         return;
     }
@@ -75,7 +75,7 @@ void IoTHubClient::initIotHubClient() {
     if (IoTHubClient_LL_SetMessageCallback(iotHubClientHandle, receiveMessageCallback,
         &receiveContext) != IOTHUB_CLIENT_OK) {
 
-        Serial.println("ERROR: IoTHubClient_LL_SetMessageCallback..........FAILED!");
+        LOG_ERROR("IoTHubClient_LL_SetMessageCallback..........FAILED!");
         hasError = true;
         return;
     }
@@ -85,7 +85,7 @@ void IoTHubClient::initIotHubClient() {
     if (IoTHubClient_LL_SetDeviceTwinCallback(iotHubClientHandle, deviceTwinGetStateCallback,
         &receiveTwinContext) != IOTHUB_CLIENT_OK) {
 
-        Serial.println("ERROR: IoTHubClient_LL_SetDeviceTwinCallback..........FAILED!");
+        LOG_ERROR("IoTHubClient_LL_SetDeviceTwinCallback..........FAILED!");
         hasError = true;
         return;
     }
@@ -94,7 +94,7 @@ void IoTHubClient::initIotHubClient() {
     if (IoTHubClient_LL_SetDeviceMethodCallback(iotHubClientHandle, DeviceDirectMethodCallback,
         &receiveContext) != IOTHUB_CLIENT_OK) {
 
-        Serial.println("ERROR: IoTHubClient_LL_SetDeviceMethodCallback..........FAILED!");
+        LOG_ERROR("IoTHubClient_LL_SetDeviceMethodCallback..........FAILED!");
         hasError = true;
         return;
     }
@@ -103,7 +103,7 @@ void IoTHubClient::initIotHubClient() {
     if (IoTHubClient_LL_SetConnectionStatusCallback(iotHubClientHandle,
         connectionStatusCallback, &statusContext) != IOTHUB_CLIENT_OK) {
 
-        Serial.println("ERROR: IoTHubClient_LL_SetConnectionStatusCallback..........FAILED!");
+        LOG_ERROR("IoTHubClient_LL_SetConnectionStatusCallback..........FAILED!");
         hasError = true;
         return;
     }
@@ -118,7 +118,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
         IoTHubMessage_CreateFromByteArray((const unsigned char*)payload, strlen(payload));
 
     if (currentMessage->messageHandle == NULL) {
-        Serial.println("ERROR: iotHubMessageHandle is NULL!");
+        LOG_ERROR("iotHubMessageHandle is NULL!");
         free(currentMessage);
         return false;
     }
@@ -134,7 +134,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
     timeBuffer[outputLength - 1] = char(0); // replace `\n` with `\0`
     if (Map_AddOrUpdate(propMap, "timestamp", timeBuffer) != MAP_OK)
     {
-        Serial.println("ERROR: Adding message property failed");
+        LOG_ERROR("Adding message property failed");
     }
 
     // submit the message to the Azure IoT hub
@@ -142,7 +142,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
         currentMessage->messageHandle, sendConfirmationCallback, currentMessage);
 
     if (hubResult != IOTHUB_CLIENT_OK) {
-        Serial.printf("ERROR: IoTHubClient_LL_SendEventAsync..........FAILED hubResult is (%d)!\r\n", hubResult);
+        LOG_ERROR("IoTHubClient_LL_SendEventAsync..........FAILED hubResult is (%d)", hubResult);
         incrementErrorCount();
         IoTHubMessage_Destroy(currentMessage->messageHandle);
         free(currentMessage);
@@ -150,7 +150,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
     }
 
     // keep happy messages small (serial monitor is failing for latter errors)
-    Serial.println("IoTHubClient_LL_SendEventAsync [CHECK]");
+    LOG_VERBOSE("IoTHubClient_LL_SendEventAsync [CHECK]");
 
     // yield to process any work to/from the hub
     hubClientYield();
@@ -220,9 +220,9 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
 
     // get message content
     if (IoTHubMessage_GetByteArray(message, (const unsigned char **)&buffer, &size) != IOTHUB_MESSAGE_OK) {
-        (void)Serial.printf("unable to retrieve the message data\r\n");
+        LOG_ERROR("- IoTHubMessage_GetByteArray: unable to retrieve the message data");
     } else {
-        (void)Serial.printf("Received Message [%d], Size=%d\r\n", *counter, (int)size);
+        LOG_VERBOSE("Received Message [%d], Size=%d", *counter, (int)size);
     }
 
     // message format expected:
@@ -297,7 +297,7 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
         }
     }
 
-    Serial.printf("Device Method %s called\r\n", method_name);
+    LOG_VERBOSE("Device Method %s called", method_name);
 
     const char * message_template = "{\"Response\":%s}";
     const int template_size = strlen(message_template) - 2 /* %s */;
@@ -351,19 +351,19 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
     uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
     AutoString buffer(buffer_size);
     if (buffer.getLength() == 0) {
-        Serial.printf("Desired property %s failed to be echoed back as a reported property (OUT OF MEMORY)\r\n", propertyName);
+        LOG_ERROR("Desired property %s failed to be echoed back as a reported property (OUT OF MEMORY)", propertyName);
         incrementErrorCount();
         return;
     }
 
     snprintf(*buffer, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
-    Serial.printf(*buffer);
+    LOG_VERBOSE(*buffer);
 
     if (Globals::iothubClient->sendReportedProperty(*buffer)) {
-        Serial.printf("Desired property %s successfully echoed back as a reported property\r\n", propertyName);
+        LOG_VERBOSE("Desired property %s successfully echoed back as a reported property.", propertyName);
         incrementReportedCount();
     } else {
-        Serial.printf("Desired property %s failed to be echoed back as a reported property\r\n", propertyName);
+        LOG_ERROR("Desired property %s failed to be echoed back as a reported property.", propertyName);
         incrementErrorCount();
     }
 }
@@ -388,6 +388,8 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
 void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
     const unsigned char* payLoad, size_t size, void* userContextCallback) {
 
+    LOG_VERBOSE("- on deviceTwinGetStateCallback");
+
     ((char*)payLoad)[size] = 0x00;
     JSObject payloadObject((const char *)payLoad);
 
@@ -401,7 +403,7 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
         // if so look if the versions match, if they match do nothing
         // if they don't match then call the associated callback for the desired property
 
-        Serial.println("Processing complete twin");
+        LOG_VERBOSE("Processing complete twin");
 
         payloadObject.getObjectByName("desired", &desired);
         payloadObject.getObjectByName("reported", &reported);
@@ -423,12 +425,12 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
                 }
 
                 if (containsKey && strcmp(desiredVersion, version) == 0) {
-                    Serial.printf("key: %s found in reported and versions match\r\n", itemName);
+                    LOG_VERBOSE("key: %s found in reported and versions match", itemName);
                 } else if (containsKey && strcmp(desiredValue, value) != 0){
-                    Serial.printf("key: %s either not found in reported or versions do not match\r\n", itemName);
+                    LOG_VERBOSE("key: %s either not found in reported or versions do not match\r\n", itemName);
                     JSObject itemValue;
                     if (desired.getObjectAt(i, &itemValue) && itemValue.toString() != NULL) {
-                        Serial.println(itemValue.toString());
+                        LOG_VERBOSE("itemValue: %s", itemValue.toString());
                     } else {
                         LOG_ERROR("desired doesn't have value at index");
                     }
@@ -443,18 +445,18 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
 
 static void deviceTwinConfirmationCallback(int status_code, void* userContextCallback) {
     assert(userContextCallback == NULL); // NOOP for now, so it should be NULL
-    LogInfo("DeviceTwin CallBack: Status_code = %u", status_code);
+    LOG_VERBOSE("DeviceTwin CallBack: Status_code = %u", status_code);
 }
 
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
     IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback) {
 
     if (reason == IOTHUB_CLIENT_CONNECTION_NO_NETWORK) {
-        Serial.println("No network connection");
+        LOG_ERROR("No network connection");
         Globals::iothubClient->needsReconnect = true;
     } else if (result == IOTHUB_CLIENT_CONNECTION_UNAUTHENTICATED &&
                reason == IOTHUB_CLIENT_CONNECTION_EXPIRED_SAS_TOKEN) {
-        Serial.println("Connection timeout");
+        LOG_ERROR("Connection timeout");
         Globals::iothubClient->needsReconnect = true;
     }
 }
@@ -462,8 +464,8 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
 static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback) {
     static int callbackCounter = 0;
     EVENT_INSTANCE *eventInstance = (EVENT_INSTANCE *)userContextCallback;
-    Serial.printf("Confirmation[%d] received for message tracking id = %d \
-        with result = %s\r\n", callbackCounter++, eventInstance->messageTrackingId,
+    LOG_VERBOSE("Confirmation[%d] received for message tracking id = %d \
+        with result = %s", callbackCounter++, eventInstance->messageTrackingId,
         ENUM_TO_STRING(IOTHUB_CLIENT_CONFIRMATION_RESULT, result));
 
     IoTHubMessage_Destroy(eventInstance->messageHandle);

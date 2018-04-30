@@ -15,7 +15,7 @@
 
 // handler for the cloud to device (C2D) message
 int cloudMessage(const char *payload, size_t size, char **response, size_t* resp_size) {
-    Serial.println("Cloud to device (C2D) message recieved");
+    LOG_VERBOSE("Cloud to device (C2D) message recieved");
 
     // get parameters
 
@@ -106,7 +106,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 
     animationInit(fan, 2, 64, 0, 0, true);
 
-    Serial.println("fanSpeed desired property just got called");
+    LOG_VERBOSE("fanSpeed desired property just got called");
 
     // turn on the fan - sound
     AudioClass& Audio = AudioClass::getInstance();
@@ -125,7 +125,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 }
 
 int voltageDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
-    Serial.println("setVoltage desired property just got called");
+    LOG_VERBOSE("setVoltage desired property just got called");
 
     char voltage0[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -194,7 +194,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
 }
 
 int currentDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
-    Serial.println("setCurrent desired property just got called");
+    LOG_VERBOSE("setCurrent desired property just got called");
 
     char current0[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -263,7 +263,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
 }
 
 int irOnDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
-    Serial.println("activateIR desired property just got called");
+    LOG_VERBOSE("activateIR desired property just got called");
 
     Screen.clean();
     Screen.print(0, "Firing IR beam");

@@ -49,7 +49,7 @@ void telemetrySetup(const char* iotCentralConfig) {
     // initialize the sensor array
     initSensors();
     if (!Globals::wiFiController.getIsConnected()) {
-        Serial.println("WiFi - NOT CONNECTED - return");
+        LOG_ERROR("WiFi - NOT CONNECTED - return");
         return;
     }
 
@@ -143,10 +143,10 @@ void telemetryLoop() {
         rollDieAnimation(die);
 
         if (Globals::iothubClient->sendReportedProperty(shakeProperty.c_str())) {
-            Serial.println("Reported property dieNumber successfully sent");
+            LOG_VERBOSE("Reported property dieNumber successfully sent");
             incrementReportedCount();
         } else {
-            Serial.println("Reported property dieNumber failed to during sending");
+            LOG_ERROR("Reported property dieNumber failed to during sending");
             incrementErrorCount();
         }
         lastShakeTime = millis();
@@ -257,8 +257,6 @@ void buildTelemetryPayload(String *payload) {
 }
 
 void sendTelemetryPayload(const char *payload) {
-    // Serial.println(payload);
-
     if (Globals::iothubClient->sendTelemetry(payload)) {
         // flash the Azure LED
         digitalWrite(LED_AZURE, 1);

@@ -47,10 +47,10 @@ void setup()
     readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
 
     if (iotCentralConfig[0] == 0x00) {
-        (void)Serial.printf("No configuration found entering config mode.\r\n");
+        LOG_VERBOSE("No configuration found entering config mode.");
         initializeSetup();
     } else {
-        (void)Serial.printf("Configuration found entering telemetry mode.\r\n");
+        LOG_VERBOSE("Configuration found entering telemetry mode.");
         Globals::isConfigured = true;
         telemetrySetup(iotCentralConfig);
     }

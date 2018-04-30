@@ -7,7 +7,7 @@
 #include "../inc/config.h"
 
 bool WiFiController::initApWiFi() {
-    Serial.println("- WiFiController::initApWiFi");
+    LOG_VERBOSE("- WiFiController::initApWiFi");
 
     char ap_name[STRING_BUFFER_32] = {0};
     byte mac[6] = {0};
@@ -33,20 +33,20 @@ bool WiFiController::initApWiFi() {
       Screen.print(0, "AP Failed:");
       Screen.print(2, "Reboot device");
       Screen.print(3, "and try again");
-      Serial.println("AP creation failed");
+      LOG_ERROR("AP creation failed");
       return false;
     }
-    Serial.println("AP started");
+    LOG_VERBOSE("AP started");
     return true;
 }
 
 bool WiFiController::initWiFi() {
-    Serial.println("- WiFiController::initWiFi");
+    LOG_VERBOSE("- WiFiController::initWiFi");
     Screen.clean();
     Screen.print("WiFi \r\n \r\nConnecting...");
 
     if(WiFi.begin() == WL_CONNECTED) {
-        Serial.println("WiFi WL_CONNECTED");
+        LOG_VERBOSE("WiFi WL_CONNECTED");
         digitalWrite(LED_WIFI, 1);
         isConnected = true;
     } else {
@@ -57,19 +57,19 @@ bool WiFiController::initWiFi() {
 }
 
 void WiFiController::shutdownWiFi() {
-    Serial.println("- WiFiController::shutdownWiFi");
+    LOG_VERBOSE("- WiFiController::shutdownWiFi");
     WiFi.disconnect();
     isConnected = false;
 }
 
 void WiFiController::shutdownApWiFi() {
-    Serial.println("- WiFiController::shutdownApWiFi");
+    LOG_VERBOSE("- WiFiController::shutdownApWiFi");
     WiFi.disconnectAP();
     isConnected = false;
 }
 
 String * WiFiController::getWifiNetworks(int &count) {
-    Serial.println("- WiFiController::getWifiNetworks");
+    LOG_VERBOSE("- WiFiController::getWifiNetworks");
     String foundNetworks = "";  // keep track of network SSID so as to remove duplicates from mesh and repeater networks
     int numSsid = WiFi.scanNetworks();
     count = 0;
@@ -108,7 +108,7 @@ String * WiFiController::getWifiNetworks(int &count) {
 }
 
 void WiFiController::displayNetworkInfo() {
-    Serial.println("- WiFiController::displayNetworkInfo");
+    LOG_VERBOSE("- WiFiController::displayNetworkInfo");
     char buff[STRING_BUFFER_128] = {0};
     IPAddress ip = WiFi.localIP();
     byte mac[6] = {0};

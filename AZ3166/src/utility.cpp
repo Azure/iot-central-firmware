@@ -188,7 +188,7 @@ bool SyncTimeToNTP() {
         NTPResult res = ntp.setTime((char*)ntpHost[i]);
         if (res == NTP_OK) {
             time_t t = time(NULL);
-            (void)Serial.printf("Time from %s, now is (UTC): %s\r\n", ntpHost[i], ctime(&t));
+            LOG_VERBOSE("Time from %s, now is (UTC): %s", ntpHost[i], ctime(&t));
             return true;
         }
     }

@@ -22,7 +22,7 @@ void initializeSetup() {
 
     // enter AP mode
     Globals::wiFiController.initApWiFi();
-    Serial.printf("initApWifi: %d \r\n", Globals::wiFiController.getIsConnected());
+    LOG_VERBOSE("initApWifi: %d \r\n", Globals::wiFiController.getIsConnected());
 
     // setup web server
     Globals::webServer.start();
@@ -35,12 +35,12 @@ void initializeLoop() {
         return;
     }
 
-    Serial.println("initializeLoop: list for incoming clients");
+    LOG_VERBOSE("initializeLoop: list for incoming clients");
 
     WiFiClient client = Globals::webServer.getClient();
     if (client) // ( _pTcpSocket != NULL )
     {
-        Serial.println("initializeLoop: new client");
+        LOG_VERBOSE("initializeLoop: new client");
         // an http request ends with a blank line
         boolean currentLineIsBlank = true;
         String request = "";
@@ -49,30 +49,29 @@ void initializeLoop() {
             if (client.available())
             {
                 char c = client.read();
-                Serial.write(c);
                 request.concat(c);
 
                 if (c == '\n' && currentLineIsBlank) {
                     String requestMethod = request.substring(0, request.indexOf("\r\n"));
                     requestMethod.toUpperCase();
                     if (requestMethod.startsWith("GET / ")) {
-                        Serial.printf("Request to '/'\r\n");
+                        LOG_VERBOSE("Request to '/'");
                         client.write((uint8_t*)HTTP_MAIN_PAGE_RESPONSE, sizeof(HTTP_MAIN_PAGE_RESPONSE) - 1);
-                        Serial.println("Responsed with HTTP_MAIN_PAGE_RESPONSE");
+                        LOG_VERBOSE("Responsed with HTTP_MAIN_PAGE_RESPONSE");
                     } else if (requestMethod.startsWith("GET /START")) {
-                        Serial.println("-> request GET /START");
+                        LOG_VERBOSE("-> request GET /START");
                         processStartRequest(client);
                     } else if (requestMethod.startsWith("GET /PROCESS")) {
-                        Serial.println("-> request GET /PROCESS");
+                        LOG_VERBOSE("-> request GET /PROCESS");
                         processResultRequest(client, request);
                     } else if (requestMethod.startsWith("GET /COMPLETE")) {
-                        Serial.println("-> request GET /COMPLETE");
+                        LOG_VERBOSE("-> request GET /COMPLETE");
                         client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
                     } else {
                         // 404
-                        Serial.printf("Request to %s -> 404!\r\n", request.c_str());
+                        LOG_VERBOSE("Request to %s -> 404!", request.c_str());
                         client.write((uint8_t*)HTTP_404_RESPONSE, sizeof(HTTP_404_RESPONSE) - 1);
-                        Serial.println("Responsed with HTTP_404_RESPONSE");
+                        LOG_VERBOSE("Responsed with HTTP_404_RESPONSE");
                     }
                     break;
                 }
@@ -91,7 +90,7 @@ void initializeLoop() {
 
         // close the connection:
         client.stop();
-        Serial.println("client disconnected");
+        LOG_VERBOSE("client disconnected");
     }
 }
 
@@ -197,7 +196,7 @@ void processResultRequest(WiFiClient client, String request) {
         }
 
         if (unknown) {
-            Serial.printf("Unkown key:'%s' idx:'%d'\r\n", key, idx);
+            LOG_ERROR("Unkown key:'%s' idx:'%d'", key, idx);
             LOG_ERROR("Unknown request parameter. Responsed with START page");
             processStartRequest(client);
             return;
@@ -222,6 +221,6 @@ void processResultRequest(WiFiClient client, String request) {
     snprintf(*configData, 3, "!#%c", checkboxState);
     storeIotCentralConfig(configData);
 
-    Serial.println("Successfully processed the configuration request.");
+    LOG_VERBOSE("Successfully processed the configuration request.");
     client.write((uint8_t*)HTTP_REDIRECT_RESPONSE, sizeof(HTTP_REDIRECT_RESPONSE) - 1);
 }

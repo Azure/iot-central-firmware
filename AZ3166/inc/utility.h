@@ -94,7 +94,7 @@ public:
 
         object = toObject();
         if (object == NULL) {
-            Serial.printf("json data: %s\r\n", json_string);
+            LOG_ERROR("json data: %s", json_string);
         }
     }
 

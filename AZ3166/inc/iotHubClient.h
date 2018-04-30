@@ -33,7 +33,7 @@ class IoTHubClient
     void checkConnection() {
         if (needsReconnect) {
             // simple reconnection of the client in the event of a disconnect
-            Serial.println("Reconnecting to the IoT Hub");
+            LOG_VERBOSE("Reconnecting to the IoT Hub");
             closeIotHubClient();
             initIotHubClient();
 
