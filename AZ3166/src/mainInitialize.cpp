@@ -12,6 +12,8 @@
 #include "../inc/config.h"
 #include "../inc/httpHtmlData.h"
 
+bool setupWasCompleted = false;
+
 // forward declarations
 void processResultRequest(WiFiClient client, String request);
 void processStartRequest(WiFiClient client);
@@ -66,7 +68,14 @@ void initializeLoop() {
                         processResultRequest(client, request);
                     } else if (requestMethod.startsWith("GET /COMPLETE")) {
                         LOG_VERBOSE("-> request GET /COMPLETE");
-                        client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
+                        if (setupWasCompleted) {
+                            client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
+                            Screen.clean();
+                            Screen.print(0, "Setup Completed!\r\n\r\nPress 'reset'\r\n    to restart..");
+                        } else {
+                            LOG_ERROR("User has landed on COMPLETE page without actually completing the setup. Writing the START page to client.");
+                            processStartRequest(client);
+                        }
                     } else {
                         // 404
                         LOG_VERBOSE("Request to %s -> 404!", request.c_str());
@@ -223,6 +232,7 @@ void processResultRequest(WiFiClient client, String request) {
     snprintf(*configData, 3, "%d", checkboxState);
     storeIotCentralConfig(configData);
 
+    setupWasCompleted = true;
     LOG_VERBOSE("Successfully processed the configuration request.");
     client.write((uint8_t*)HTTP_REDIRECT_RESPONSE, sizeof(HTTP_REDIRECT_RESPONSE) - 1);
 }
