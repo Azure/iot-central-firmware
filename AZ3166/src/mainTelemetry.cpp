@@ -35,7 +35,7 @@ unsigned long lastShakeTime = 0;
 unsigned long lastSwitchPress = 0;
 static int currentInfoPage = 0;
 static int lastInfoPage = -1;
-uint8_t telemetryState = 0xFF;
+uint8_t telemetryState = 0x0;
 
 
 void telemetrySetup(const char* iotCentralConfig) {
@@ -86,7 +86,7 @@ void telemetrySetup(const char* iotCentralConfig) {
     clearCounters();
 
     assert(iotCentralConfig != NULL);
-    telemetryState = iotCentralConfig[2];
+    telemetryState = strtol(iotCentralConfig, NULL, 10);
 }
 
 

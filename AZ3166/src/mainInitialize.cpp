@@ -131,7 +131,7 @@ void processResultRequest(WiFiClient client, String request) {
     data.toCharArray(buff, dataLength);
     char *pch = strtok(buff, "&");
     AutoString ssid, password, connStr;
-    uint8_t checkboxState = 0x00; // bit order - TEMP, HUMIDITY, PRESSURE, ACCELEROMETER, GYROSCOPE, MAGNETOMETER
+    uint8_t checkboxState = 0x00; // bit order - see globals.h
 
     while (pch != NULL)
     {
@@ -154,9 +154,9 @@ void processResultRequest(WiFiClient client, String request) {
             case 3:
             {
                 if (strncmp(key, "HUM", 3) == 0) {
-                    checkboxState = checkboxState | 0x40;
+                    checkboxState = checkboxState | HUMIDITY_CHECKED;
                 } else if (strncmp(key, "MAG", 3) == 0) {
-                    checkboxState = checkboxState | 0x04;
+                    checkboxState = checkboxState | MAG_CHECKED;
                 } else {
                     unknown = true;
                 }
@@ -171,11 +171,11 @@ void processResultRequest(WiFiClient client, String request) {
                 } else if (strncmp(key, "CONN", 4) == 0) {
                     urldecode(value, valueLength, &connStr);
                 } else if (strncmp(key, "TEMP", 4) == 0) {
-                    checkboxState = checkboxState | 0x80;
+                    checkboxState = checkboxState | TEMP_CHECKED;
                 } else if (strncmp(key, "PRES", 4) == 0) {
-                    checkboxState = checkboxState | 0x20;
+                    checkboxState = checkboxState | PRESSURE_CHECKED;
                 } else if (strncmp(key, "GYRO", 4) == 0) {
-                    checkboxState = checkboxState | 0x08;
+                    checkboxState = checkboxState | GYRO_CHECKED;
                 } else {
                     unknown = true;
                 }
@@ -184,7 +184,7 @@ void processResultRequest(WiFiClient client, String request) {
             case 5:
             {
                 if (strncmp(key, "ACCEL", 5) == 0) {
-                    checkboxState = checkboxState | 0x10;
+                    checkboxState = checkboxState | ACCEL_CHECKED;
                 } else {
                     unknown = true;
                 }
@@ -194,6 +194,8 @@ void processResultRequest(WiFiClient client, String request) {
             default:
                 unknown = true;
         }
+
+        LOG_VERBOSE("- Checkbox State %d", checkboxState);
 
         if (unknown) {
             LOG_ERROR("Unkown key:'%s' idx:'%d'", key, idx);
@@ -218,7 +220,7 @@ void processResultRequest(WiFiClient client, String request) {
     storeConnectionString(connStr);
 
     AutoString configData(3);
-    snprintf(*configData, 3, "!#%c", checkboxState);
+    snprintf(*configData, 3, "%d", checkboxState);
     storeIotCentralConfig(configData);
 
     LOG_VERBOSE("Successfully processed the configuration request.");

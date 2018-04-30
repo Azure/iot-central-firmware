@@ -20,10 +20,3 @@ void clearWiFiEEPROM();
 void clearAzureEEPROM();
 void clearIotCentralEEPROM();
 #endif /* CONFIG_H */
-
-#define TEMP_CHECKED 0x80
-#define HUMIDITY_CHECKED 0x40
-#define PRESSURE_CHECKED 0x20
-#define ACCEL_CHECKED 0x10
-#define GYRO_CHECKED 0x08
-#define MAG_CHECKED 0x04

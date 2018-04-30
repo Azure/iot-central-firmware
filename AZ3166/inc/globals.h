@@ -13,6 +13,13 @@
 #define TO_STRING_(s) #s
 #define TO_STRING(s) TO_STRING_(s)
 
+#define HUMIDITY_CHECKED 0x01
+#define MAG_CHECKED 0x02
+#define TEMP_CHECKED 0x04
+#define PRESSURE_CHECKED 0x08
+#define ACCEL_CHECKED 0x10
+#define GYRO_CHECKED 0x20
+
 #define STRING_BUFFER_16     16
 #define STRING_BUFFER_32     32
 #define STRING_BUFFER_128   128
