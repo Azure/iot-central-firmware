@@ -25,15 +25,17 @@ typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 class AzWebServer;
 class IoTHubClient;
 class WiFiController;
+class SensorController;
 
 struct Globals
 {
-    static  bool            isConfigured; // default: false
-    static  bool            needsInitialize; // default: true
-    static  AzWebServer     webServer;
-    static  const char *    completedString; // \"completed\"
-    static  IoTHubClient *  iothubClient;
-    static  WiFiController  wiFiController;
+    static  bool              isConfigured; // default: false
+    static  bool              needsInitialize; // default: true
+    static  AzWebServer       webServer;
+    static  const char *      completedString; // \"completed\"
+    static  IoTHubClient *    iothubClient;
+    static  WiFiController    wiFiController;
+    static  SensorController  sensorController;
 };
 
 // IOT HUB

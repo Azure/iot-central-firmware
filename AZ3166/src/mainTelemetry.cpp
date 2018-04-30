@@ -47,7 +47,7 @@ void telemetrySetup(const char* iotCentralConfig) {
     Globals::wiFiController.initWiFi();
     lastTimeSync = millis();
     // initialize the sensor array
-    initSensors();
+    Globals::sensorController.initSensors();
     if (!Globals::wiFiController.getIsConnected()) {
         LOG_ERROR("WiFi - NOT CONNECTED - return");
         return;
@@ -133,7 +133,9 @@ void telemetryLoop() {
     }
 
     // example of sending a device twin reported property when the accelerometer detects a double tap
-    if (checkForShake() && (millis() - lastShakeTime > reportedSendInterval)) {
+    if (Globals::sensorController.checkForShake() &&
+        (millis() - lastShakeTime > reportedSendInterval)) {
+
         String shakeProperty = F("{\"dieNumber\":{{die}}}");
         randomSeed(analogRead(0));
         int die = random(1, 7);
@@ -157,6 +159,7 @@ void telemetryLoop() {
         Screen.clean();
         lastInfoPage = currentInfoPage;
     }
+
     switch (currentInfoPage) {
         case 0: // message counts - page 1
         {
@@ -197,14 +200,14 @@ void buildTelemetryPayload(String *payload) {
     // HTS221
     float humidity = 0.0;
     if ((telemetryState & HUMIDITY_CHECKED) == HUMIDITY_CHECKED) {
-        humidity = readHumidity();
+        humidity = Globals::sensorController.readHumidity();
         payload->concat(",\"humidity\":");
         payload->concat(String(humidity));
     }
 
     float temp = 0.0;
     if ((telemetryState & TEMP_CHECKED) == TEMP_CHECKED) {
-        temp = readTemperature();
+        temp = Globals::sensorController.readTemperature();
         payload->concat(",\"temp\":");
         payload->concat(String(temp));
     }
@@ -212,7 +215,7 @@ void buildTelemetryPayload(String *payload) {
     // LPS22HB
     float pressure = 0.0;
     if ((telemetryState & PRESSURE_CHECKED) == PRESSURE_CHECKED) {
-        pressure = readPressure();
+        pressure = Globals::sensorController.readPressure();
         payload->concat(",\"pressure\":");
         payload->concat(String(pressure));
     }
@@ -220,7 +223,7 @@ void buildTelemetryPayload(String *payload) {
     // LIS2MDL
     int magAxes[3];
     if ((telemetryState & MAG_CHECKED) == MAG_CHECKED) {
-        readMagnetometer(magAxes);
+        Globals::sensorController.readMagnetometer(magAxes);
         payload->concat(",\"magnetometerX\":");
         payload->concat(String(magAxes[0]));
         payload->concat(",\"magnetometerY\":");
@@ -232,7 +235,7 @@ void buildTelemetryPayload(String *payload) {
     // LSM6DSL
     int accelAxes[3];
     if ((telemetryState & ACCEL_CHECKED) == ACCEL_CHECKED) {
-        readAccelerometer(accelAxes);
+        Globals::sensorController.readAccelerometer(accelAxes);
         payload->concat(",\"accelerometerX\":");
         payload->concat(String(accelAxes[0]));
         payload->concat(",\"accelerometerY\":");
@@ -243,7 +246,7 @@ void buildTelemetryPayload(String *payload) {
 
     int gyroAxes[3];
     if ((telemetryState & GYRO_CHECKED) == GYRO_CHECKED) {
-        readGyroscope(gyroAxes);
+        Globals::sensorController.readGyroscope(gyroAxes);
         payload->concat(",\"gyroscopeX\":");
         payload->concat(String(gyroAxes[0]));
         payload->concat(",\"gyroscopeY\":");

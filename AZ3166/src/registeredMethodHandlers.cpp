@@ -39,7 +39,7 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
     // make the RGB LED color cycle
     unsigned int rgbColour[3];
 
-    turnLedOff();
+    Globals::sensorController.turnLedOff();
     delay(100);
 
     JSObject json(payload);
@@ -65,7 +65,7 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
                 rgbColour[decColour] -= 1;
                 rgbColour[incColour] += 1;
 
-                setLedColor(rgbColour[0], rgbColour[1], rgbColour[2]);
+                Globals::sensorController.setLedColor(rgbColour[0], rgbColour[1], rgbColour[2]);
                 delay(5);
             }
         }
@@ -73,7 +73,7 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
 
     // return it to the status color
     delay(200);
-    turnLedOff();
+    Globals::sensorController.turnLedOff();
     delay(100);
     DeviceControl::showState();
 
@@ -268,7 +268,7 @@ int irOnDesiredChange(const char *message, size_t size, char **response, size_t*
     Screen.clean();
     Screen.print(0, "Firing IR beam");
 
-    transmitIR();
+    Globals::sensorController.transmitIR();
 
     incrementDesiredCount();
 
