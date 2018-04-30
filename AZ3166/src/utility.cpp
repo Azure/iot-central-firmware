@@ -169,7 +169,6 @@ unsigned urldecode(const char * url, unsigned length, AutoString * outURL) {
             outURL->set(resultLength++, c);
         }
     }
-    outURL->set(resultLength, 0);
 
     return resultLength;
 }

@@ -24,6 +24,7 @@ typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
 class AzWebServer;
 class IoTHubClient;
+class WiFiController;
 
 struct Globals
 {
@@ -32,6 +33,7 @@ struct Globals
     static  AzWebServer     webServer;
     static  const char *    completedString; // \"completed\"
     static  IoTHubClient *  iothubClient;
+    static  WiFiController  wiFiController;
 };
 
 // IOT HUB

@@ -2,10 +2,13 @@
 // Licensed under the MIT license.
 
 #include "../inc/globals.h"
+#include "../inc/wifi.h"
 #include "AZ3166WiFi.h"
 #include "../inc/config.h"
 
-bool initApWiFi() {
+bool WiFiController::initApWiFi() {
+    Serial.println("- WiFiController::initApWiFi");
+
     char ap_name[STRING_BUFFER_32] = {0};
     byte mac[6] = {0};
     WiFi.macAddress(mac);
@@ -37,30 +40,36 @@ bool initApWiFi() {
     return true;
 }
 
-bool initWiFi() {
-    bool connected = false;
-    Screen.print("WiFi \r\n \r\nConnecting...\r\n             \r\n");
+bool WiFiController::initWiFi() {
+    Serial.println("- WiFiController::initWiFi");
+    Screen.clean();
+    Screen.print("WiFi \r\n \r\nConnecting...");
 
     if(WiFi.begin() == WL_CONNECTED) {
         Serial.println("WiFi WL_CONNECTED");
         digitalWrite(LED_WIFI, 1);
-        connected = true;
+        isConnected = true;
     } else {
         Screen.print("WiFi\r\nNot Connected\r\nEnter AP Mode?\r\n");
     }
 
-    return connected;
+    return isConnected;
 }
 
-void shutdownWiFi() {
+void WiFiController::shutdownWiFi() {
+    Serial.println("- WiFiController::shutdownWiFi");
     WiFi.disconnect();
+    isConnected = false;
 }
 
-void shutdownApWiFi() {
+void WiFiController::shutdownApWiFi() {
+    Serial.println("- WiFiController::shutdownApWiFi");
     WiFi.disconnectAP();
+    isConnected = false;
 }
 
-String * getWifiNetworks(int &count) {
+String * WiFiController::getWifiNetworks(int &count) {
+    Serial.println("- WiFiController::getWifiNetworks");
     String foundNetworks = "";  // keep track of network SSID so as to remove duplicates from mesh and repeater networks
     int numSsid = WiFi.scanNetworks();
     count = 0;
@@ -98,7 +107,8 @@ String * getWifiNetworks(int &count) {
     }
 }
 
-void displayNetworkInfo() {
+void WiFiController::displayNetworkInfo() {
+    Serial.println("- WiFiController::displayNetworkInfo");
     char buff[STRING_BUFFER_128] = {0};
     IPAddress ip = WiFi.localIP();
     byte mac[6] = {0};

@@ -28,7 +28,6 @@ const int reportedSendInterval = 2000;
 
 static bool reset = false;
 const int switchDebounceTime = 250;
-static bool connected;
 unsigned long lastTimeSync = 0;
 unsigned long timeSyncPeriod = 24 * 60 * 60 * 1000; // 24 Hours
 unsigned long lastTelemetrySend = 0;
@@ -45,11 +44,14 @@ void telemetrySetup(const char* iotCentralConfig) {
     randomSeed(analogRead(0));
 
     // connect to the WiFi in config
-    connected = initWiFi();
+    Globals::wiFiController.initWiFi();
     lastTimeSync = millis();
-
     // initialize the sensor array
     initSensors();
+    if (!Globals::wiFiController.getIsConnected()) {
+        Serial.println("WiFi - NOT CONNECTED - return");
+        return;
+    }
 
     // initialize the IoT Hub Client
     assert(Globals::iothubClient == NULL);
@@ -90,12 +92,12 @@ void telemetrySetup(const char* iotCentralConfig) {
 
 void telemetryLoop() {
     // if we are about to reset then stop sending/processing any telemetry
-    if (reset) {
-       delay(1);
-      return;
+    if (reset || !Globals::wiFiController.getIsConnected()) {
+        delay(1);
+        return;
     }
 
-    if (connected && (millis() - lastTimeSync > timeSyncPeriod)) {
+    if ((millis() - lastTimeSync > timeSyncPeriod)) {
         // re-sync the time from ntp
         if (SyncTimeToNTP()) {
             lastTimeSync = millis();
@@ -161,7 +163,7 @@ void telemetryLoop() {
             char buff[STRING_BUFFER_128] = {0};
             snprintf(buff, STRING_BUFFER_128 - 1,
                     "%s\r\nsent: %d\r\nfail: %d\r\ntwin: %d/%d",
-                    connected ? "-- Connected --":"- disconnected -",
+                    "-- Connected --",
                     getTelemetryCount(), getErrorCount(), getDesiredCount(),
                     getReportedCount());
 
@@ -172,7 +174,7 @@ void telemetryLoop() {
             Globals::iothubClient->displayDeviceInfo();
             break;
         case 2:  // Network information
-            displayNetworkInfo();
+            Globals::wiFiController.displayNetworkInfo();
             break;
     }
 
@@ -186,7 +188,7 @@ void telemetryCleanup() {
     delete Globals::iothubClient;
 
     // cleanup the WiFi
-    shutdownWiFi();
+    Globals::wiFiController.shutdownWiFi();
 }
 
 void buildTelemetryPayload(String *payload) {

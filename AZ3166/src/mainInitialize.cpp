@@ -21,8 +21,8 @@ void initializeSetup() {
     Globals::needsInitialize = false;
 
     // enter AP mode
-    bool apRunning = initApWiFi();
-    Serial.printf("initApWifi: %d \r\n", apRunning);
+    Globals::wiFiController.initApWiFi();
+    Serial.printf("initApWifi: %d \r\n", Globals::wiFiController.getIsConnected());
 
     // setup web server
     Globals::webServer.start();
@@ -98,12 +98,12 @@ void initializeLoop() {
 void initializeCleanup() {
     Globals::needsInitialize = true;
     Globals::webServer.stop();
-    shutdownApWiFi();
+    Globals::wiFiController.shutdownApWiFi();
 }
 
 void processStartRequest(WiFiClient client) {
     int count = 0;
-    String *networks = getWifiNetworks(count);
+    String *networks = Globals::wiFiController.getWifiNetworks(count);
     if (networks == NULL) {
         LOG_ERROR("getWifiNetworks Out of Memory");
         client.write((uint8_t*)HTTP_ERROR_PAGE_RESPONSE, sizeof(HTTP_ERROR_PAGE_RESPONSE) - 1);
@@ -151,38 +151,53 @@ void processResultRequest(WiFiClient client, String request) {
         unsigned valueLength = pair.length() - (idx + 1);
         bool unknown = false;
 
-        if (idx == 3) {
-            if (strncmp(key, "HUM", 3) == 0) {
-                checkboxState = checkboxState | 0x40;
-            } else if (strncmp(key, "MAG", 3) == 0) {
-                checkboxState = checkboxState | 0x04;
-            } else {
-                unknown = true;
+        switch(idx) {
+            case 3:
+            {
+                if (strncmp(key, "HUM", 3) == 0) {
+                    checkboxState = checkboxState | 0x40;
+                } else if (strncmp(key, "MAG", 3) == 0) {
+                    checkboxState = checkboxState | 0x04;
+                } else {
+                    unknown = true;
+                }
             }
-        } else if (idx == 4) {
-            if (strncmp(key, "SSID", 4) == 0) {
-                urldecode(value, valueLength, &ssid);
-            } else if (strncmp(key, "PASS", 4) == 0) {
-                urldecode(value, valueLength, &password);
-            } else if (strncmp(key, "CONN", 4) == 0) {
-                urldecode(value, valueLength, &connStr);
-            } else if (strncmp(key, "TEMP", 4) == 0) {
-                checkboxState = checkboxState | 0x80;
-            } else if (strncmp(key, "PRES", 4) == 0) {
-                checkboxState = checkboxState | 0x20;
-            } else if (strncmp(key, "ACCEL", 4) == 0) {
-                checkboxState = checkboxState | 0x10;
-            } else if (strncmp(key, "GYRO", 4) == 0) {
-                checkboxState = checkboxState | 0x08;
-            } else {
-                unknown = true;
+            break;
+            case 4:
+            {
+                if (strncmp(key, "SSID", 4) == 0) {
+                    urldecode(value, valueLength, &ssid);
+                } else if (strncmp(key, "PASS", 4) == 0) {
+                    urldecode(value, valueLength, &password);
+                } else if (strncmp(key, "CONN", 4) == 0) {
+                    urldecode(value, valueLength, &connStr);
+                } else if (strncmp(key, "TEMP", 4) == 0) {
+                    checkboxState = checkboxState | 0x80;
+                } else if (strncmp(key, "PRES", 4) == 0) {
+                    checkboxState = checkboxState | 0x20;
+                } else if (strncmp(key, "GYRO", 4) == 0) {
+                    checkboxState = checkboxState | 0x08;
+                } else {
+                    unknown = true;
+                }
             }
-        } else {
-            unknown = true;
+            break;
+            case 5:
+            {
+                if (strncmp(key, "ACCEL", 5) == 0) {
+                    checkboxState = checkboxState | 0x10;
+                } else {
+                    unknown = true;
+                }
+            }
+            break;
+
+            default:
+                unknown = true;
         }
 
         if (unknown) {
-            Serial.printf("Unkown key '%s'\r\n", key);
+            Serial.printf("Unkown key:'%s' idx:'%d'\r\n", key, idx);
             LOG_ERROR("Unknown request parameter. Responsed with START page");
             processStartRequest(client);
             return;
