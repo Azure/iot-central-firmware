@@ -60,6 +60,7 @@ void IoTHubClient::initIotHubClient() {
     }
 
     IoTHubClient_LL_SetRetryPolicy(iotHubClientHandle, IOTHUB_CLIENT_RETRY_EXPONENTIAL_BACKOFF, 1200);
+    bool traceOn = IOTHUB_TRACE_LOG_ENABLED;
     IoTHubClient_LL_SetOption(iotHubClientHandle, "logtrace", &traceOn);
 
     if (IoTHubClient_LL_SetOption(iotHubClientHandle, "TrustedCerts",

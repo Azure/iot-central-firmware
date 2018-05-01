@@ -7,14 +7,6 @@
 
 #include "../inc/oledAnimation.h"
 
-int frameCount;
-int move;
-
-unsigned char xs = 0;
-unsigned char ys = 0;
-unsigned char xe = 128;
-unsigned char ye = 8;
-
 unsigned char block[]  = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 unsigned char blockGap[]  = {0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E, 0x7E};
 unsigned char blockVGap[]  = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00};
@@ -40,129 +32,88 @@ unsigned char circleRT[]  = {0xFE, 0xFE, 0xFE, 0xFC, 0xFC, 0xF8, 0xF0, 0x00};
 unsigned char circleLB[]  = {0x00, 0x0F, 0x1F, 0x3F, 0x3F, 0x7F, 0x7F, 0x7F};
 unsigned char circleRB[]  = {0x7F, 0x7F, 0x7F, 0x3F, 0x3F, 0x1F, 0x0F, 0x00};
 
-unsigned char* buf;
-unsigned char* blankBuf;
-
-int _maxFrames;
-int _width;
-int _moveLimit;
-int _frameDelay;
-bool _center;
-char **_frames;
-
-void animationInit(char **frames, int maxFrames, int width, int moveLimit, int frameDelay, bool center) {
-    frameCount = 0;
-    move = 0;
-
-    _frames = frames;
-    _maxFrames = maxFrames - 1;
-    _width = width;
-    _moveLimit = moveLimit;
-    _frameDelay = frameDelay;
-    _center = center;
-
-    buf = (unsigned char*)malloc(1024);
-    blankBuf = (unsigned char*)malloc(64);
-    memset(blankBuf, 0x00, 64);
-
-    renderNextFrame();
-}
-
-void clearScreen() {
-    memset(buf, 0x00, 1024);
-    Screen.draw(0, 0, 128, 64, buf);
-}
-
-void renderNextFrame() {
+void AnimationController::renderFrameToBuffer(unsigned char *screenBuffer, char *image) {
     int columnPad = 3;
-
-    memset(buf, 0x00, 1024);
-    char *image;
-
-    image = _frames[frameCount];
-
-    if (frameCount < _maxFrames)
-        frameCount++;
-    else
-        frameCount = 0;
-    int colLimit = _width / 8;
+    int colLimit = 8;
 
     for(int y = 0; y < 8; y++) {
         for(int x = 0; x < colLimit; x++) {
             if (image[(y * colLimit) + x] == 'B')
-                memcpy(buf + columnPad, block, 8);
-            else if (image[(y * colLimit) + x] == 'G')
-                memcpy(buf + columnPad, blockGap, 8);
-            else if (image[(y * colLimit) + x] == 'g')
-                memcpy(buf + columnPad, blockVGap, 8);
-            else if (image[(y * colLimit) + x] == 'X')
-                memcpy(buf + columnPad, cross, 8);
-            else if (image[(y * colLimit) + x] == 'L')
-                memcpy(buf + columnPad, diagLR, 8);
-            else if (image[(y * colLimit) + x] == 'R')
-                memcpy(buf + columnPad, diagRL, 8);
-            else if (image[(y * colLimit) + x] == 'H')
-                memcpy(buf + columnPad, horzT, 8);
-            else if (image[(y * colLimit) + x] == 'h')
-                memcpy(buf + columnPad, horzB, 8);
-            else if (image[(y * colLimit) + x] == 'V')
-                memcpy(buf + columnPad, vertL, 8);
-            else if (image[(y * colLimit) + x] == 'v')
-                memcpy(buf + columnPad, vertR, 8);
-            else if (image[(y * colLimit) + x] == 'O')
-                memcpy(buf + columnPad, circle, 8);
+                memcpy(screenBuffer + columnPad, block, 8);
             else if (image[(y * colLimit) + x] == '.')
-                memcpy(buf + columnPad, clear, 8);
+                memcpy(screenBuffer + columnPad, clear, 8);
+            else if (image[(y * colLimit) + x] == 'G')
+                memcpy(screenBuffer + columnPad, blockGap, 8);
+            else if (image[(y * colLimit) + x] == 'g')
+                memcpy(screenBuffer + columnPad, blockVGap, 8);
+            else if (image[(y * colLimit) + x] == 'X')
+                memcpy(screenBuffer + columnPad, cross, 8);
+            else if (image[(y * colLimit) + x] == 'L')
+                memcpy(screenBuffer + columnPad, diagLR, 8);
+            else if (image[(y * colLimit) + x] == 'R')
+                memcpy(screenBuffer + columnPad, diagRL, 8);
+            else if (image[(y * colLimit) + x] == 'H')
+                memcpy(screenBuffer + columnPad, horzT, 8);
+            else if (image[(y * colLimit) + x] == 'h')
+                memcpy(screenBuffer + columnPad, horzB, 8);
+            else if (image[(y * colLimit) + x] == 'V')
+                memcpy(screenBuffer + columnPad, vertL, 8);
+            else if (image[(y * colLimit) + x] == 'v')
+                memcpy(screenBuffer + columnPad, vertR, 8);
+            else if (image[(y * colLimit) + x] == 'O')
+                memcpy(screenBuffer + columnPad, circle, 8);
             else if (image[(y * colLimit) + x] == 'T')
-                memcpy(buf + columnPad, borderTop, 8);
+                memcpy(screenBuffer + columnPad, borderTop, 8);
             else if (image[(y * colLimit) + x] == 'b')
-                memcpy(buf + columnPad, borderBottom, 8);
+                memcpy(screenBuffer + columnPad, borderBottom, 8);
             else if (image[(y * colLimit) + x] == '<')
-                memcpy(buf + columnPad, borderLeft, 8);
+                memcpy(screenBuffer + columnPad, borderLeft, 8);
             else if (image[(y * colLimit) + x] == '>')
-                memcpy(buf + columnPad, borderRight, 8);
+                memcpy(screenBuffer + columnPad, borderRight, 8);
             else if (image[(y * colLimit) + x] == '1')
-                memcpy(buf + columnPad, cornerLT, 8);
+                memcpy(screenBuffer + columnPad, cornerLT, 8);
             else if (image[(y * colLimit) + x] == '2')
-                memcpy(buf + columnPad, cornerRT, 8);
+                memcpy(screenBuffer + columnPad, cornerRT, 8);
             else if (image[(y * colLimit) + x] == '3')
-                memcpy(buf + columnPad, cornerLB, 8);
+                memcpy(screenBuffer + columnPad, cornerLB, 8);
             else if (image[(y * colLimit) + x] == '4')
-                memcpy(buf + columnPad, cornerRB, 8);
+                memcpy(screenBuffer + columnPad, cornerRB, 8);
             else if (image[(y * colLimit) + x] == '!')
-                memcpy(buf + columnPad, circleLT, 8);
+                memcpy(screenBuffer + columnPad, circleLT, 8);
             else if (image[(y * colLimit) + x] == '@')
-                memcpy(buf + columnPad, circleRT, 8);
+                memcpy(screenBuffer + columnPad, circleRT, 8);
             else if (image[(y * colLimit) + x] == '#')
-                memcpy(buf + columnPad, circleLB, 8);
+                memcpy(screenBuffer + columnPad, circleLB, 8);
             else if (image[(y * colLimit) + x] == '$')
-                memcpy(buf + columnPad, circleRB, 8);
+                memcpy(screenBuffer + columnPad, circleRB, 8);
 
             columnPad = columnPad + 8;
         }
         columnPad = columnPad + 8;
     }
-
-    if (_moveLimit > 0)
-        Screen.draw(xs + move - 8, ys, xs+move, 8, blankBuf);
-
-    int centerPad = 0;
-    if (_center)
-        centerPad = (126 - _width) / 2;
-
-    xe = _width + 8 + move + centerPad;
-    Screen.draw(xs + move + centerPad, ys, xe, ye, buf);
-
-    if (move / 8 < _moveLimit)
-        move = move + 8;
-    else
-        move = 0;
-
-    if (_frameDelay > 0)
-        delay(_frameDelay);
 }
 
-void animationEnd() {
-    free(buf);
-    free(blankBuf);
+void AnimationController::renderFrameToScreen(unsigned char *screenBuffer,
+    int numFrames, bool center, unsigned frameDelay) {
+
+    const int width = 64;
+    unsigned char xs = 0;
+    unsigned char ys = 0;
+    unsigned char xe = 0;
+    unsigned char ye = 8;
+
+    int centerPad = 0;
+    if (center)
+        centerPad = 32;
+
+    for (int i = 0; i < numFrames; i++) {
+        unsigned char * buffer = screenBuffer + (i * OLED_SINGLE_FRAME_BUFFER);
+
+        xe = width + 8 + centerPad;
+        Screen.draw(xs + centerPad, ys, xe, ye, buffer);
+
+        if (frameDelay > 0) {
+            delay(frameDelay);
+        }
+    }
 }

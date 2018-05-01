@@ -3,10 +3,10 @@
 
 #include "../inc/globals.h"
 
-static int telemetryCount;
-static int reportedCount;
-static int desiredCount;
-static int errorCount;
+static int telemetryCount = 0;
+static int reportedCount = 0;
+static int desiredCount = 0;
+static int errorCount = 0;
 
 void clearCounters() {
     telemetryCount = 0;

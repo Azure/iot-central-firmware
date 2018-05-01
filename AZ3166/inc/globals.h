@@ -27,6 +27,8 @@
 #define STRING_BUFFER_1024 1024
 #define STRING_BUFFER_4096 4096
 
+#define OLED_SINGLE_FRAME_BUFFER 576
+
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
 class AzWebServer;
@@ -62,6 +64,7 @@ struct Globals
 // LOGS
 
 #define SERIAL_VERBOSE_LOGGING_ENABLED false
+#define IOTHUB_TRACE_LOG_ENABLED false
 
 #if SERIAL_VERBOSE_LOGGING_ENABLED != 1
 #define LOG_VERBOSE(...)

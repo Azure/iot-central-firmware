@@ -20,7 +20,6 @@ typedef struct EVENT_INSTANCE_TAG {
 
 class IoTHubClient
 {
-    bool traceOn;
     bool hasError;
     char deviceId[IOT_CENTRAL_MAX_LEN];
     char hubName[IOT_CENTRAL_MAX_LEN];
@@ -52,10 +51,10 @@ class IoTHubClient
     void closeIotHubClient();
 
 public:
-    IoTHubClient(bool traceOn_): traceOn(traceOn_), hasError(false),
-                                 needsReconnect(false), displayCharPos(0),
-                                 waitCount(3), needsCopying(true),
-                                 iotHubClientHandle(NULL)
+    IoTHubClient(): hasError(false),
+                    needsReconnect(false), displayCharPos(0),
+                    waitCount(3), needsCopying(true),
+                    iotHubClientHandle(NULL)
     {
         memset(deviceId, 0, IOT_CENTRAL_MAX_LEN);
         memset(hubName,  0, IOT_CENTRAL_MAX_LEN);

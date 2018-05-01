@@ -5,12 +5,10 @@
 #include "../inc/utility.h"
 #include <AudioClass.h>
 
-
 #include "../inc/sensors.h"
 #include "../inc/stats.h"
 #include "../inc/device.h"
 #include "../inc/oledAnimation.h"
-
 #include "../inc/fanSound.h"
 
 // handler for the cloud to device (C2D) message
@@ -92,6 +90,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
         '.', '.', '.', 'X', 'X', '.', '.', '.',
         '.', '.', 'R', '.', '.', 'L', '.', '.',
         '.', 'R', '.', '.', '.', '.', 'L', '.'};
+
     char fan2[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -104,38 +103,45 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 
     char *fan[] = {fan1, fan2};
 
-    animationInit(fan, 2, 64, 0, 0, true);
-
     LOG_VERBOSE("fanSpeed desired property just got called");
 
     // turn on the fan - sound
     AudioClass& Audio = AudioClass::getInstance();
     Audio.startPlay(fanSoundData, FAN_SOUND_DATA_SIZE);
 
-    // show the animation
+    unsigned char buffer[2 * OLED_SINGLE_FRAME_BUFFER] = {0};
     Screen.clean();
-    for(int i = 0; i < 100; i++) {
-        renderNextFrame();
+    for (int i = 0; i < 2; i++) {
+        AnimationController::renderFrameToBuffer(buffer + (i * OLED_SINGLE_FRAME_BUFFER), fan[i]);
+    }
+
+    for(int i = 0; i < 30; i++) {
+        AnimationController::renderFrameToScreen(buffer, 2, true, 20);
     }
 
     incrementDesiredCount();
 
-    *response = (char*) Globals::completedString;
+    if (response != NULL) {
+        *response = (char*) Globals::completedString;
+    }
+
     return 200; /* status */
+}
+
+void animateCircular(char ** source, unsigned length) {
+    unsigned char buffer[length * OLED_SINGLE_FRAME_BUFFER] = {0};
+    Screen.clean();
+    for (int i = 0; i < length; i++) {
+        AnimationController::renderFrameToBuffer(buffer + (i * OLED_SINGLE_FRAME_BUFFER), source[i]);
+    }
+
+    for(int i = 0; i < 15; i++) {
+        AnimationController::renderFrameToScreen(buffer, length, true, 20);
+    }
 }
 
 int voltageDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
     LOG_VERBOSE("setVoltage desired property just got called");
-
-    char voltage0[] = {
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.'};
 
     char voltage1[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -151,23 +157,13 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
+        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'};
 
     char voltage3[] = {
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
-        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
-        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
-        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
-        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
-        'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'};
-
-    char voltage4[] = {
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
@@ -177,34 +173,20 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G',
         'G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'};
 
-    char *voltage[] = {voltage0, voltage1, voltage2, voltage3, voltage4, voltage3, voltage2, voltage1, voltage0};
-
-    animationInit(voltage, 9, 64, 0, 30, true);
-
-    // show the animation
-    Screen.clean();
-    for(int i = 0; i < 54; i++) {
-        renderNextFrame();
-    }
+    char *voltage[] = {voltage1, voltage2, voltage3, voltage2};
+    animateCircular(voltage, 4);
 
     incrementDesiredCount();
 
-    *response = (char*) Globals::completedString;
+    if (response != NULL) {
+        *response = (char*) Globals::completedString;
+    }
+
     return 200; /* status */
 }
 
 int currentDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
     LOG_VERBOSE("setCurrent desired property just got called");
-
-    char current0[] = {
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.',
-        '.', '.', '.', '.', '.', '.', '.', '.'};
 
     char current1[] = {
         'g', 'g', '.', '.', '.', '.', '.', '.',
@@ -217,16 +199,6 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         'g', 'g', '.', '.', '.', '.', '.', '.'};
 
     char current2[] = {
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.',
-        'g', 'g', 'g', 'g', '.', '.', '.', '.'};
-
-    char current3[] = {
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
@@ -236,7 +208,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.',
         'g', 'g', 'g', 'g', 'g', 'g', '.', '.'};
 
-    char current4[] = {
+    char current3[] = {
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
@@ -246,15 +218,8 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
         'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g'};
 
-    char *current[] = {current0, current1, current2, current3, current4, current3, current2, current1, current0};
-
-    animationInit(current, 9, 64, 0, 30, false);
-
-    // show the animation
-    Screen.clean();
-    for(int i = 0; i < 54; i++) {
-        renderNextFrame();
-    }
+    char *current[] = {current1, current2, current3, current2};
+    animateCircular(current, 4);
 
     incrementDesiredCount();
 

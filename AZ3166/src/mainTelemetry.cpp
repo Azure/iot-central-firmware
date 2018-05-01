@@ -14,7 +14,6 @@
 #include "../inc/registeredMethodHandlers.h"
 #include "../inc/oledAnimation.h"
 
-#define traceOn false
 #define statePayloadTemplate "{\"%s\":\"%s\"}"
 
 // forward declarations
@@ -55,7 +54,7 @@ void telemetrySetup(const char* iotCentralConfig) {
 
     // initialize the IoT Hub Client
     assert(Globals::iothubClient == NULL);
-    Globals::iothubClient = new IoTHubClient(traceOn);
+    Globals::iothubClient = new IoTHubClient();
     if (Globals::iothubClient == NULL || !Globals::iothubClient->wasInitialized()) {
         reset = true;
         Globals::isConfigured = false;
@@ -141,7 +140,6 @@ void telemetryLoop() {
         int die = random(1, 7);
         shakeProperty.replace("{{die}}", String(die));
 
-        Screen.clean();
         rollDieAnimation(die);
 
         if (Globals::iothubClient->sendReportedProperty(shakeProperty.c_str())) {
@@ -300,7 +298,6 @@ void sendStateChange() {
 }
 
 void rollDieAnimation(int value) {
-
     char die1[] = {
         '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
         '<', '.', '.', '.', '.', '.', '.', '>',
@@ -362,20 +359,32 @@ void rollDieAnimation(int value) {
         '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
 
     char *die[] = { die1, die2, die3, die4, die5, die6 };
-    char *roll[5];
+    const int numberOfRolls = 3;
+    char *roll[numberOfRolls + 1];
+    char uniqueRolls[6] = {0};
+    uniqueRolls[value - 1] = 1;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < numberOfRolls; i++) {
+re_roll:
         int dieRoll = random(0, 6);
+        if (uniqueRolls[dieRoll] != 0) goto re_roll;
+        uniqueRolls[dieRoll] = 1;
+
         roll[i] = die[dieRoll];
     }
-    roll[4] = die[value - 1];
+    roll[numberOfRolls] = die[value - 1];
 
-    animationInit(roll, 5, 64, 0, 1000, true);
+    // detach stack alloc
+    {
+        unsigned char buffer[(numberOfRolls + 1) * OLED_SINGLE_FRAME_BUFFER] = {0};
+        Screen.clean();
+        for(int i = 0; i < numberOfRolls + 1; i++) {
+            AnimationController::renderFrameToBuffer(buffer + (i * OLED_SINGLE_FRAME_BUFFER), roll[i]);
+        }
 
-    // show the animation
-    for(int i = 0; i < 4; i++) {
-        renderNextFrame();
+        // show the animation
+        AnimationController::renderFrameToScreen(buffer, numberOfRolls + 1, true, 100);
     }
 
-    animationEnd();
+    delay(1200); // to keep last number on the screen longer
 }
