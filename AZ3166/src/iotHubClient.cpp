@@ -29,7 +29,7 @@ static int trackingId = 0;
 
 void IoTHubClient::initIotHubClient() {
     char connectionString[AZ_IOT_HUB_MAX_LEN] = {0};
-    readConnectionString(connectionString, AZ_IOT_HUB_MAX_LEN);
+    ConfigController::readConnectionString(connectionString, AZ_IOT_HUB_MAX_LEN);
 
     String connString(connectionString);
     String deviceIdString = connString.substring(connString.indexOf("DeviceId=")

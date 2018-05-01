@@ -223,14 +223,14 @@ void processResultRequest(WiFiClient client, String request) {
     }
     // store the settings in EEPROM
     assert(ssid.getLength() != 0 && password.getLength() != 0);
-    storeWiFi(ssid, password);
+    ConfigController::storeWiFi(ssid, password);
 
     assert(connStr.getLength() != 0);
-    storeConnectionString(connStr);
+    ConfigController::storeConnectionString(connStr);
 
     AutoString configData(3);
     snprintf(*configData, 3, "%d", checkboxState);
-    storeIotCentralConfig(configData);
+    ConfigController::storeIotCentralConfig(configData);
 
     setupWasCompleted = true;
     LOG_VERBOSE("Successfully processed the configuration request.");

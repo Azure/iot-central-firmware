@@ -44,7 +44,7 @@ void setup()
     pinMode(LED_USER, OUTPUT);
 
     char iotCentralConfig[IOT_CENTRAL_MAX_LEN] = {0};
-    readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
+    ConfigController::readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
 
     if (iotCentralConfig[0] == 0x00) {
         LOG_VERBOSE("No configuration found entering config mode.");
@@ -64,7 +64,7 @@ void loop()
 
         Screen.clean();
         Screen.print(0, "Device resetting");
-        clearAllConfig();
+        ConfigController::clearAllConfig();
 
         if (Globals::isConfigured) {
             telemetryCleanup();
