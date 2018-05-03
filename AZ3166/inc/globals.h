@@ -29,22 +29,26 @@
 
 #define OLED_SINGLE_FRAME_BUFFER 576
 
+#define TELEMETRY_SEND_INTERVAL 5000
+#define TELEMETRY_REPORTED_SEND_INTERVAL 2000
+#define TELEMETRY_SWITCH_DEBOUNCE_TIME 250
+
+#define NTP_SYNC_PERIOD (24 * 60 * 60 * 1000)
+
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
 class AzWebServer;
 class IoTHubClient;
 class WiFiController;
 class SensorController;
+class LoopController;
 
 struct Globals
 {
-    static  bool              isConfigured; // default: false
-    static  bool              needsInitialize; // default: true
-    static  AzWebServer       webServer;
-    static  const char *      completedString; // \"completed\"
-    static  IoTHubClient *    iothubClient;
-    static  WiFiController    wiFiController;
-    static  SensorController  sensorController;
+    static  const char *            completedString; // \"completed\"
+    static  WiFiController          wiFiController;
+    static  SensorController        sensorController;
+    static  LoopController *        loopController;
 };
 
 // IOT HUB

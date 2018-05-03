@@ -6,11 +6,9 @@
 #include "../inc/webServer.h"
 #include "../inc/wifi.h"
 #include "../inc/sensors.h"
+#include "../inc/onboarding.h"
 
-bool Globals::isConfigured = false;
-bool Globals::needsInitialize = true;
-AzWebServer Globals::webServer;
 const char * Globals::completedString = "completed";
-IoTHubClient * Globals::iothubClient = NULL;
 WiFiController Globals::wiFiController;
 SensorController Globals::sensorController;
+LoopController * Globals::loopController = NULL;

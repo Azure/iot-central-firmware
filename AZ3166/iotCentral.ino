@@ -28,61 +28,15 @@ Uses the following libraries:
 
 ***/
 
-#include "inc/globals.h"
-#include "EEPROMInterface.h"
+#include "inc/application.h"
 
-#include "inc/mainInitialize.h"
-#include "inc/mainTelemetry.h"
-#include "inc/config.h"
-#include "inc/device.h"
 
 void setup()
 {
-    Serial.begin(250000);
-    pinMode(LED_WIFI, OUTPUT);
-    pinMode(LED_AZURE, OUTPUT);
-    pinMode(LED_USER, OUTPUT);
-
-    char iotCentralConfig[IOT_CENTRAL_MAX_LEN] = {0};
-    ConfigController::readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
-
-    if (iotCentralConfig[0] == 0x00) {
-        LOG_VERBOSE("No configuration found entering config mode.");
-        initializeSetup();
-    } else {
-        LOG_VERBOSE("Configuration found entering telemetry mode.");
-        Globals::isConfigured = true;
-        telemetrySetup(iotCentralConfig);
-    }
+    ApplicationController::initialize();
 }
 
 void loop()
 {
-    // reset the device if the A and B buttons are both pressed and held
-    if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
-        DeviceControl::IsButtonClicked(USER_BUTTON_B)) {
-
-        Screen.clean();
-        Screen.print(0, "Device resetting");
-        ConfigController::clearAllConfig();
-
-        if (Globals::isConfigured) {
-            telemetryCleanup();
-        } else {
-            initializeCleanup();
-        }
-
-        Globals::isConfigured = false;
-        delay(1000);  //artificial pause
-        Screen.clean();
-        Screen.print(0, "Device is reset");
-        Screen.print(1, "Press reset");
-        Screen.print(2, "to configure");
-    }
-
-	if (Globals::isConfigured) {
-        telemetryLoop();
-    } else {
-        initializeLoop();
-    }
+    ApplicationController::loop();
 }

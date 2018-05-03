@@ -9,7 +9,7 @@
 
 class AzWebServer
 {
-    WiFiServer *webServer;
+    WiFiServer *server;
 public:
     AzWebServer();
     void start();

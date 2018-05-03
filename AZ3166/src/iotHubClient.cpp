@@ -5,6 +5,7 @@
 #include "../inc/iotHubClient.h"
 #include <time.h>
 
+#include "../inc/telemetry.h"
 #include "../inc/utility.h"
 #include "../inc/config.h"
 
@@ -18,14 +19,6 @@ static int DeviceDirectMethodCallback(const char* method_name, const unsigned ch
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result, IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback);
 static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback);
 static void deviceTwinConfirmationCallback(int status_code, void* userContextCallback);
-
-static int methodCallbackCount = 0;
-static int desiredCallbackCount = 0;
-static CALLBACK_LOOKUP methodCallbackList[MAX_CALLBACK_COUNT];
-static CALLBACK_LOOKUP desiredCallbackList[MAX_CALLBACK_COUNT];
-
-static int statusContext = 0;
-static int trackingId = 0;
 
 void IoTHubClient::initIotHubClient() {
     char connectionString[AZ_IOT_HUB_MAX_LEN] = {0};
@@ -100,6 +93,7 @@ void IoTHubClient::initIotHubClient() {
         return;
     }
 
+    int statusContext = 0; // noop
     // Connection status change callback
     if (IoTHubClient_LL_SetConnectionStatusCallback(iotHubClientHandle,
         connectionStatusCallback, &statusContext) != IOTHUB_CLIENT_OK) {
@@ -247,23 +241,32 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
     char *methodResponse;
     size_t responseSize;
 
-    // lookup if the method has been registered to a function
-    for(int i = 0; i < methodCallbackCount; i++) {
-        if (methodName == methodCallbackList[i].name) {
-            const char* params = json.getStringByName("payload");
-            if (params == NULL) {
-                LOG_ERROR("Object doesn't have a member 'payload'");
-                return IOTHUBMESSAGE_REJECTED;
-            }
-
-            methodCallbackList[i].callback(params, strlen(params),
-                &methodResponse, &responseSize);
-            break;
-        }
+    TelemetryController * telemetryController = NULL;
+    if (Globals::loopController->withTelemetry()) {
+        telemetryController = (TelemetryController*)Globals::loopController;
     }
 
-    (*counter)++;
-    return IOTHUBMESSAGE_ACCEPTED;
+    if (telemetryController != NULL && telemetryController->getHubClient() != NULL) {
+        // lookup if the method has been registered to a function
+        for(int i = 0; i < telemetryController->getHubClient()->methodCallbackCount; i++) {
+            if (methodName == telemetryController->getHubClient()->methodCallbackList[i].name) {
+                const char* params = json.getStringByName("payload");
+                if (params == NULL) {
+                    LOG_ERROR("Object doesn't have a member 'payload'");
+                    return IOTHUBMESSAGE_REJECTED;
+                }
+
+                telemetryController->getHubClient()->methodCallbackList[i].callback(params,
+                    strlen(params), &methodResponse, &responseSize);
+                break;
+            }
+        }
+
+        (*counter)++;
+        return IOTHUBMESSAGE_ACCEPTED;
+    } else {
+        return IOTHUBMESSAGE_REJECTED;
+    }
 }
 
 int DeviceDirectMethodCallback(const char* method_name, const unsigned char* payload,
@@ -288,29 +291,37 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
     *response = NULL;
     *resp_size = 0;
 
-    // lookup if the method has been registered to a function
-    String methodName = method_name;
-    methodName.toUpperCase();
-    for(int i = 0; i < methodCallbackCount; i++) {
-        if (methodName == methodCallbackList[i].name) {
-            status = methodCallbackList[i].callback((const char*)payload, size, &methodResponse, &responseSize);
-            break;
-        }
+    TelemetryController * telemetryController = NULL;
+    if (Globals::loopController->withTelemetry()) {
+        telemetryController = (TelemetryController*)Globals::loopController;
     }
 
-    LOG_VERBOSE("Device Method %s called", method_name);
+    if (telemetryController != NULL && telemetryController->getHubClient() != NULL) {
+        // lookup if the method has been registered to a function
+        String methodName = method_name;
+        methodName.toUpperCase();
+        for(int i = 0; i < telemetryController->getHubClient()->methodCallbackCount; i++) {
+            if (methodName == telemetryController->getHubClient()->methodCallbackList[i].name) {
+                status = telemetryController->getHubClient()->methodCallbackList[i].callback(
+                        (const char*)payload, size, &methodResponse, &responseSize);
+                break;
+            }
+        }
 
-    const char * message_template = "{\"Response\":%s}";
-    const int template_size = strlen(message_template) - 2 /* %s */;
-    uint32_t message_size = responseSize + template_size;
-    char *tmp_string = (char*) malloc(message_size + 1);
-    if (tmp_string == NULL) {
-        status = -1;
-    } else {
-        snprintf(tmp_string, message_size, message_template, methodResponse);
-        tmp_string[message_size] = char(0);
-        *response = reinterpret_cast<unsigned char*>(tmp_string);
-        *resp_size = message_size;
+        LOG_VERBOSE("Device Method %s called", method_name);
+
+        const char * message_template = "{\"Response\":%s}";
+        const int template_size = strlen(message_template) - 2 /* %s */;
+        uint32_t message_size = responseSize + template_size;
+        char *tmp_string = (char*) malloc(message_size + 1);
+        if (tmp_string == NULL) {
+            status = -1;
+        } else {
+            snprintf(tmp_string, message_size, message_template, methodResponse);
+            tmp_string[message_size] = char(0);
+            *response = reinterpret_cast<unsigned char*>(tmp_string);
+            *resp_size = message_size;
+        }
     }
 
     return status;
@@ -348,19 +359,29 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
         desiredVersion = rootObject.getStringByName("$version");
     }
 
-    const char* echoTemplate = "{\"%s\":{\"value\":%s, \"statusCode\":%d, \"status\":\"%s\", \"desiredVersion\":%s}}";
-    uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
+    const char* echoTemplate = "{\"%s\":{\"value\":%s, \"statusCode\":%d, \
+        \"status\":\"%s\", \"desiredVersion\":%s}}";
+    uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value,
+        statusCode, status, desiredVersion);
     AutoString buffer(buffer_size);
     if (buffer.getLength() == 0) {
-        LOG_ERROR("Desired property %s failed to be echoed back as a reported property (OUT OF MEMORY)", propertyName);
+        LOG_ERROR("Desired property %s failed to be echoed back as a reported \
+            property (OUT OF MEMORY)", propertyName);
         incrementErrorCount();
         return;
     }
 
-    snprintf(*buffer, buffer_size, echoTemplate, propertyName, value, statusCode, status, desiredVersion);
+    snprintf(*buffer, buffer_size, echoTemplate, propertyName, value, statusCode,
+             status, desiredVersion);
     LOG_VERBOSE(*buffer);
 
-    if (Globals::iothubClient->sendReportedProperty(*buffer)) {
+    TelemetryController * telemetryController = NULL;
+    if (Globals::loopController->withTelemetry()) {
+        telemetryController = (TelemetryController*)Globals::loopController;
+    }
+
+    if (telemetryController != NULL && telemetryController->getHubClient() != NULL &&
+        telemetryController->getHubClient()->sendReportedProperty(*buffer)) {
         LOG_VERBOSE("Desired property %s successfully echoed back as a reported property.", propertyName);
         incrementReportedCount();
     } else {
@@ -373,15 +394,24 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
     int status = 0;
     char *methodResponse;
     size_t responseSize;
-    AutoString propName(propertyName, strlen(propertyName));
-    strupr(*propName);
 
-    for(int i = 0; i < desiredCallbackCount; i++) {
-        if (strcmp(*propName, desiredCallbackList[i].name) == 0) {
-            status = desiredCallbackList[i].callback(payLoad, size, &methodResponse, &responseSize);
-            echoDesired(propertyName, payLoad, methodResponse, status);
-            free(methodResponse);
-            break;
+    TelemetryController * telemetryController = NULL;
+    if (Globals::loopController->withTelemetry()) {
+        telemetryController = (TelemetryController*)Globals::loopController;
+    }
+
+    if (telemetryController != NULL && telemetryController->getHubClient() != NULL) {
+        AutoString propName(propertyName, strlen(propertyName));
+        strupr(*propName);
+
+        for(int i = 0; i < telemetryController->getHubClient()->desiredCallbackCount; i++) {
+            if (strcmp(*propName, telemetryController->getHubClient()->desiredCallbackList[i].name) == 0) {
+                status = telemetryController->getHubClient()->desiredCallbackList[i].callback(payLoad,
+                            size, &methodResponse, &responseSize);
+                echoDesired(propertyName, payLoad, methodResponse, status);
+                free(methodResponse);
+                break;
+            }
         }
     }
 }
@@ -452,13 +482,20 @@ static void deviceTwinConfirmationCallback(int status_code, void* userContextCal
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
     IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback) {
 
+    TelemetryController * telemetryController = NULL;
+    if (Globals::loopController->withTelemetry()) {
+        telemetryController = (TelemetryController*) Globals::loopController;
+    }
+
     if (reason == IOTHUB_CLIENT_CONNECTION_NO_NETWORK) {
         LOG_ERROR("No network connection");
-        Globals::iothubClient->needsReconnect = true;
+        if (telemetryController != NULL && telemetryController->getHubClient() != NULL)
+            telemetryController->getHubClient()->needsReconnect = true;
     } else if (result == IOTHUB_CLIENT_CONNECTION_UNAUTHENTICATED &&
                reason == IOTHUB_CLIENT_CONNECTION_EXPIRED_SAS_TOKEN) {
         LOG_ERROR("Connection timeout");
-        Globals::iothubClient->needsReconnect = true;
+        if (telemetryController != NULL && telemetryController->getHubClient() != NULL)
+            telemetryController->getHubClient()->needsReconnect = true;
     }
 }
 

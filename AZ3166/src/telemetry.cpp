@@ -3,7 +3,7 @@
 
 #include "../inc/globals.h"
 
-#include "../inc/mainTelemetry.h"
+#include "../inc/telemetry.h"
 #include "../inc/config.h"
 #include "../inc/wifi.h"
 #include "../inc/sensors.h"
@@ -16,29 +16,8 @@
 
 #define statePayloadTemplate "{\"%s\":\"%s\"}"
 
-// forward declarations
-void sendTelemetryPayload(const char *payload);
-void sendStateChange();
-void buildTelemetryPayload(String *payload);
-void rollDieAnimation(int value);
-
-const int telemetrySendInterval = 5000;
-const int reportedSendInterval = 2000;
-
-static bool reset = false;
-const int switchDebounceTime = 250;
-unsigned long lastTimeSync = 0;
-unsigned long timeSyncPeriod = 24 * 60 * 60 * 1000; // 24 Hours
-unsigned long lastTelemetrySend = 0;
-unsigned long lastShakeTime = 0;
-unsigned long lastSwitchPress = 0;
-static int currentInfoPage = 0;
-static int lastInfoPage = -1;
-uint8_t telemetryState = 0x0;
-
-
-void telemetrySetup(const char* iotCentralConfig) {
-    reset = false;
+void TelemetryController::initializeTelemetryController(const char * iotCentralConfig) {
+    assert(initializeCompleted == false);
 
     randomSeed(analogRead(0));
 
@@ -53,15 +32,13 @@ void telemetrySetup(const char* iotCentralConfig) {
     }
 
     // initialize the IoT Hub Client
-    assert(Globals::iothubClient == NULL);
-    Globals::iothubClient = new IoTHubClient();
-    if (Globals::iothubClient == NULL || !Globals::iothubClient->wasInitialized()) {
-        reset = true;
-        Globals::isConfigured = false;
-        if (Globals::iothubClient != NULL) {
-            delete Globals::iothubClient;
+    assert(iothubClient == NULL);
+    iothubClient = new IoTHubClient();
+    if (iothubClient == NULL || !iothubClient->wasInitialized()) {
+        if (iothubClient != NULL) {
+            delete iothubClient;
+            iothubClient = NULL;
         }
-        Globals::iothubClient = NULL;
         Screen.print(0, "Error:");
         Screen.print(1, "");
         Screen.print(2, "Please reset \r\n   the device.  \r\n");
@@ -69,14 +46,14 @@ void telemetrySetup(const char* iotCentralConfig) {
     }
 
     // Register callbacks for cloud to device messages
-    Globals::iothubClient->registerMethod("message", cloudMessage);  // C2D message
-    Globals::iothubClient->registerMethod("rainbow", directMethod);  // direct method
+    iothubClient->registerMethod("message", cloudMessage);  // C2D message
+    iothubClient->registerMethod("rainbow", directMethod);  // direct method
 
     // register callbacks for desired properties expected
-    Globals::iothubClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
-    Globals::iothubClient->registerDesiredProperty("setVoltage", voltageDesiredChange);
-    Globals::iothubClient->registerDesiredProperty("setCurrent", currentDesiredChange);
-    Globals::iothubClient->registerDesiredProperty("activateIR", irOnDesiredChange);
+    iothubClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
+    iothubClient->registerDesiredProperty("setVoltage", voltageDesiredChange);
+    iothubClient->registerDesiredProperty("setCurrent", currentDesiredChange);
+    iothubClient->registerDesiredProperty("activateIR", irOnDesiredChange);
 
     // show the state of the device on the RGB LED
     DeviceControl::showState();
@@ -86,17 +63,19 @@ void telemetrySetup(const char* iotCentralConfig) {
 
     assert(iotCentralConfig != NULL);
     telemetryState = strtol(iotCentralConfig, NULL, 10);
+
+    initializeCompleted = true;
 }
 
 
-void telemetryLoop() {
+void TelemetryController::loop() {
     // if we are about to reset then stop sending/processing any telemetry
-    if (reset || !Globals::wiFiController.getIsConnected()) {
+    if (!initializeCompleted || !Globals::wiFiController.getIsConnected()) {
         delay(1);
         return;
     }
 
-    if ((millis() - lastTimeSync > timeSyncPeriod)) {
+    if ((millis() - lastTimeSync > NTP_SYNC_PERIOD)) {
         // re-sync the time from ntp
         if (SyncTimeToNTP()) {
             lastTimeSync = millis();
@@ -106,7 +85,7 @@ void telemetryLoop() {
     // look for button A pressed to signify state change
     // when the A button is pressed the device state rotates to the next value and a state telemetry message is sent
     if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
-        (millis() - lastSwitchPress > switchDebounceTime)) {
+        (millis() - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
 
         DeviceControl::incrementDeviceState();
         DeviceControl::showState();
@@ -116,14 +95,14 @@ void telemetryLoop() {
 
     // look for button B pressed to page through info screens
     if (DeviceControl::IsButtonClicked(USER_BUTTON_B) &&
-        (millis() - lastSwitchPress > switchDebounceTime)) {
+        (millis() - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
 
         currentInfoPage = (currentInfoPage + 1) % 3;
         lastSwitchPress = millis();
     }
 
     // example of sending telemetry data
-    if (millis() - lastTelemetrySend >= telemetrySendInterval) {
+    if (millis() - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
         String payload; // max payload size for Azure IoT
 
         buildTelemetryPayload(&payload);
@@ -133,16 +112,16 @@ void telemetryLoop() {
 
     // example of sending a device twin reported property when the accelerometer detects a double tap
     if (Globals::sensorController.checkForShake() &&
-        (millis() - lastShakeTime > reportedSendInterval)) {
+        (millis() - lastShakeTime > TELEMETRY_REPORTED_SEND_INTERVAL)) {
 
         String shakeProperty = F("{\"dieNumber\":{{die}}}");
         randomSeed(analogRead(0));
         int die = random(1, 7);
         shakeProperty.replace("{{die}}", String(die));
 
-        rollDieAnimation(die);
+        AnimationController::rollDieAnimation(die);
 
-        if (Globals::iothubClient->sendReportedProperty(shakeProperty.c_str())) {
+        if (iothubClient->sendReportedProperty(shakeProperty.c_str())) {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
             incrementReportedCount();
         } else {
@@ -172,7 +151,7 @@ void telemetryLoop() {
         }
             break;
         case 1: // Device information
-            Globals::iothubClient->displayDeviceInfo();
+            iothubClient->displayDeviceInfo();
             break;
         case 2:  // Network information
             Globals::wiFiController.displayNetworkInfo();
@@ -182,17 +161,20 @@ void telemetryLoop() {
     delay(1);  // good practice to help prevent lockups
 }
 
-void telemetryCleanup() {
-    reset = true;
+TelemetryController::~TelemetryController() {
+    initializeCompleted = false;
 
-    // cleanup the Azure IoT client
-    delete Globals::iothubClient;
+    if (iothubClient != NULL) {
+        // cleanup the Azure IoT client
+        delete iothubClient;
+        iothubClient = NULL;
+    }
 
     // cleanup the WiFi
     Globals::wiFiController.shutdownWiFi();
 }
 
-void buildTelemetryPayload(String *payload) {
+void TelemetryController::buildTelemetryPayload(String *payload) {
     *payload = "{";
 
     // HTS221
@@ -257,8 +239,8 @@ void buildTelemetryPayload(String *payload) {
     payload->replace("{,", "{");
 }
 
-void sendTelemetryPayload(const char *payload) {
-    if (Globals::iothubClient->sendTelemetry(payload)) {
+void TelemetryController::sendTelemetryPayload(const char *payload) {
+    if (iothubClient->sendTelemetry(payload)) {
         // flash the Azure LED
         digitalWrite(LED_AZURE, 1);
         delay(500);
@@ -272,7 +254,7 @@ void sendTelemetryPayload(const char *payload) {
     }
 }
 
-void sendStateChange() {
+void TelemetryController::sendStateChange() {
     char stateChangePayload[STRING_BUFFER_4096] = {0};
     char value[STRING_BUFFER_16] = {0};
 
@@ -295,96 +277,4 @@ void sendStateChange() {
     stateChangePayload[length] = char(0);
 
     sendTelemetryPayload(stateChangePayload);
-}
-
-void rollDieAnimation(int value) {
-    char die1[] = {
-        '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '.', '.', '!', '@', '.', '.', '>',
-        '<', '.', '.', '#', '$', '.', '.', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-
-    char die2[] = {
-        '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
-        '<', '!', '@', '.', '.', '.', '.', '>',
-        '<', '#', '$', '.', '.', '.', '.', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '.', '.', '.', '.', '!', '@', '>',
-        '<', '.', '.', '.', '.', '#', '$', '>',
-        '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-
-    char die3[] = {
-        '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
-        '<', '!', '@', '.', '.', '.', '.', '>',
-        '<', '#', '$', '.', '.', '.', '.', '>',
-        '<', '.', '.', '!', '@', '.', '.', '>',
-        '<', '.', '.', '#', '$', '.', '.', '>',
-        '<', '.', '.', '.', '.', '!', '@', '>',
-        '<', '.', '.', '.', '.', '#', '$', '>',
-        '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-
-    char die4[] = {
-        '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '.', '.', '.', '.', '.', '.', '>',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-
-    char die5[] = {
-        '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '<', '.', '.', '!', '@', '.', '.', '>',
-        '<', '.', '.', '#', '$', '.', '.', '>',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-
-    char die6[] = {
-        '1', 'T', 'T', 'T', 'T', 'T', 'T', '2',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '<', '!', '@', '.', '.', '!', '@', '>',
-        '<', '#', '$', '.', '.', '#', '$', '>',
-        '3', 'b', 'b', 'b', 'b', 'b', 'b', '4'};
-
-    char *die[] = { die1, die2, die3, die4, die5, die6 };
-    const int numberOfRolls = 3;
-    char *roll[numberOfRolls + 1];
-    char uniqueRolls[6] = {0};
-    uniqueRolls[value - 1] = 1;
-
-    for (int i = 0; i < numberOfRolls; i++) {
-re_roll:
-        int dieRoll = random(0, 6);
-        if (uniqueRolls[dieRoll] != 0) goto re_roll;
-        uniqueRolls[dieRoll] = 1;
-
-        roll[i] = die[dieRoll];
-    }
-    roll[numberOfRolls] = die[value - 1];
-
-    // detach stack alloc
-    {
-        unsigned char buffer[(numberOfRolls + 1) * OLED_SINGLE_FRAME_BUFFER] = {0};
-        Screen.clean();
-        for(int i = 0; i < numberOfRolls + 1; i++) {
-            AnimationController::renderFrameToBuffer(buffer + (i * OLED_SINGLE_FRAME_BUFFER), roll[i]);
-        }
-
-        // show the animation
-        AnimationController::renderFrameToScreen(buffer, numberOfRolls + 1, true, 100);
-    }
-
-    delay(1200); // to keep last number on the screen longer
 }

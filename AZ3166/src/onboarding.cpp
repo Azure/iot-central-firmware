@@ -6,40 +6,47 @@
 #include <AZ3166WiFi.h>
 #include <EEPROMInterface.h>
 
-#include "../inc/mainInitialize.h"
+#include "../inc/onboarding.h"
 #include "../inc/wifi.h"
 #include "../inc/webServer.h"
 #include "../inc/config.h"
 #include "../inc/httpHtmlData.h"
 
-bool setupWasCompleted = false;
+void OnboardingController::initializeConfigurationSetup() {
+    LOG_VERBOSE("OnboardingController::initializeConfigurationSetup");
 
-// forward declarations
-void processResultRequest(WiFiClient client, String request);
-void processStartRequest(WiFiClient client);
-
-void initializeSetup() {
-    assert(Globals::needsInitialize == true);
-    Globals::needsInitialize = false;
+    assert(initializeCompleted == false);
 
     // enter AP mode
-    Globals::wiFiController.initApWiFi();
-    LOG_VERBOSE("initApWifi: %d \r\n", Globals::wiFiController.getIsConnected());
+    bool initWiFi = Globals::wiFiController.initApWiFi();
+    LOG_VERBOSE("initApWifi: %d \r\n", init);
 
-    // setup web server
-    Globals::webServer.start();
+    if (initWiFi) {
+        // setup web server
+        assert(webServer == NULL);
+        webServer = new AzWebServer();
+        webServer->start();
+        initializeCompleted = true;
+    } else {
+        LOG_ERROR("OnboardingController WiFi initialize has failed.");
+    }
 }
 
-void initializeLoop() {
-    // if we are about to reset then stop processing any requests
-    if (Globals::needsInitialize) {
-        delay(1);
-        return;
+void OnboardingController::loop() {
+    if (!initializeCompleted) {
+        Screen.clean();
+        Screen.print(0, "oopps..");
+        Screen.print(1, "Unable to create");
+        Screen.print(2, "a WiFi HotSpot.");
+        Screen.print(3, "Press ('Reset')");
+        delay(2000);
+        return; // do not recall initializeConfigurationSetup here (stack-overflow)
     }
 
+    assert(initializeCompleted == true);
     LOG_VERBOSE("initializeLoop: list for incoming clients");
 
-    WiFiClient client = Globals::webServer.getClient();
+    WiFiClient client = webServer->getClient();
     if (client) // ( _pTcpSocket != NULL )
     {
         LOG_VERBOSE("initializeLoop: new client");
@@ -68,7 +75,7 @@ void initializeLoop() {
                         processResultRequest(client, request);
                     } else if (requestMethod.startsWith("GET /COMPLETE")) {
                         LOG_VERBOSE("-> request GET /COMPLETE");
-                        if (setupWasCompleted) {
+                        if (setupCompleted) {
                             client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
                             Screen.clean();
                             Screen.print(0, "Setup Completed!\r\n\r\nPress 'reset'\r\n    to restart..");
@@ -103,13 +110,18 @@ void initializeLoop() {
     }
 }
 
-void initializeCleanup() {
-    Globals::needsInitialize = true;
-    Globals::webServer.stop();
+void OnboardingController::cleanup() {
+    assert(initializeCompleted == false);
+
+    initializeCompleted = false;
+    if (webServer != NULL) {
+        delete webServer;
+        webServer = NULL;
+    }
     Globals::wiFiController.shutdownApWiFi();
 }
 
-void processStartRequest(WiFiClient client) {
+void OnboardingController::processStartRequest(WiFiClient &client) {
     int count = 0;
     String *networks = Globals::wiFiController.getWifiNetworks(count);
     if (networks == NULL) {
@@ -133,7 +145,7 @@ void processStartRequest(WiFiClient client) {
     client.write((uint8_t*)startPageHtml.c_str(), startPageHtml.length());
 }
 
-void processResultRequest(WiFiClient client, String request) {
+void OnboardingController::processResultRequest(WiFiClient &client, String &request) {
     String data = request.substring(request.indexOf('?') + 1, request.indexOf(" HTTP/"));
     const unsigned dataLength = data.length() + 1;
     char buff[dataLength] = {0};
@@ -232,7 +244,7 @@ void processResultRequest(WiFiClient client, String request) {
     snprintf(*configData, 3, "%d", checkboxState);
     ConfigController::storeIotCentralConfig(configData);
 
-    setupWasCompleted = true;
+    setupCompleted = true;
     LOG_VERBOSE("Successfully processed the configuration request.");
     client.write((uint8_t*)HTTP_REDIRECT_RESPONSE, sizeof(HTTP_REDIRECT_RESPONSE) - 1);
 }

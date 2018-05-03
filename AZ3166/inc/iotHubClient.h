@@ -28,6 +28,7 @@ class IoTHubClient
     bool needsCopying;
     char displayHubName[AZ3166_DISPLAY_MAX_COLUMN + 1];
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
+    int trackingId;
 
     void checkConnection() {
         if (needsReconnect) {
@@ -51,10 +52,11 @@ class IoTHubClient
     void closeIotHubClient();
 
 public:
-    IoTHubClient(): hasError(false),
-                    needsReconnect(false), displayCharPos(0),
+    IoTHubClient(): hasError(false), displayCharPos(0),
                     waitCount(3), needsCopying(true),
-                    iotHubClientHandle(NULL)
+                    iotHubClientHandle(NULL), trackingId(0),
+                    methodCallbackCount(0), desiredCallbackCount(0),
+                    needsReconnect(false)
     {
         memset(deviceId, 0, IOT_CENTRAL_MAX_LEN);
         memset(hubName,  0, IOT_CENTRAL_MAX_LEN);
@@ -78,6 +80,10 @@ public:
 
     void displayDeviceInfo(); // TODO: should this go under device?
 
+    int methodCallbackCount;
+    int desiredCallbackCount;
+    CALLBACK_LOOKUP methodCallbackList[MAX_CALLBACK_COUNT];
+    CALLBACK_LOOKUP desiredCallbackList[MAX_CALLBACK_COUNT];
     bool needsReconnect;
 };
 
