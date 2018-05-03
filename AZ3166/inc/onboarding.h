@@ -11,13 +11,15 @@ class AzWebServer;
 
 class OnboardingController: public LoopController {
     bool setupCompleted;
+    bool pincodePasses;
     AzWebServer * webServer;
 
     void initializeConfigurationSetup();
     void processStartRequest(WiFiClient &client);
     void processResultRequest(WiFiClient &client, String &request);
 
-    OnboardingController(): setupCompleted(false), webServer(NULL)
+    OnboardingController(): setupCompleted(false), pincodePasses(false),
+                            webServer(NULL)
     {
         initializeConfigurationSetup();
     }

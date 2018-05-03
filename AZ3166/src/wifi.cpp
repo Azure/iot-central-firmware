@@ -9,25 +9,23 @@
 bool WiFiController::initApWiFi() {
     LOG_VERBOSE("- WiFiController::initApWiFi");
 
-    char ap_name[STRING_BUFFER_32] = {0};
     byte mac[6] = {0};
     WiFi.macAddress(mac);
-    unsigned length = snprintf(ap_name, STRING_BUFFER_32 - 1, "AZ3166_%c%c%c%c%c%c",
+    unsigned length = snprintf(apName, STRING_BUFFER_32 - 1, "AZ3166_%c%c%c%c%c%c",
             mac[0] % 26 + 65, mac[1]% 26 + 65, mac[2]% 26 + 65, mac[3]% 26 + 65,
             mac[4]% 26 + 65, mac[5]% 26 + 65);
-    ap_name[length] = char(0);
+    apName[length] = char(0);
 
-    char macAddress[STRING_BUFFER_32] = {0};
-    length = snprintf(macAddress, STRING_BUFFER_32 - 1, "mac:%02X%02X%02X%02X%02X%02X",
+    length = snprintf(macAddress, STRING_BUFFER_16, "%02X%02X%02X%02X%02X%02X",
             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     macAddress[length] = char(0);
+    LOG_VERBOSE("MAC address %s", macAddress);
 
-    int ret = WiFi.beginAP(ap_name, "");
+    memcpy(password, macAddress, 4);
+    password[4] = 0;
 
-    Screen.print(0, "WiFi name:");
-    Screen.print(1, ap_name);
-    Screen.print(2, macAddress);
-    Screen.print(3, "go-> 192.168.0.1");
+    // passcode below is not widely compatible. See the password is used as pincode for onboarding
+    int ret = WiFi.beginAP(apName, "");
 
     if ( ret != WL_CONNECTED) {
       Screen.print(0, "AP Failed:");

@@ -41,6 +41,14 @@ void OnboardingController::loop() {
         Screen.print(3, "Press ('Reset')");
         delay(2000);
         return; // do not recall initializeConfigurationSetup here (stack-overflow)
+    } else {
+        Screen.clean();
+        Screen.print(0, "Connect HotSpot:");
+        Screen.print(1, Globals::wiFiController.getAPName());
+        Screen.print(2, "go-> 192.168.0.1");
+        char buffer[STRING_BUFFER_32] = {0};
+        snprintf(buffer, STRING_BUFFER_32, "PIN CODE %s", Globals::wiFiController.getPassword());
+        Screen.print(3, buffer);
     }
 
     assert(initializeCompleted == true);
@@ -206,6 +214,12 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
             {
                 if (strncmp(key, "ACCEL", 5) == 0) {
                     checkboxState = checkboxState | ACCEL_CHECKED;
+                } else if (strncmp(key, "PINCO", 5) == 0) {
+                    if (valueLength > 4 || strncmp(value, Globals::wiFiController.getPassword(), 4) != 0) {
+                        LOG_ERROR("WRONG PIN CODE");
+                    } else {
+                        pincodePasses = true;
+                    }
                 } else {
                     unknown = true;
                 }
@@ -232,7 +246,11 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
         LOG_ERROR("Missing ssid, password or connStr. Responsed with START page");
         processStartRequest(client);
         return;
+    } else if (!pincodePasses) {
+        client.write((uint8_t*)HTTP_REDIRECT_WRONG_PINCODE, sizeof(HTTP_REDIRECT_WRONG_PINCODE) - 1);
+        return;
     }
+
     // store the settings in EEPROM
     assert(ssid.getLength() != 0 && password.getLength() != 0);
     ConfigController::storeWiFi(ssid, password);
