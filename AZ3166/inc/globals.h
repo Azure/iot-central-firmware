@@ -37,8 +37,6 @@
 
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
-class AzWebServer;
-class IoTHubClient;
 class WiFiController;
 class SensorController;
 class LoopController;

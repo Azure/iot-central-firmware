@@ -119,7 +119,7 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
         AnimationController::renderFrameToScreen(buffer, 2, true, 20);
     }
 
-    incrementDesiredCount();
+    StatsController::incrementDesiredCount();
 
     if (response != NULL) {
         *response = (char*) Globals::completedString;
@@ -176,7 +176,7 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
     char *voltage[] = {voltage1, voltage2, voltage3, voltage2};
     animateCircular(voltage, 4);
 
-    incrementDesiredCount();
+    StatsController::incrementDesiredCount();
 
     if (response != NULL) {
         *response = (char*) Globals::completedString;
@@ -221,7 +221,7 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
     char *current[] = {current1, current2, current3, current2};
     animateCircular(current, 4);
 
-    incrementDesiredCount();
+    StatsController::incrementDesiredCount();
 
     *response = (char*) Globals::completedString;
     return 200; /* status */
@@ -235,7 +235,7 @@ int irOnDesiredChange(const char *message, size_t size, char **response, size_t*
 
     Globals::sensorController.transmitIR();
 
-    incrementDesiredCount();
+    StatsController::incrementDesiredCount();
 
     *response = (char*) Globals::completedString;
     return 200; /* status */

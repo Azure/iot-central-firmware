@@ -1,19 +1,28 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. 
+// Licensed under the MIT license.
 
 #ifndef STATS_H
 #define STATS_H
 
-void clearCounters();
+// SINGLETON
+class StatsController {
+    static int telemetryCount;
+    static int reportedCount;
+    static int desiredCount;
+    static int errorCount;
 
-void incrementReportedCount();
-void incrementErrorCount();
-void incrementTelemetryCount();
-void incrementDesiredCount();
+public:
+    static void clearCounters();
 
-int getReportedCount();
-int getErrorCount();
-int getTelemetryCount();
-int getDesiredCount();
+    static void incrementReportedCount();
+    static void incrementErrorCount();
+    static void incrementTelemetryCount();
+    static void incrementDesiredCount();
+
+    static int getReportedCount();
+    static int getErrorCount();
+    static int getTelemetryCount();
+    static int getDesiredCount();
+};
 
 #endif /* STATS_H */

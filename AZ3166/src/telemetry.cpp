@@ -59,7 +59,7 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     DeviceControl::showState();
 
     // clear all the stat counters
-    clearCounters();
+    StatsController::clearCounters();
 
     assert(iotCentralConfig != NULL);
     telemetryState = strtol(iotCentralConfig, NULL, 10);
@@ -123,10 +123,10 @@ void TelemetryController::loop() {
 
         if (iothubClient->sendReportedProperty(shakeProperty.c_str())) {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
-            incrementReportedCount();
+            StatsController::incrementReportedCount();
         } else {
             LOG_ERROR("Reported property dieNumber failed to during sending");
-            incrementErrorCount();
+            StatsController::incrementErrorCount();
         }
         lastShakeTime = millis();
     }
@@ -144,8 +144,10 @@ void TelemetryController::loop() {
             snprintf(buff, STRING_BUFFER_128 - 1,
                     "%s\r\nsent: %d\r\nfail: %d\r\ntwin: %d/%d",
                     "-- Connected --",
-                    getTelemetryCount(), getErrorCount(), getDesiredCount(),
-                    getReportedCount());
+                    StatsController::getTelemetryCount(),
+                    StatsController::getErrorCount(),
+                    StatsController::getDesiredCount(),
+                    StatsController::getReportedCount());
 
             Screen.print(0, buff);
         }
@@ -245,12 +247,12 @@ void TelemetryController::sendTelemetryPayload(const char *payload) {
         digitalWrite(LED_AZURE, 1);
         delay(500);
         digitalWrite(LED_AZURE, 0);
-        incrementTelemetryCount();
+        StatsController::incrementTelemetryCount();
     } else {
         digitalWrite(LED_USER, 1);
         delay(500);
         digitalWrite(LED_USER, 0);
-        incrementErrorCount();
+        StatsController::incrementErrorCount();
     }
 }
 

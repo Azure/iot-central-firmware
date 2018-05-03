@@ -138,7 +138,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
 
     if (hubResult != IOTHUB_CLIENT_OK) {
         LOG_ERROR("IoTHubClient_LL_SendEventAsync..........FAILED hubResult is (%d)", hubResult);
-        incrementErrorCount();
+        StatsController::incrementErrorCount();
         IoTHubMessage_Destroy(currentMessage->messageHandle);
         free(currentMessage);
         return false;
@@ -367,7 +367,7 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
     if (buffer.getLength() == 0) {
         LOG_ERROR("Desired property %s failed to be echoed back as a reported \
             property (OUT OF MEMORY)", propertyName);
-        incrementErrorCount();
+        StatsController::incrementErrorCount();
         return;
     }
 
@@ -383,10 +383,10 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
     if (telemetryController != NULL && telemetryController->getHubClient() != NULL &&
         telemetryController->getHubClient()->sendReportedProperty(*buffer)) {
         LOG_VERBOSE("Desired property %s successfully echoed back as a reported property.", propertyName);
-        incrementReportedCount();
+        StatsController::incrementReportedCount();
     } else {
         LOG_ERROR("Desired property %s failed to be echoed back as a reported property.", propertyName);
-        incrementErrorCount();
+        StatsController::incrementErrorCount();
     }
 }
 
