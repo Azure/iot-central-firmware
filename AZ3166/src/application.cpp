@@ -33,7 +33,7 @@ bool ApplicationController::loop() {
         DeviceControl::IsButtonClicked(USER_BUTTON_B)) {
 
         Screen.clean();
-        Screen.print(0, "Device resetting..");
+        Screen.print(0, "RE-initializing...");
         delay(1000);  //artificial pause
         Screen.clean();
         ConfigController::clearAllConfig();

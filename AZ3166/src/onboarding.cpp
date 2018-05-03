@@ -41,7 +41,7 @@ void OnboardingController::loop() {
         Screen.print(3, "Press ('Reset')");
         delay(2000);
         return; // do not recall initializeConfigurationSetup here (stack-overflow)
-    } else {
+    } else if (!setupCompleted) {
         Screen.clean();
         Screen.print(0, "Connect HotSpot:");
         Screen.print(1, Globals::wiFiController.getAPName());
@@ -84,9 +84,11 @@ void OnboardingController::loop() {
                     } else if (requestMethod.startsWith("GET /COMPLETE")) {
                         LOG_VERBOSE("-> request GET /COMPLETE");
                         if (setupCompleted) {
-                            client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
                             Screen.clean();
-                            Screen.print(0, "Setup Completed!\r\n\r\nPress 'reset'\r\n    to restart..");
+                            Screen.print(0, "Completed!");
+                            Screen.print(2, "Press 'reset'");
+                            Screen.print(3, "         now :)");
+                            client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
                         } else {
                             LOG_ERROR("User has landed on COMPLETE page without actually completing the setup. Writing the START page to client.");
                             processStartRequest(client);
