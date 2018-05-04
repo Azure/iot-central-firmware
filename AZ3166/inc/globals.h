@@ -68,6 +68,10 @@ struct Globals
 #define SERIAL_VERBOSE_LOGGING_ENABLED false
 #define IOTHUB_TRACE_LOG_ENABLED       false
 
+// To enable Fan Sound experiment, comment out the line below
+// CAUTION: Fan sound is aprox 80KB . So, make sure you got enough sram left ;)
+// #define ENABLE_FAN_SOUND
+
 #if SERIAL_VERBOSE_LOGGING_ENABLED != 1
 #define LOG_VERBOSE(...)
 #else

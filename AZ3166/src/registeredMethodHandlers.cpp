@@ -108,9 +108,11 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
 
     LOG_VERBOSE("fanSpeed desired property just got called");
 
+#ifdef ENABLE_FAN_SOUND
     // turn on the fan - sound
     AudioClass& Audio = AudioClass::getInstance();
     Audio.startPlay(fanSoundData, FAN_SOUND_DATA_SIZE);
+#endif // ENABLE_FAN_SOUND
 
     unsigned char buffer[2 * OLED_SINGLE_FRAME_BUFFER] = {0};
     Screen.clean();
