@@ -59,7 +59,7 @@ struct Globals
 #define IOT_CENTRAL_ZONE_IDX      0x02
 #define IOT_CENTRAL_MAX_LEN       STRING_BUFFER_128
 #define AZIOTC_FW_MAJOR_VERSION 1
-#define AZIOTC_FW_MINOR_VERSION 0
+#define AZIOTC_FW_MINOR_VERSION 1
 #define AZIOTC_FW_PATCH_VERSION 0
 #define AZIOTC_FW_VERSION         TO_STRING(AZIOTC_FW_MAJOR_VERSION AZIOTC_FW_MINOR_VERSION AZIOTC_FW_PATCH_VERSION) "-MSIOTC"
 
@@ -67,6 +67,10 @@ struct Globals
 
 #define SERIAL_VERBOSE_LOGGING_ENABLED false
 #define IOTHUB_TRACE_LOG_ENABLED       false
+
+// To enable Fan Sound experiment, comment out the line below
+// CAUTION: Fan sound is aprox 80KB . So, make sure you got enough sram left ;)
+// #define ENABLE_FAN_SOUND
 
 #if SERIAL_VERBOSE_LOGGING_ENABLED != 1
 #define LOG_VERBOSE(...)

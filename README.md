@@ -1,6 +1,9 @@
 # Azure IoT Central Firmware
 
-Reference firmware implementation repository for Azure IoT Central supported devices.
+Reference firmware implementation repository for some of the supported devices.
+
+- **Are you looking for a particular device sample?**
+Create an issue on this repository and let us know.
 
 ## Contents
 
@@ -9,11 +12,11 @@ Reference firmware implementation repository for Azure IoT Central supported dev
 
 ## Status
 
-This project is in active development.
+This project is in active development. Check our roadmap below; (have an idea? create an issue on this repo.)
 
-## Support
-
-To report issues, please contact [Technical Support](https://aka.ms/iotcentral-create-technical-support-ticket).
+- Sound activated cloud event
+- Update device states on the cloud
+- Show Watchdog usage
 
 ## Reporting Security Issues
 
