@@ -19,7 +19,7 @@ void OnboardingController::initializeConfigurationSetup() {
 
     // enter AP mode
     bool initWiFi = Globals::wiFiController.initApWiFi();
-    LOG_VERBOSE("initApWifi: %d \r\n", init);
+    LOG_VERBOSE("initApWifi: %d", initWiFi);
 
     if (initWiFi) {
         // setup web server

@@ -159,10 +159,10 @@ bool IoTHubClient::sendReportedProperty(const char *payload) {
     bool retValue = true;
 
     IOTHUB_CLIENT_RESULT result = IoTHubClient_LL_SendReportedState(iotHubClientHandle,
-        (const unsigned char*)payload, strlen(payload), deviceTwinConfirmationCallback, NULL);
+        (const unsigned char*)payload, strlen(payload), deviceTwinConfirmationCallback, (void*) payload);
 
     if (result != IOTHUB_CLIENT_OK) {
-        LogError("Failure sending reported property!!!");
+        LOG_ERROR("Failure sending reported property!!!");
         retValue = false;
     }
 
@@ -203,7 +203,10 @@ bool IoTHubClient::registerDesiredProperty(const char *propertyName, hubMethodCa
 
 void IoTHubClient::closeIotHubClient()
 {
-    IoTHubClient_LL_Destroy(iotHubClientHandle);
+    if (iotHubClientHandle != NULL) {
+        IoTHubClient_LL_Destroy(iotHubClientHandle);
+        iotHubClientHandle = NULL;
+    }
 }
 
 static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
@@ -313,11 +316,11 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
         const char * message_template = "{\"Response\":%s}";
         const int template_size = strlen(message_template) - 2 /* %s */;
         uint32_t message_size = responseSize + template_size;
-        char *tmp_string = (char*) malloc(message_size + 1);
+        char *tmp_string = (char*) malloc(message_size + 2);
         if (tmp_string == NULL) {
             status = -1;
         } else {
-            snprintf(tmp_string, message_size, message_template, methodResponse);
+            snprintf(tmp_string, message_size + 1, message_template, methodResponse);
             tmp_string[message_size] = char(0);
             *response = reinterpret_cast<unsigned char*>(tmp_string);
             *resp_size = message_size;
@@ -331,39 +334,36 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
 void echoDesired(const char *propertyName, const char *message, const char *status, int statusCode) {
     JSObject rootObject(message);
     JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
-
+    LOG_ERROR("echoDesired is received - pn: %s m: %s s: %s sc: %d", propertyName, message, status, statusCode);
     const char* methodName = rootObject.getStringByName("methodName");
     if (methodName == NULL) {
-        LOG_ERROR("Object doesn't have a member 'methodName'");
-        return;
+        LOG_VERBOSE("Object doesn't have a member 'methodName'");
     }
 
     if (!rootObject.getObjectByName(propertyName, &propertyNameObject)) {
-        LOG_ERROR("Object doesn't have a member with propertyName");
-        return;
+        LOG_VERBOSE("Object doesn't have a member with propertyName");
     }
 
-    const char *value, *desiredVersion;
-    if (rootObject.getObjectByName("desired", &desiredObject)) {
-        if (!desiredObject.getObjectByName(propertyName, &desiredObjectPropertyName)) {
-            LOG_ERROR("desiredObject doesn't have a member with propertyName");
-            return;
-        }
+    double value = 0, desiredVersion = 0;
+    if (rootObject.getObjectByName("desired", &desiredObject) &&
+        desiredObject.getObjectByName(propertyName, &desiredObjectPropertyName)) {
 
-        value = desiredObjectPropertyName.getStringByName("value");
-        desiredVersion = desiredObject.getStringByName("$version");
+        value = desiredObjectPropertyName.getNumberByName("value");
+        desiredVersion = desiredObject.getNumberByName("$version");
     } else {
         propertyName = rootObject.getNameAt(0);
 
-        value = propertyNameObject.getStringByName("value");
-        desiredVersion = rootObject.getStringByName("$version");
+        value = propertyNameObject.getNumberByName("value");
+        desiredVersion = rootObject.getNumberByName("$version");
     }
 
-    const char* echoTemplate = "{\"%s\":{\"value\":%s, \"statusCode\":%d, \
-        \"status\":\"%s\", \"desiredVersion\":%s}}";
-    uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName, value,
-        statusCode, status, desiredVersion);
-    AutoString buffer(buffer_size);
+    const char* echoTemplate = "{\"%s\":{\"value\":%d,\"statusCode\":%d,\"status\":\"%s\",\"desiredVersion\":%d}}";
+    uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName,
+        (int) value, // BAD HACK
+        statusCode, status, (int) desiredVersion);
+
+    AutoString buffer(buffer_size + 1); // +1 is a weird snprintf bug on arduino. needs more investigation
+
     if (buffer.getLength() == 0) {
         LOG_ERROR("Desired property %s failed to be echoed back as a reported \
             property (OUT OF MEMORY)", propertyName);
@@ -371,9 +371,10 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
         return;
     }
 
-    snprintf(*buffer, buffer_size, echoTemplate, propertyName, value, statusCode,
-             status, desiredVersion);
-    LOG_VERBOSE(*buffer);
+    snprintf(*buffer, buffer_size + 1, echoTemplate, propertyName,
+             (int) value, statusCode,
+             status, (int) desiredVersion);
+    LOG_ERROR("Sending reported property buffer: %s", *buffer);
 
     TelemetryController * telemetryController = NULL;
     if (Globals::loopController->withTelemetry()) {
@@ -382,6 +383,7 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
 
     if (telemetryController != NULL && telemetryController->getHubClient() != NULL &&
         telemetryController->getHubClient()->sendReportedProperty(*buffer)) {
+        buffer.makePersistent(); // will be freed under deviceTwinConfirmationCallback
         LOG_VERBOSE("Desired property %s successfully echoed back as a reported property.", propertyName);
         StatsController::incrementReportedCount();
     } else {
@@ -404,14 +406,18 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
         AutoString propName(propertyName, strlen(propertyName));
         strupr(*propName);
 
-        for(int i = 0; i < telemetryController->getHubClient()->desiredCallbackCount; i++) {
+        int i = 0;
+        for(; i < telemetryController->getHubClient()->desiredCallbackCount; i++) {
             if (strcmp(*propName, telemetryController->getHubClient()->desiredCallbackList[i].name) == 0) {
                 status = telemetryController->getHubClient()->desiredCallbackList[i].callback(payLoad,
                             size, &methodResponse, &responseSize);
                 echoDesired(propertyName, payLoad, methodResponse, status);
-                free(methodResponse);
                 break;
             }
+        }
+
+        if (i == telemetryController->getHubClient()->desiredCallbackCount) {
+            LOG_ERROR("Property Name '%s' is not found @callDesiredCallback", *propName);
         }
     }
 }
@@ -424,7 +430,7 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
     ((char*)payLoad)[size] = 0x00;
     JSObject payloadObject((const char *)payLoad);
 
-    if (update_state == DEVICE_TWIN_UPDATE_PARTIAL) {
+    if (update_state == DEVICE_TWIN_UPDATE_PARTIAL && payloadObject.getNameAt(0) != NULL) {
         callDesiredCallback(payloadObject.getNameAt(0), reinterpret_cast<const char*>(payLoad), size);
     } else {
         JSObject desired, reported;
@@ -440,9 +446,8 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
         payloadObject.getObjectByName("reported", &reported);
 
         for (unsigned i = 0, count = desired.getCount(); i < count; i++) {
-            JSObject item;
             const char * itemName = desired.getNameAt(i);
-            if (itemName[0] != '$') {
+            if (itemName != NULL && itemName[0] != '$') {
                 JSObject keyObject;
                 const char * version = NULL, * desiredVersion = NULL,
                            * value = NULL, * desiredValue = NULL;
@@ -475,8 +480,10 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
 }
 
 static void deviceTwinConfirmationCallback(int status_code, void* userContextCallback) {
-    assert(userContextCallback == NULL); // NOOP for now, so it should be NULL
     LOG_VERBOSE("DeviceTwin CallBack: Status_code = %u", status_code);
+    if (userContextCallback != NULL) {
+        free(userContextCallback);
+    }
 }
 
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,

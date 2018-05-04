@@ -121,8 +121,10 @@ void TelemetryController::loop() {
 
         AnimationController::rollDieAnimation(die);
 
-        if (iothubClient->sendReportedProperty(shakeProperty.c_str())) {
+        AutoString shakeString(shakeProperty.c_str(), shakeProperty.length());
+        if (iothubClient->sendReportedProperty(*shakeString)) {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
+            shakeString.makePersistent();
             StatsController::incrementReportedCount();
         } else {
             LOG_ERROR("Reported property dieNumber failed to during sending");
@@ -276,7 +278,6 @@ void TelemetryController::sendStateChange() {
 
     unsigned length = snprintf(stateChangePayload, STRING_BUFFER_4096 - 1,
                               statePayloadTemplate, "deviceState", value);
-    stateChangePayload[length] = char(0);
 
     sendTelemetryPayload(stateChangePayload);
 }

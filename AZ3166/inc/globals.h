@@ -66,7 +66,7 @@ struct Globals
 // LOGS
 
 #define SERIAL_VERBOSE_LOGGING_ENABLED false
-#define IOTHUB_TRACE_LOG_ENABLED false
+#define IOTHUB_TRACE_LOG_ENABLED       false
 
 #if SERIAL_VERBOSE_LOGGING_ENABLED != 1
 #define LOG_VERBOSE(...)
@@ -74,7 +74,8 @@ struct Globals
 #define LOG_VERBOSE(...) \
     do { \
         Serial.printf(__VA_ARGS__); \
-        Serial.printf('\r\n'); \
+        Serial.printf("\r\n"); \
+        delay(5); \
     } while(0)
 #endif
 
@@ -84,6 +85,7 @@ struct Globals
         Serial.printf("Error at %s:%d\r\n\t", __FILE__, __LINE__); \
         Serial.printf(__VA_ARGS__); \
         Serial.printf("\r\n"); \
+        delay(50); \
     } while(0)
 
 #endif // GLOBALS_H

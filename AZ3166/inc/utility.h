@@ -74,9 +74,10 @@ class JSObject
 private:
     JSON_Value* value;
     JSON_Object* object;
+    bool isSubObject;
 
     JSON_Object* toObject() {
-        JSON_Object* object = json_value_get_object(value);
+        object = json_value_get_object(value);
         if (object == NULL) {
             LOG_ERROR("JSON value is not an object");
             return NULL;
@@ -84,9 +85,9 @@ private:
         return object;
     }
 public:
-    JSObject(): object(NULL) { }
+    JSObject(): value(NULL), object(NULL), isSubObject(false) { }
 
-    JSObject(const char * json_string) {
+    JSObject(const char * json_string) : isSubObject(false) {
         value = json_parse_string(json_string);
         if (value == NULL) {
             LOG_ERROR("parsing JSON failed");
@@ -105,20 +106,24 @@ public:
     bool getObjectAt(unsigned index, JSObject * outJSObject);
 
     const char * getNameAt(unsigned index) {
+        assert(object != NULL);
+
         return json_object_get_name(object, index);
     }
 
     unsigned getCount() {
-        return (unsigned)json_object_get_count(object);
+        return object ? (unsigned)json_object_get_count(object) : 0;
     }
 
     bool hasProperty(const char * name) {
-        return json_object_has_value(object, name) == 1;
+        return object ? json_object_has_value(object, name) == 1 : false;
     }
 
     bool getObjectByName(const char * name, JSObject * outJSObject);
 
     const char * getStringByName(const char * name) {
+        assert(object != NULL);
+
         const char * text = json_object_get_string(object, name);
         if (text == NULL) {
             return NULL; // let consumer file the log
@@ -128,6 +133,7 @@ public:
     }
 
     double getNumberByName(const char * name) {
+        assert(object != NULL);
         // API returns 0.0 on fail hence it doesn't actually have a good
         // fail discovery strategy
         return json_object_get_number(object, name);
