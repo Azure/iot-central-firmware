@@ -2,65 +2,72 @@
 // Licensed under the MIT license.
 
 #include "../inc/globals.h"
+#include "../inc/wifi.h"
 #include "AZ3166WiFi.h"
 #include "../inc/config.h"
 
-bool initApWiFi() {
-    char ap_name[STRING_BUFFER_32] = {0};
+bool WiFiController::initApWiFi() {
+    LOG_VERBOSE("- WiFiController::initApWiFi");
+
     byte mac[6] = {0};
     WiFi.macAddress(mac);
-    unsigned length = snprintf(ap_name, STRING_BUFFER_32 - 1, "AZ3166_%c%c%c%c%c%c",
+    unsigned length = snprintf(apName, STRING_BUFFER_32 - 1, "AZ3166_%c%c%c%c%c%c",
             mac[0] % 26 + 65, mac[1]% 26 + 65, mac[2]% 26 + 65, mac[3]% 26 + 65,
             mac[4]% 26 + 65, mac[5]% 26 + 65);
-    ap_name[length] = char(0);
+    apName[length] = char(0);
 
-    char macAddress[STRING_BUFFER_32] = {0};
-    length = snprintf(macAddress, STRING_BUFFER_32 - 1, "mac:%02X%02X%02X%02X%02X%02X",
+    length = snprintf(macAddress, STRING_BUFFER_16, "%02X%02X%02X%02X%02X%02X",
             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     macAddress[length] = char(0);
+    LOG_VERBOSE("MAC address %s", macAddress);
 
-    int ret = WiFi.beginAP(ap_name, "");
+    memcpy(password, macAddress, 4);
+    password[4] = 0;
 
-    Screen.print(0, "WiFi name:");
-    Screen.print(1, ap_name);
-    Screen.print(2, macAddress);
-    Screen.print(3, "go-> 192.168.0.1");
+    // passcode below is not widely compatible. See the password is used as pincode for onboarding
+    int ret = WiFi.beginAP(apName, "");
 
     if ( ret != WL_CONNECTED) {
       Screen.print(0, "AP Failed:");
       Screen.print(2, "Reboot device");
       Screen.print(3, "and try again");
-      Serial.println("AP creation failed");
+      LOG_ERROR("AP creation failed");
       return false;
     }
-    Serial.println("AP started");
+    LOG_VERBOSE("AP started");
     return true;
 }
 
-bool initWiFi() {
-    bool connected = false;
-    Screen.print("WiFi \r\n \r\nConnecting...\r\n             \r\n");
+bool WiFiController::initWiFi() {
+    LOG_VERBOSE("- WiFiController::initWiFi");
+    Screen.clean();
+    Screen.print("WiFi \r\n \r\nConnecting...");
 
     if(WiFi.begin() == WL_CONNECTED) {
-        Serial.println("WiFi WL_CONNECTED");
+        LOG_VERBOSE("WiFi WL_CONNECTED");
         digitalWrite(LED_WIFI, 1);
-        connected = true;
+        isConnected = true;
     } else {
         Screen.print("WiFi\r\nNot Connected\r\nEnter AP Mode?\r\n");
     }
 
-    return connected;
+    return isConnected;
 }
 
-void shutdownWiFi() {
+void WiFiController::shutdownWiFi() {
+    LOG_VERBOSE("- WiFiController::shutdownWiFi");
     WiFi.disconnect();
+    isConnected = false;
 }
 
-void shutdownApWiFi() {
+void WiFiController::shutdownApWiFi() {
+    LOG_VERBOSE("- WiFiController::shutdownApWiFi");
     WiFi.disconnectAP();
+    isConnected = false;
 }
 
-String * getWifiNetworks(int &count) {
+String * WiFiController::getWifiNetworks(int &count) {
+    LOG_VERBOSE("- WiFiController::getWifiNetworks");
     String foundNetworks = "";  // keep track of network SSID so as to remove duplicates from mesh and repeater networks
     int numSsid = WiFi.scanNetworks();
     count = 0;
@@ -98,7 +105,8 @@ String * getWifiNetworks(int &count) {
     }
 }
 
-void displayNetworkInfo() {
+void WiFiController::displayNetworkInfo() {
+    LOG_VERBOSE("- WiFiController::displayNetworkInfo");
     char buff[STRING_BUFFER_128] = {0};
     IPAddress ip = WiFi.localIP();
     byte mac[6] = {0};

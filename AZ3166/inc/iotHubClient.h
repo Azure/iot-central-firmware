@@ -20,7 +20,6 @@ typedef struct EVENT_INSTANCE_TAG {
 
 class IoTHubClient
 {
-    bool traceOn;
     bool hasError;
     char deviceId[IOT_CENTRAL_MAX_LEN];
     char hubName[IOT_CENTRAL_MAX_LEN];
@@ -29,11 +28,12 @@ class IoTHubClient
     bool needsCopying;
     char displayHubName[AZ3166_DISPLAY_MAX_COLUMN + 1];
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
+    int trackingId;
 
     void checkConnection() {
         if (needsReconnect) {
             // simple reconnection of the client in the event of a disconnect
-            Serial.println("Reconnecting to the IoT Hub");
+            LOG_VERBOSE("Reconnecting to the IoT Hub");
             closeIotHubClient();
             initIotHubClient();
 
@@ -52,10 +52,11 @@ class IoTHubClient
     void closeIotHubClient();
 
 public:
-    IoTHubClient(bool traceOn_): traceOn(traceOn_), hasError(false),
-                                 needsReconnect(false), displayCharPos(0),
-                                 waitCount(3), needsCopying(true),
-                                 iotHubClientHandle(NULL)
+    IoTHubClient(): hasError(false), displayCharPos(0),
+                    waitCount(3), needsCopying(true),
+                    iotHubClientHandle(NULL), trackingId(0),
+                    methodCallbackCount(0), desiredCallbackCount(0),
+                    needsReconnect(false)
     {
         memset(deviceId, 0, IOT_CENTRAL_MAX_LEN);
         memset(hubName,  0, IOT_CENTRAL_MAX_LEN);
@@ -79,6 +80,10 @@ public:
 
     void displayDeviceInfo(); // TODO: should this go under device?
 
+    int methodCallbackCount;
+    int desiredCallbackCount;
+    CALLBACK_LOOKUP methodCallbackList[MAX_CALLBACK_COUNT];
+    CALLBACK_LOOKUP desiredCallbackList[MAX_CALLBACK_COUNT];
     bool needsReconnect;
 };
 

@@ -21,16 +21,16 @@ bool DeviceControl::IsButtonClicked(unsigned char ulPin)
 void DeviceControl::showState() {
     switch(deviceState) {
         case NORMAL:
-            setLedColor(0x00, 0xFF, 0x00);
+            Globals::sensorController.setLedColor(0x00, 0xFF, 0x00);
             break;
         case CAUTION:
-            setLedColor(0xFF, 0xC2, 0x00);
+            Globals::sensorController.setLedColor(0xFF, 0xC2, 0x00);
             break;
         case DANGER:
-            setLedColor(0xFF, 0x00, 0x00);
+            Globals::sensorController.setLedColor(0xFF, 0x00, 0x00);
             break;
         default:
-            turnLedOff();
+            Globals::sensorController.turnLedOff();
     }
 }
 

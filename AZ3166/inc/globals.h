@@ -13,6 +13,13 @@
 #define TO_STRING_(s) #s
 #define TO_STRING(s) TO_STRING_(s)
 
+#define HUMIDITY_CHECKED 0x01
+#define MAG_CHECKED 0x02
+#define TEMP_CHECKED 0x04
+#define PRESSURE_CHECKED 0x08
+#define ACCEL_CHECKED 0x10
+#define GYRO_CHECKED 0x20
+
 #define STRING_BUFFER_16     16
 #define STRING_BUFFER_32     32
 #define STRING_BUFFER_128   128
@@ -20,18 +27,26 @@
 #define STRING_BUFFER_1024 1024
 #define STRING_BUFFER_4096 4096
 
+#define OLED_SINGLE_FRAME_BUFFER 576
+
+#define TELEMETRY_SEND_INTERVAL 5000
+#define TELEMETRY_REPORTED_SEND_INTERVAL 2000
+#define TELEMETRY_SWITCH_DEBOUNCE_TIME 250
+
+#define NTP_SYNC_PERIOD (24 * 60 * 60 * 1000)
+
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
-class AzWebServer;
-class IoTHubClient;
+class WiFiController;
+class SensorController;
+class LoopController;
 
 struct Globals
 {
-    static  bool            isConfigured; // default: false
-    static  bool            needsInitialize; // default: true
-    static  AzWebServer     webServer;
-    static  const char *    completedString; // \"completed\"
-    static  IoTHubClient *  iothubClient;
+    static  const char *            completedString; // \"completed\"
+    static  WiFiController          wiFiController;
+    static  SensorController        sensorController;
+    static  LoopController *        loopController;
 };
 
 // IOT HUB
@@ -50,7 +65,27 @@ struct Globals
 
 // LOGS
 
-#define LOG_ERROR(str) \
-    Serial.printf("Error: %s at %s:%d\r\n", str, __FILE__, __LINE__)
+#define SERIAL_VERBOSE_LOGGING_ENABLED false
+#define IOTHUB_TRACE_LOG_ENABLED       false
+
+#if SERIAL_VERBOSE_LOGGING_ENABLED != 1
+#define LOG_VERBOSE(...)
+#else
+#define LOG_VERBOSE(...) \
+    do { \
+        Serial.printf(__VA_ARGS__); \
+        Serial.printf("\r\n"); \
+        delay(5); \
+    } while(0)
+#endif
+
+// Log Errors no matter what
+#define LOG_ERROR(...) \
+    do { \
+        Serial.printf("Error at %s:%d\r\n\t", __FILE__, __LINE__); \
+        Serial.printf(__VA_ARGS__); \
+        Serial.printf("\r\n"); \
+        delay(50); \
+    } while(0)
 
 #endif // GLOBALS_H

@@ -8,20 +8,23 @@
 #include "LIS2MDLSensor.h"
 #include "HTS221Sensor.h"
 #include "LPS22HBSensor.h"
-#include "RGB_LED.h"
 #include "IrDASensor.h"
 
 #include "../inc/sensors.h"
 
-DevI2C *i2c;
-LSM6DSLSensor *accelGyro;
-LIS2MDLSensor *magnetometer;
-HTS221Sensor *tempHumidity;
-LPS22HBSensor *pressure;
-RGB_LED rgbLed;
-IRDASensor *irdaSensor;
+#define FREEMEM(d) if (d != NULL) { delete d; d = NULL; }
+SensorController::~SensorController() {
+    FREEMEM(i2c)
+    FREEMEM(accelGyro)
+    FREEMEM(magnetometer)
+    FREEMEM(tempHumidity)
+    FREEMEM(pressure)
+    FREEMEM(irdaSensor)
+}
+#undef FREEMEM
 
-void initSensors() {
+void SensorController::initSensors() {
+    LOG_VERBOSE("- SensorController::initSensors");
     // LSM6DSL
     i2c = new DevI2C(D14, D15);
     accelGyro = new LSM6DSLSensor(*i2c, D4, D5);
@@ -52,7 +55,15 @@ void initSensors() {
 }
 
 // HTS221
-float readHumidity() {
+float SensorController::readHumidity() {
+    LOG_VERBOSE("- SensorController::readHumidity");
+
+    assert(tempHumidity != NULL);
+    if (tempHumidity == NULL) {
+        LOG_ERROR("Trying to do readHumidity while the sensor wasn't initialized.");
+        return 0xFFFF;
+    }
+
     float humidityValue;
     tempHumidity->reset();
     if (tempHumidity->getHumidity(&humidityValue) == 0)
@@ -61,7 +72,15 @@ float readHumidity() {
         return 0xFFFF;
 }
 
-float readTemperature() {
+float SensorController::readTemperature() {
+    LOG_VERBOSE("- SensorController::readTemperature");
+
+    assert(tempHumidity != NULL);
+    if (tempHumidity == NULL) {
+        LOG_ERROR("Trying to do readTemperature while the sensor wasn't initialized.");
+        return 0xFFFF;
+    }
+
     float tempValue;
     tempHumidity->reset();
     if (tempHumidity->getTemperature(&tempValue) == 0)
@@ -71,7 +90,15 @@ float readTemperature() {
 }
 
 // LPS22HB
-float readPressure() {
+float SensorController::readPressure() {
+    LOG_VERBOSE("- SensorController::readPressure");
+
+    assert(pressure != NULL);
+    if (pressure == NULL) {
+        LOG_ERROR("Trying to do readPressure while the sensor wasn't initialized.");
+        return 0xFFFF;
+    }
+
     float presureValue;
     if (pressure->getPressure(&presureValue) == 0)
         return presureValue;
@@ -80,8 +107,20 @@ float readPressure() {
 }
 
 // LIS2MDL
-void readMagnetometer(int *axes) {
-    if (magnetometer->getMAxes(axes) != 0) {
+void SensorController::readMagnetometer(int *axes) {
+    LOG_VERBOSE("- SensorController::readMagnetometer");
+    bool hasFailed = false;
+
+    assert(magnetometer != NULL);
+    if (magnetometer == NULL) {
+        LOG_ERROR("Trying to do readMagnetometer while the sensor wasn't initialized.");
+        hasFailed = true;
+    }
+    else if (magnetometer->getMAxes(axes) != 0) {
+        hasFailed = true;
+    }
+
+    if (hasFailed) {
         axes[0] = 0xFFFF;
         axes[1] = 0xFFFF;
         axes[2] = 0xFFFF;
@@ -89,25 +128,60 @@ void readMagnetometer(int *axes) {
 }
 
 // LSM6DSL
-void readAccelerometer(int *axes) {
+void SensorController::readAccelerometer(int *axes) {
+    LOG_VERBOSE("- SensorController::readAccelerometer");
+    bool hasFailed = false;
+
+    assert(magnetometer != NULL);
+    if (magnetometer == NULL) {
+        LOG_ERROR("Trying to do readMagnetometer while the sensor wasn't initialized.");
+        hasFailed = true;
+    }
+
     if (accelGyro->getXAxes(axes) != 0) {
+        hasFailed = true;
+    }
+
+    if (hasFailed) {
         axes[0] = 0xFFFF;
         axes[1] = 0xFFFF;
         axes[2] = 0xFFFF;
     }
 }
 
-void readGyroscope(int *axes) {
+void SensorController::readGyroscope(int *axes) {
+    LOG_VERBOSE("- SensorController::readGyroscope");
+    bool hasFailed = false;
+
+    assert(accelGyro != NULL);
+    if (accelGyro == NULL) {
+        LOG_ERROR("Trying to do readGyroscope while the sensor wasn't initialized.");
+        hasFailed = true;
+    }
+
     if (accelGyro->getGAxes(axes) != 0) {
+        hasFailed = true;
+    }
+
+    if (hasFailed) {
         axes[0] = 0xFFFF;
         axes[1] = 0xFFFF;
         axes[2] = 0xFFFF;
     }
 }
 
-bool checkForShake() {
+bool SensorController::checkForShake() {
+    LOG_VERBOSE("- SensorController::checkForShake");
+
     int steps = 0;
     bool shake = false;
+
+    assert(accelGyro != NULL);
+    if (accelGyro == NULL) {
+        LOG_ERROR("Trying to do checkForShake while the sensor wasn't initialized.");
+        return false;
+    }
+
     accelGyro->getStepCounter(&steps);
     if (steps > 1) {
         shake = true;
@@ -118,23 +192,31 @@ bool checkForShake() {
 }
 
 // RGB LED
-void setLedColor(uint8_t red, uint8_t green, uint8_t blue) {
+void SensorController::setLedColor(uint8_t red, uint8_t green, uint8_t blue) {
+    LOG_VERBOSE("- SensorController::setLedColor");
     rgbLed.setColor(red, green, blue);
 }
 
-void turnLedOff() {
+void SensorController::turnLedOff() {
+    LOG_VERBOSE("- SensorController::turnLedOff");
     rgbLed.turnOff();
 }
 
-void transmitIR() {
-    //static unsigned char data[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+void SensorController::transmitIR() {
+    LOG_VERBOSE("- SensorController::transmitIR");
+
+    assert(irdaSensor != NULL);
+    if (irdaSensor == NULL) {
+        LOG_ERROR("Trying to do transmitIR while the sensor wasn't initialized.");
+        return;
+    }
 
     unsigned char data = 1;
     for (int i = 0; i < 20; i++) {
         int irda_status = irdaSensor->IRDATransmit(&data, 1, 100);
         if(irda_status != 0)
         {
-            Serial.println("Unable to transmit through IrDA");
+            LOG_ERROR("Unable to transmit through IrDA");
         }
         delay(150);
     }

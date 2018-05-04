@@ -5,27 +5,27 @@
 #include "../inc/webServer.h"
 
 AzWebServer::AzWebServer() {
-    webServer = NULL;
+    server = NULL;
 }
 
 void AzWebServer::start() {
-    assert(webServer == NULL);
-    webServer = new WiFiServer(80);
-    webServer->begin();
+    assert(server == NULL);
+    server = new WiFiServer(80);
+    server->begin();
 }
 
 WiFiClient AzWebServer::getClient() {
-    assert(webServer != NULL);
-    return webServer->available();
+    assert(server != NULL);
+    return server->available();
 }
 
 void AzWebServer::stop() {
-    assert(webServer != NULL);
-    webServer->close();
+    assert(server != NULL);
+    server->close();
 
     // TODO: Fix it
     // we need to talk to upstream people and fix deleting object of polymorphic class type 'WiFiServer'
-    delete(webServer);
+    delete(server);
 
-    webServer = NULL;
+    server = NULL;
 }

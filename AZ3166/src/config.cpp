@@ -7,36 +7,37 @@
 #include "../inc/utility.h"
 #include "../inc/config.h"
 
-void clearAllConfig() {
-    clearWiFiEEPROM();
-    clearAzureEEPROM();
-    clearIotCentralEEPROM();
+void ConfigController::clearAllConfig() {
+    ConfigController::clearWiFiEEPROM();
+    ConfigController::clearAzureEEPROM();
+    ConfigController::clearIotCentralEEPROM();
 }
 
-void storeWiFi(AutoString &ssid, AutoString &password) {
+void ConfigController::storeWiFi(AutoString &ssid, AutoString &password) {
     EEPROMInterface eeprom;
 
     eeprom.write((uint8_t*) *ssid, ssid.getLength(), WIFI_SSID_ZONE_IDX);
     eeprom.write((uint8_t*) *password, password.getLength(), WIFI_PWD_ZONE_IDX);
 }
 
-void storeConnectionString(AutoString &connectionString) {
+void ConfigController::storeConnectionString(AutoString &connectionString) {
     EEPROMInterface eeprom;
     eeprom.write((uint8_t*) *connectionString, connectionString.getLength(), AZ_IOT_HUB_ZONE_IDX);
 }
 
-void storeIotCentralConfig(AutoString &iotCentralConfig) {
+void ConfigController::storeIotCentralConfig(AutoString &iotCentralConfig) {
     EEPROMInterface eeprom;
     eeprom.write((uint8_t*) *iotCentralConfig, iotCentralConfig.getLength(), IOT_CENTRAL_ZONE_IDX);
 }
 
-void readWiFi(char* ssid, int ssidLen, char *password, int passwordLen) {
+// Unused. Left here for sample
+void ConfigController::readWiFi(char* ssid, int ssidLen, char *password, int passwordLen) {
     EEPROMInterface eeprom;
     eeprom.read((uint8_t*) ssid, ssidLen, 0, WIFI_SSID_ZONE_IDX);
     eeprom.read((uint8_t*) password, passwordLen, 0, WIFI_PWD_ZONE_IDX);
 }
 
-void readConnectionString(char* connectionString, uint32_t buffer_size) {
+void ConfigController::readConnectionString(char* connectionString, uint32_t buffer_size) {
     EEPROMInterface eeprom;
     assert(connectionString != NULL);
     assert(buffer_size == AZ_IOT_HUB_MAX_LEN);
@@ -44,7 +45,7 @@ void readConnectionString(char* connectionString, uint32_t buffer_size) {
     eeprom.read((uint8_t*) connectionString, AZ_IOT_HUB_MAX_LEN, 0, AZ_IOT_HUB_ZONE_IDX);
 }
 
-void readIotCentralConfig(char* iotCentralConfig, uint32_t buffer_size) {
+void ConfigController::readIotCentralConfig(char* iotCentralConfig, uint32_t buffer_size) {
     EEPROMInterface eeprom;
     assert(iotCentralConfig != NULL);
     assert(buffer_size == IOT_CENTRAL_MAX_LEN);
@@ -52,7 +53,7 @@ void readIotCentralConfig(char* iotCentralConfig, uint32_t buffer_size) {
     eeprom.read((uint8_t*) iotCentralConfig, IOT_CENTRAL_MAX_LEN, 0, IOT_CENTRAL_ZONE_IDX);
 }
 
-void clearWiFiEEPROM() {
+void ConfigController::clearWiFiEEPROM() {
     EEPROMInterface eeprom;
 
     uint32_t max_mem = max(WIFI_SSID_MAX_LEN, WIFI_PWD_MAX_LEN);
@@ -61,14 +62,14 @@ void clearWiFiEEPROM() {
     eeprom.write((uint8_t*)*cleanBuffer, WIFI_PWD_MAX_LEN, WIFI_PWD_ZONE_IDX);
 }
 
-void clearAzureEEPROM() {
+void ConfigController::clearAzureEEPROM() {
     EEPROMInterface eeprom;
 
     AutoString cleanBuffer(AZ_IOT_HUB_MAX_LEN);
     eeprom.write((uint8_t*)*cleanBuffer, AZ_IOT_HUB_MAX_LEN, AZ_IOT_HUB_ZONE_IDX);
 }
 
-void clearIotCentralEEPROM() {
+void ConfigController::clearIotCentralEEPROM() {
     EEPROMInterface eeprom;
 
     AutoString cleanBuffer(IOT_CENTRAL_MAX_LEN);

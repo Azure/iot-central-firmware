@@ -7,45 +7,16 @@
 #include "SystemWiFi.h"
 #include "NTPClient.h"
 
-typedef union json_value_value {
-    char        *string;
-    double       number;
-    JSON_Object *object;
-    JSON_Array  *array;
-    int          boolean;
-    int          null;
-} JSON_Value_Value;
-
-struct json_object_t {
-    JSON_Value  *wrapping_value;
-    char       **names;
-    JSON_Value **values;
-    size_t       count;
-    size_t       capacity;
-};
-
-struct json_value_t {
-    JSON_Value      *parent;
-    JSON_Value_Type  type;
-    JSON_Value_Value value;
-};
-
-// detect if parson data types have changed.
-static_assert(sizeof(JSON_Value) == sizeof(json_value_t), "parson data types have changed?");
-static_assert(sizeof(JSON_Object) == sizeof(json_object_t), "parson data types have changed?");
-
-// unchanged. redef
-typedef struct json_object_t JSON_Object;
-typedef struct json_value_t JSON_Value;
-
 const char * JSObject::toString() {
-    if (object->wrapping_value == NULL) return NULL;
-    return json_value_get_string(object->wrapping_value /* hacky */);
+    assert(object != NULL);
+
+    JSON_Value * val = json_object_get_wrapping_value(object);
+    if (val == NULL) return NULL;
+    return json_value_get_string(val);
 }
 
 JSObject::~JSObject() {
-    if (value != NULL) {
-        memset((void*)value, 0, sizeof(JSON_Value));
+    if (value != NULL && isSubObject == false) {
         json_value_free(value);
         value = NULL;
     }
@@ -54,32 +25,27 @@ JSObject::~JSObject() {
 bool JSObject::getObjectAt(unsigned index, JSObject * outJSObject) {
     if (index >= getCount()) return false;
 
-    outJSObject->value = (JSON_Value*) malloc(sizeof(JSON_Value)); // memory will be cleaned up at outJSObject's de-cons.
-    memcpy(outJSObject->value, value, sizeof(JSON_Value));
-    outJSObject->toObject();
-
-    JSON_Value * subValue =  json_object_get_value_at(outJSObject->object, index);
+    JSON_Value * subValue =  json_object_get_value_at(object, index);
     if (subValue == NULL) return false;
 
-    outJSObject->object = json_value_get_object(subValue);
+    outJSObject->isSubObject = true;
+    outJSObject->value = subValue;
+    outJSObject->toObject();
     if (outJSObject->object == NULL) return false;
 
     return true;
 }
 
 bool JSObject::getObjectByName(const char * name, JSObject * outJSObject) {
-    outJSObject->value = (JSON_Value*) malloc(sizeof(JSON_Value));
-    memcpy(outJSObject->value, value, sizeof(JSON_Value));
-    outJSObject->toObject();
-
-    JSON_Object* subObject = json_object_get_object(outJSObject->object, name);
+    JSON_Object* subObject = json_object_get_object(object, name);
     if (subObject == NULL) {
         // outJSObject->value memory freed by it's own de-constructor.
         return false; // let consumer file the log
     }
 
-
+    outJSObject->value = json_object_get_wrapping_value(object);
     outJSObject->object = subObject;
+    outJSObject->isSubObject = true;
     return true;
 }
 
@@ -169,7 +135,6 @@ unsigned urldecode(const char * url, unsigned length, AutoString * outURL) {
             outURL->set(resultLength++, c);
         }
     }
-    outURL->set(resultLength, 0);
 
     return resultLength;
 }
@@ -189,7 +154,7 @@ bool SyncTimeToNTP() {
         NTPResult res = ntp.setTime((char*)ntpHost[i]);
         if (res == NTP_OK) {
             time_t t = time(NULL);
-            (void)Serial.printf("Time from %s, now is (UTC): %s\r\n", ntpHost[i], ctime(&t));
+            LOG_VERBOSE("Time from %s, now is (UTC): %s", ntpHost[i], ctime(&t));
             return true;
         }
     }

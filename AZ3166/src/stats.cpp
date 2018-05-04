@@ -2,24 +2,25 @@
 // Licensed under the MIT license.
 
 #include "../inc/globals.h"
+#include "../inc/stats.h"
 
-static int telemetryCount;
-static int reportedCount;
-static int desiredCount;
-static int errorCount;
+int StatsController::telemetryCount = 0;
+int StatsController::reportedCount = 0;
+int StatsController::desiredCount = 0;
+int StatsController::errorCount = 0;
 
-void clearCounters() {
+void StatsController::clearCounters() {
     telemetryCount = 0;
     reportedCount = 0;
     desiredCount = 0;
     errorCount = 0;
 }
 
-void incrementReportedCount() {
+void StatsController::incrementReportedCount() {
     reportedCount++;
 }
 
-void incrementErrorCount() {
+void StatsController::incrementErrorCount() {
     if (telemetryCount < 99999999) {
         errorCount++;
     } else {
@@ -27,7 +28,7 @@ void incrementErrorCount() {
     }
 }
 
-void incrementTelemetryCount() {
+void StatsController::incrementTelemetryCount() {
     if (telemetryCount < 99999999) {
         telemetryCount++;
     } else {
@@ -35,22 +36,22 @@ void incrementTelemetryCount() {
     }
 }
 
-void incrementDesiredCount() {
+void StatsController::incrementDesiredCount() {
     desiredCount++;
 }
 
-int getReportedCount(){
+int StatsController::getReportedCount(){
     return reportedCount;
 }
 
-int getErrorCount() {
+int StatsController::getErrorCount() {
     return errorCount;
 }
 
-int getTelemetryCount() {
+int StatsController::getTelemetryCount() {
     return telemetryCount;
 }
 
-int getDesiredCount() {
+int StatsController::getDesiredCount() {
     return desiredCount;
 }
