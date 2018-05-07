@@ -45,7 +45,7 @@ bool ApplicationController::loop() {
         initialize();
     }
 
-	if (Globals::loopController != NULL) {
+    if (Globals::loopController != NULL) {
         Globals::loopController->loop();
     }
 }

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. 
+# Licensed under the MIT license.
 
 import time
 import json
@@ -226,7 +226,7 @@ def accelerometerStart():
         x = acceleration['x']
         y = acceleration['y']
         z = acceleration['z']
-        
+
         x = abs(x)
         y = abs(y)
         z = abs(z)
@@ -251,15 +251,15 @@ def accelerometerStart():
             time.sleep(0.1)
 
 def showIPOnDisplay(showIp):
-	# show the IP on the display
-	globals.sense.clear()
+    # show the IP on the display
+    globals.sense.clear()
 
-	if showIp:
-		if deviceState.getIPaddress()[0] != "127.0.0.1" and deviceState.getIPaddress()[0] != "0.0.0.0": # check to see if loop back or not assigned
-			globals.sense.show_message("Wifi IP: {0}".format(deviceState.getIPaddress()[0]), text_colour=[255,0,0])
-		if deviceState.getIPaddress()[1] != "127.0.0.1" and deviceState.getIPaddress()[1] != "0.0.0.0": # check to see if loop back or not assigned
-			globals.sense.show_message("Ethernet IP: {0}".format(deviceState.getIPaddress()[1]), text_colour=[0,255,0])
-					
+    if showIp:
+        if deviceState.getIPaddress()[0] != "127.0.0.1" and deviceState.getIPaddress()[0] != "0.0.0.0": # check to see if loop back or not assigned
+            globals.sense.show_message("Wifi IP: {0}".format(deviceState.getIPaddress()[0]), text_colour=[255,0,0])
+        if deviceState.getIPaddress()[1] != "127.0.0.1" and deviceState.getIPaddress()[1] != "0.0.0.0": # check to see if loop back or not assigned
+            globals.sense.show_message("Ethernet IP: {0}".format(deviceState.getIPaddress()[1]), text_colour=[0,255,0])
+
 def main():
         #initialize logging
         logger.init()
@@ -269,16 +269,16 @@ def main():
 
         # initialize globals
         globals.init()
-        
+
         wlan0Ip = utility.getIpAddress('wlan0')
         eth0Ip = utility.getIpAddress('eth0')
-                                   
+
         if configState.config["hubConnectionString"] == "":
             deviceState.init("", globals.firmwareVersion)
             deviceState.setIPaddress(wlan0Ip, eth0Ip)
 
             showIPOnDisplay(True)
-					
+
             webServerStart(8080)
         else:
             # initialize device state
