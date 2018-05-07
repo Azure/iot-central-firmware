@@ -10,6 +10,10 @@ Create an issue on this repository and let us know.
 - [Azure MXChip IoT DevKit (AZ3166)](./AZ3166)
 - [Raspberry Pi 2/3](./RaspberryPi)
 
+## Previous Releases
+
+You can access to previous releases from https://github.com/Microsoft/microsoft-iot-central-firmware/releases
+
 ## Status
 
 This project is in active development. Check our roadmap below; (have an idea? create an issue on this repo.)
