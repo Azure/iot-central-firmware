@@ -114,7 +114,7 @@ this is not needed to build the firmware.
 - Ensure your device has been upgraded to the latest base firmware.
 Instructions for downloading the firmware from here [https://microsoft.github.io/azure-iot-developer-kit/versions/](https://microsoft.github.io/azure-iot-developer-kit/versions/)
 - Install Git tools for your operating system
-- Clone the IoTCentral firmware repository on Github [https://github.com/Microsoft/microsoft-iot-central-firmware](https://github.com/Microsoft/microsoft-iot-central-firmware)
+- Clone the IoTCentral firmware repository on Github [https://github.com/Azure/iot-central-firmware](https://github.com/Azure/iot-central-firmware)
 
 Opening the code in Visual Studio Code and getting connected to the device:
 
