@@ -37,6 +37,15 @@
 
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
+#define STATE_MESSAGE(state) \
+    state == NORMAL ?  "{\"deviceState\":\"NORMAL\"}" :  ( \
+    state == CAUTION ? "{\"deviceState\":\"CAUTION\"}" : ( \
+    state == DANGER ?  "{\"deviceState\":\"DANGER\"}" :  ( \
+                       "{\"deviceState\":\"NORMAL\"}"      \
+    ) \
+    ) \
+    )
+
 class WiFiController;
 class SensorController;
 class LoopController;

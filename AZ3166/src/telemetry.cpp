@@ -75,7 +75,9 @@ void TelemetryController::loop() {
         return;
     }
 
-    if ((millis() - lastTimeSync > NTP_SYNC_PERIOD)) {
+    const uint32_t currentMillis = millis(); // reduce number of times we call this
+
+    if ((currentMillis - lastTimeSync > NTP_SYNC_PERIOD)) {
         // re-sync the time from ntp
         if (SyncTimeToNTP()) {
             lastTimeSync = millis();
@@ -85,24 +87,33 @@ void TelemetryController::loop() {
     // look for button A pressed to signify state change
     // when the A button is pressed the device state rotates to the next value and a state telemetry message is sent
     if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
-        (millis() - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
+        (currentMillis - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
 
         DeviceControl::incrementDeviceState();
         DeviceControl::showState();
         sendStateChange();
         lastSwitchPress = millis();
+
+        const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
+        if (iothubClient->sendReportedProperty(stateMessage)) {
+            LOG_VERBOSE("Device state successfully sent");
+            StatsController::incrementReportedCount();
+        } else {
+            LOG_ERROR("Sending device state has failed");
+            StatsController::incrementErrorCount();
+        }
     }
 
     // look for button B pressed to page through info screens
     if (DeviceControl::IsButtonClicked(USER_BUTTON_B) &&
-        (millis() - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
+        (currentMillis - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
 
         currentInfoPage = (currentInfoPage + 1) % 3;
-        lastSwitchPress = millis();
+        lastSwitchPress = currentMillis;
     }
 
     // example of sending telemetry data
-    if (millis() - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
+    if (currentMillis - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
         String payload; // max payload size for Azure IoT
 
         buildTelemetryPayload(&payload);
@@ -111,8 +122,8 @@ void TelemetryController::loop() {
     }
 
     // example of sending a device twin reported property when the accelerometer detects a double tap
-    if (Globals::sensorController.checkForShake() &&
-        (millis() - lastShakeTime > TELEMETRY_REPORTED_SEND_INTERVAL)) {
+    if ((currentMillis - lastShakeTime > TELEMETRY_REPORTED_SEND_INTERVAL) &&
+        Globals::sensorController.checkForShake()) {
 
         String shakeProperty = F("{\"dieNumber\":{{die}}}");
         randomSeed(analogRead(0));
@@ -124,7 +135,6 @@ void TelemetryController::loop() {
         AutoString shakeString(shakeProperty.c_str(), shakeProperty.length());
         if (iothubClient->sendReportedProperty(*shakeString)) {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
-            shakeString.makePersistent();
             StatsController::incrementReportedCount();
         } else {
             LOG_ERROR("Reported property dieNumber failed to during sending");
