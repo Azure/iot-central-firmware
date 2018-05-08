@@ -94,6 +94,7 @@ void TelemetryController::loop() {
         sendStateChange();
         lastSwitchPress = millis();
 
+        // SEND State example
         const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
         if (iothubClient->sendReportedProperty(stateMessage)) {
             LOG_VERBOSE("Device state successfully sent");
@@ -110,6 +111,17 @@ void TelemetryController::loop() {
 
         currentInfoPage = (currentInfoPage + 1) % 3;
         lastSwitchPress = currentMillis;
+
+        // SEND EVENT example
+        // build the event payload
+        const char * eventString = "{\"ButtonBPressed\": 1}";
+        if (iothubClient->sendTelemetry(eventString)) {
+            LOG_VERBOSE("Event successfully sent");
+            StatsController::incrementReportedCount();
+        } else {
+            LOG_ERROR("Sending event has failed");
+            StatsController::incrementErrorCount();
+        }
     }
 
     // example of sending telemetry data
