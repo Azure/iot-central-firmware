@@ -37,6 +37,15 @@
 
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
+#define STATE_MESSAGE(state) \
+    state == NORMAL ?  "{\"deviceState\":\"NORMAL\"}" :  ( \
+    state == CAUTION ? "{\"deviceState\":\"CAUTION\"}" : ( \
+    state == DANGER ?  "{\"deviceState\":\"DANGER\"}" :  ( \
+                       "{\"deviceState\":\"NORMAL\"}"      \
+    ) \
+    ) \
+    )
+
 class WiFiController;
 class SensorController;
 class LoopController;
@@ -59,7 +68,7 @@ struct Globals
 #define IOT_CENTRAL_ZONE_IDX      0x02
 #define IOT_CENTRAL_MAX_LEN       STRING_BUFFER_128
 #define AZIOTC_FW_MAJOR_VERSION 1
-#define AZIOTC_FW_MINOR_VERSION 1
+#define AZIOTC_FW_MINOR_VERSION 2
 #define AZIOTC_FW_PATCH_VERSION 0
 #define AZIOTC_FW_VERSION         TO_STRING(AZIOTC_FW_MAJOR_VERSION AZIOTC_FW_MINOR_VERSION AZIOTC_FW_PATCH_VERSION) "-MSIOTC"
 

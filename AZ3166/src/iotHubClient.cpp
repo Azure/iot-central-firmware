@@ -159,7 +159,7 @@ bool IoTHubClient::sendReportedProperty(const char *payload) {
     bool retValue = true;
 
     IOTHUB_CLIENT_RESULT result = IoTHubClient_LL_SendReportedState(iotHubClientHandle,
-        (const unsigned char*)payload, strlen(payload), deviceTwinConfirmationCallback, (void*) payload);
+        (const unsigned char*)payload, strlen(payload), deviceTwinConfirmationCallback, NULL);
 
     if (result != IOTHUB_CLIENT_OK) {
         LOG_ERROR("Failure sending reported property!!!");
@@ -334,7 +334,7 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
 void echoDesired(const char *propertyName, const char *message, const char *status, int statusCode) {
     JSObject rootObject(message);
     JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
-    LOG_ERROR("echoDesired is received - pn: %s m: %s s: %s sc: %d", propertyName, message, status, statusCode);
+    LOG_VERBOSE("echoDesired is received - pn: %s m: %s s: %s sc: %d", propertyName, message, status, statusCode);
     const char* methodName = rootObject.getStringByName("methodName");
     if (methodName == NULL) {
         LOG_VERBOSE("Object doesn't have a member 'methodName'");
@@ -374,7 +374,7 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
     snprintf(*buffer, buffer_size + 1, echoTemplate, propertyName,
              (int) value, statusCode,
              status, (int) desiredVersion);
-    LOG_ERROR("Sending reported property buffer: %s", *buffer);
+    LOG_VERBOSE("Sending reported property buffer: %s", *buffer);
 
     TelemetryController * telemetryController = NULL;
     if (Globals::loopController->withTelemetry()) {
@@ -383,7 +383,6 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
 
     if (telemetryController != NULL && telemetryController->getHubClient() != NULL &&
         telemetryController->getHubClient()->sendReportedProperty(*buffer)) {
-        buffer.makePersistent(); // will be freed under deviceTwinConfirmationCallback
         LOG_VERBOSE("Desired property %s successfully echoed back as a reported property.", propertyName);
         StatsController::incrementReportedCount();
     } else {
@@ -481,9 +480,6 @@ void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
 
 static void deviceTwinConfirmationCallback(int status_code, void* userContextCallback) {
     LOG_VERBOSE("DeviceTwin CallBack: Status_code = %u", status_code);
-    if (userContextCallback != NULL) {
-        free(userContextCallback);
-    }
 }
 
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
