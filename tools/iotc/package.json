@@ -1,0 +1,28 @@
+{
+  "name": "@azure-iot/iotc",
+  "version": "0.3.8",
+  "description": "ARM mbed / Arduino compiler tools",
+  "keywords": [
+    "arm",
+    "mbed",
+    "arduino",
+    "cli",
+    "azure",
+    "iot"
+  ],
+  "author": "Oguz Bastemur <oguz.bastemur@microsoft.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Azure/iot-central-firmware/tools/iotc"
+  },
+  "bin": {
+    "iotc": "./index.js"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "colors": "^1.2.5",
+    "node-cmd": "^3.0.0",
+    "rimraf": "^2.6.2"
+  },
+  "license": "SEE LICENSE IN LICENSE.md"
+}
