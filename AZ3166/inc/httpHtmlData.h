@@ -25,8 +25,8 @@ must-revalidate\r\n\r\n"
 "<body> <header> <h1 class=\"logo\">Azure IoT Central Config Complete</h1>  \
 </header> <section class=\"container\"> <div id=\"content\" class=\"row\">  \
 <div class=\"col-sm-10 col-sm-offset-1 col-md-4 col-md-offset-4\" style=\"  \
-text-align:center;\"> <h5>Device configured, please press the boards \"Reset\
-\" buttton to start sending data</h5> </div></div></section></body></html>"
+text-align:center;\"> <h5>Device configured, please press the board's \"Reset\
+\" button to start sending data</h5> </div></div></section></body></html>"
 
 // BEWARE! This is sample only. Consider using password / certificate etc.
 #define HTTP_MAIN_PAGE_RESPONSE HTTP_STATUS_200 HTTP_HEADER_HTML \
