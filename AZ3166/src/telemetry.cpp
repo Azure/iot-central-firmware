@@ -64,6 +64,8 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     assert(iotCentralConfig != NULL);
     telemetryState = strtol(iotCentralConfig, NULL, 10);
 
+    sendStateChange();
+
     initializeCompleted = true;
 }
 
@@ -93,16 +95,6 @@ void TelemetryController::loop() {
         DeviceControl::showState();
         sendStateChange();
         lastSwitchPress = millis();
-
-        // SEND State example
-        const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
-        if (iothubClient->sendReportedProperty(stateMessage)) {
-            LOG_VERBOSE("Device state successfully sent");
-            StatsController::incrementReportedCount();
-        } else {
-            LOG_ERROR("Sending device state has failed");
-            StatsController::incrementErrorCount();
-        }
     }
 
     // look for button B pressed to page through info screens
