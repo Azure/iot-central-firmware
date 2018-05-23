@@ -1,0 +1,4 @@
+out/
+*.tar.gz
+azureiot_mbed_container/
+
