@@ -6,3 +6,6 @@
 # Arduino build files and folders
 build/
 
+# iotc default build folder
+out/
+
