@@ -14,8 +14,6 @@
 #include "../inc/registeredMethodHandlers.h"
 #include "../inc/oledAnimation.h"
 
-#define statePayloadTemplate "{\"%s\":\"%s\"}"
-
 void TelemetryController::initializeTelemetryController(const char * iotCentralConfig) {
     assert(initializeCompleted == false);
 
@@ -273,25 +271,7 @@ void TelemetryController::sendTelemetryPayload(const char *payload) {
 }
 
 void TelemetryController::sendStateChange() {
-    char stateChangePayload[STRING_BUFFER_4096] = {0};
-    char value[STRING_BUFFER_16] = {0};
-
-    switch(DeviceControl::getDeviceState()) {
-        case NORMAL:
-            strcpy(value, "NORMAL");
-            break;
-        case CAUTION:
-            strcpy(value, "CAUTION");
-            break;
-        case DANGER:
-            strcpy(value, "DANGER");
-            break;
-        default:
-            strcpy(value, "UNKNOWN");
-    }
-
-    unsigned length = snprintf(stateChangePayload, STRING_BUFFER_4096 - 1,
-                              statePayloadTemplate, "deviceState", value);
-
-    sendTelemetryPayload(stateChangePayload);
+    // SEND State example
+    const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
+    sendTelemetryPayload(stateMessage);
 }
