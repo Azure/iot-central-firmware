@@ -46,7 +46,6 @@ monitor.</h5> </div></div></section></body></html>"
 #define HTTP_REDIRECT_RESPONSE  HTTP_STATUS_302 \
 "\r\nLocation: /COMPLETE\r\n\r\n\r\n"
 
-
 #define HTTP_REDIRECT_WRONG_PINCODE HTTP_STATUS_200 HTTP_HEADER_HTML \
 "<body> <header> <h1 class=\"logo\">Azure IoT Central Config Complete</h1>  \
 </header> <section class=\"container\"> <div id=\"content\" class=\"row\">  \

@@ -9,3 +9,6 @@ build/
 # iotc default build folder
 out/
 
+# build configuration for AZ3166
+inc/definitions.h
+

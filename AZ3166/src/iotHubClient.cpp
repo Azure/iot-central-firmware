@@ -28,7 +28,12 @@ void IoTHubClient::initIotHubClient() {
     String deviceIdString = connString.substring(connString.indexOf("DeviceId=")
                             + 9, connString.indexOf(";SharedAccess"));
 
-    assert(deviceIdString.length() < IOT_CENTRAL_MAX_LEN);
+    if (deviceIdString.length() >= IOT_CENTRAL_MAX_LEN) {
+        LOG_ERROR("deviceIdString.length() >= IOT_CENTRAL_MAX_LEN...\n \
+deviceIdString : %s\n \
+connString: %s", deviceIdString.c_str(), connString.c_str());
+        return;
+    }
     memcpy(deviceId, deviceIdString.c_str(), deviceIdString.length());
 
     String hubNameString = connString.substring(connString.indexOf("HostName=")
