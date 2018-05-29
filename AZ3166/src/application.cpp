@@ -7,6 +7,7 @@
 #include "../inc/telemetry.h"
 #include "../inc/config.h"
 #include "../inc/device.h"
+#include "../inc/watchdogController.h"
 
 bool ApplicationController::initialize() {
     Serial.begin(250000);
@@ -22,6 +23,7 @@ bool ApplicationController::initialize() {
         LOG_ERROR("No configuration found...");
         Globals::loopController = OnboardingController::New();
     } else {
+        WatchdogController::initialize(); // start the watchdog only for run mode
         LOG_VERBOSE("Configuration found entering telemetry mode.");
         Globals::loopController = TelemetryController::New(iotCentralConfig);
     }

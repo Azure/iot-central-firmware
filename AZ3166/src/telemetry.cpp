@@ -13,6 +13,7 @@
 #include "../inc/stats.h"
 #include "../inc/registeredMethodHandlers.h"
 #include "../inc/oledAnimation.h"
+#include "../inc/watchdogController.h"
 
 void TelemetryController::initializeTelemetryController(const char * iotCentralConfig) {
     assert(initializeCompleted == false);
@@ -83,6 +84,7 @@ void TelemetryController::loop() {
     }
 
     const uint32_t currentMillis = millis(); // reduce number of times we call this
+    WatchdogController::reset();
 
     if ((currentMillis - lastTimeSync > NTP_SYNC_PERIOD)) {
         // re-sync the time from ntp

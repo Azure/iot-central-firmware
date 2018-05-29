@@ -18,8 +18,8 @@ You can access to previous releases from https://github.com/Microsoft/microsoft-
 
 This project is in active development. Check our roadmap below; (have an idea? create an issue on this repo.)
 
-- Sound activated cloud event
-- Show Watchdog usage
+- Sound activated connection
+- OCR activated connection
 
 ## Reporting Security Issues
 
