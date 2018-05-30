@@ -3,47 +3,61 @@
 //  Licensed under the MIT license.
 // ----------------------------------------------------------------------------
 
-const http = require('http');
+const https = require('https');
 const fs   = require('fs');
 const path = require('path');
 const cmd = require('node-cmd');
+var connect = require('connect');
+var serveStatic = require('serve-static');
 
 const hostname = '0.0.0.0';
-const port = 8080;
-var HTTP_START_PAGE_HTML = fs.readFileSync(__dirname + '/index.html');
+const port = 443;
 var servCounter = 0; // it's okay that this will overflow
+
+var key = fs.readFileSync('keys/domain.key');
+var cert = fs.readFileSync( 'keys/domain.crt' );
+
+var options = {
+  key: key,
+  cert: cert
+};
 
 cmd.get(`find ${__dirname}/../../ -name "15*" | while read line; do rm -rf $line; done`, function(errorCode, e__, o__) {
   if (errorCode) {
-    console.log(errorCode, e__, o__);
+    console.log("FAILED", errorCode, e__, o__);
     process.exit(1);
   }
-  const server = http.createServer((req, res) => {
-    res.statusCode = 200;
-    if (req.url == '/') {
-      res.setHeader('Content-Type', 'text/html');
-      res.end(HTTP_START_PAGE_HTML);
-    } else if (req.url.startsWith('/program.bin')) {
-      if (req.method == 'POST') {
-        var body = '';
-        req.on('data', function (data) {
-            body += data;
-            if (body.length > 8192)
-                req.connection.destroy();
-        });
 
-        req.on('end', function () {
-            createBinary(req, res, body);
-        });
-      } else {
-        res.end('404 :p');
-      }
-    } else {
-      res.end("404 :p");
+  var app = connect();
+
+  app.use(function (req, res, next) {
+      //res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS, HEAD");
+      next();
+  });
+
+  app.use(serveStatic(__dirname + '/static'))
+  app.use(serveStatic(__dirname + '/hosted'))
+
+  app.use("/compile", function(req, res, next) {
+    if (req.method == 'POST') {
+      var body = '';
+      req.on('data', function (data) {
+          body += data;
+          if (body.length > 8192)
+              req.connection.destroy();
+      });
+
+      req.on('end', function () {
+          createBinary(req, res, body);
+      });
     }
   });
+
+  const server = https.createServer(options, app);
   server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
+    console.log(`Server running at https://${hostname}/`);
   });
 });
 
@@ -88,7 +102,8 @@ function createBinary(req, res, body) {
   }
 
   var failed = false;
-  var writeString = '<html><body style="font-size:120%;">'
+  var writeString = '';
+
   if (!configs.SSID.value || configs.SSID.value.length == 0) {
     failed = true;
     writeString += ('<p>- Missing SSID</p>');
@@ -119,7 +134,8 @@ function createBinary(req, res, body) {
 
     defs.push('#define COMPILE_TIME_DEFINITIONS_SET');
     defs = defs.join('\n').replace(/\"/g, "\\\"");
-    var NAME = Date.now() + (servCounter++);
+    var NAME = (Date.now() + "" + servCounter);
+    servCounter += Date.now() % 2 == 0 ? 11 : 13;
     cmd.get(`
     cp -R ../../AZ3166 ../../${NAME}
     cd ../../${NAME}
@@ -128,34 +144,38 @@ function createBinary(req, res, body) {
     iotc iotCentral.ino -c=a -t=AZ3166:stm32f4:MXCHIP_AZ3166
     `, function(errorCode, stdout, stderr) {
       if (errorCode) {
-        res.write(writeString)
-        res.write('<p>something bad has happened</p>' +
+        writeString += ('<p>something bad has happened</p>' +
           (stdout + stderr).replace(/\n/g, "<br>"));
-        res.end('</body></html>');
         cmd.get(`rm -rf ../../${NAME}`);
+        failed = true;
+        renderDownload(res, failed, writeString)
       } else {
-        var filename = path.join(__dirname, `../../AZ3166 ../../${NAME}`, `out/program.bin`);
-        var stat = fs.statSync(filename);
-        var reader = fs.createReadStream(filename);
-        var header = {
-          'Content-Length': stat.size,
-          'Content-Type': 'binary',
-          'Access-Control-Allow-Origin': req.headers.origin || "*",
-          'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'POST, GET, OPTIONS'
-        };
-        res.writeHead(200, header);
+        var filename = path.join(__dirname, `../../${NAME}`, `out/program.bin`);
+        var appName = "program.bin"
+        cmd.get(`mkdir -p hosted/${NAME} && mv ${filename} hosted/${NAME}/ && rm -rf ../../${NAME}`, function(e, s, r) {
+          res.write(writeString);
 
-        reader.pipe(res);
-        reader.on('close', function () {
-          res.end(0);
-          cmd.get(`rm -rf ../../${NAME}`);
+          if (errorCode) {
+            writeString += ('<p>something bad has happened</p>' +
+              (s + r).replace(/\n/g, "<br>"));
+            failed = true;
+          } else {
+            writeString += `<a id='btnD' href="${NAME}/program.bin">Download Firmware</a> <br/>`;
+            writeString += `<a id='btn' style='display:none' href="#">Flash Firmware to USB</a> <br/>`;
+          }
+          renderDownload(res, failed, writeString)
         });
       }
     });
   } else {
-    res.write(writeString)
-    res.write('<h5>Click <a href="http://ozzzzz.westus.cloudapp.azure.com:8080/" target=_blank>here</a> to go back</h5>');
-    res.end('</body></html>');
+    renderDownload(res, failed, writeString)
   }
+}
+
+function renderDownload(res, failed, writeString) {
+  var render = fs.readFileSync(__dirname + "/static/download.html") + "";
+  render = render.replace("$OUTPUT", writeString)
+                 .replace("$NO_ISSUE", !failed);
+
+  res.end(render);
 }

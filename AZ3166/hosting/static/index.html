@@ -10,7 +10,7 @@ html{font-size: 16px;}html, *{font-family: -apple-system, BlinkMacSystemFont, "S
 <body> <header> <h1 class="logo">Azure IoT Cloud Compile - MXChip</h1> </header>
   <section class="container"> <div id="content" class="row">
     <div class="col-sm-10 col-sm-offset-1 col-md-4 col-md-offset-4" style="text-align:center;">
-    <form action="/program.bin" method="post" id='frm1'>
+    <form action="/compile" method="post" id='frm1'>
     <div id='t1' class="input-group fluid">
       <input value="" name="SSID" required="" id="SSID" placeholder="WiFi SSID" style="width: 100%; background-repeat: no-repeat; background-attachment: scroll; background-size: 16px 18px; background-position: 98% 50%;" type="text">
     </div>
@@ -25,7 +25,7 @@ html{font-size: 16px;}html, *{font-family: -apple-system, BlinkMacSystemFont, "S
       <ul class="checkbox"><li>
 <input name="TEMP" id="temp" checked="checked" type="checkbox"><label for="temp">Temperature</label></li><li><input name="ACCEL" id="accel" checked="checked" type="checkbox"><label for="accel">Accelerometer</label></li><li><input name="HUM" id="hum" checked="checked" type="checkbox"><label for="hum">Humidity</label></li><li><input name="GYRO" id="gyro" checked="checked" type="checkbox"><label for="gyro">Gyroscope</label></li><li><input name="PRES" id="pres" checked="checked" type="checkbox"><label for="pres">Pressure</label></li><li><input name="MAG" id="mag" checked="checked" type="checkbox"><label for="mag">Magnetometer</label></li></ul> </fieldset> </div><div class="input-group fluid" style="padding-top: 20px;">
         <button type="submit" class="primary" id='btn'>Build Bootloader</button> </div></form>
-        <h5 id='t4' style='display:none;'>Click <a href="http://ozzzzz.westus.cloudapp.azure.com:8080/" target=_blank>here</a> to go back</h5>
+        <h5 id='t4' style='display:none;'>Click <a href="/index.html" target=_blank>here</a> to go back</h5>
         <h5 id='t5'>Click <a href="https://apps.azureiotcentral.com" target=_blank>here</a> to visit AzureIoTCentral.com</h5>
     </div></div></section>
       <script>
@@ -35,10 +35,10 @@ html{font-size: 16px;}html, *{font-family: -apple-system, BlinkMacSystemFont, "S
           btn.disabled = true;
 
           var i = 0;
-          setInterval(function() {
+          var loaderInterval = setInterval(function() {
             i = ++i % 6;
             var dots = Array(i + 1).join(".");
-            btn.innerText = dots + "..Please Wait.." + dots;
+            btn.innerText = dots + "..Preparing.." + dots;
             btn.innerValue = btn.innerText;
           }, 600);
 
