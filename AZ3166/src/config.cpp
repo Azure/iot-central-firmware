@@ -38,8 +38,8 @@ void ConfigController::readWiFi(char* ssid, int ssidLen, char *password, int pas
 #if defined(WIFI_NAME)
     // check if hardcoded wifi creds are equal to the ones in eeprom
     if (strcmp(ssid, WIFI_NAME) != 0 || strcmp(password, WIFI_PASSWORD) != 0) {
-        eeprom.write((uint8_t*) WIFI_NAME, sizeof(WIFI_NAME) - 1, WIFI_SSID_ZONE_IDX);
-        eeprom.write((uint8_t*) WIFI_PASSWORD, sizeof(WIFI_PASSWORD) - 1, WIFI_PWD_ZONE_IDX);
+        eeprom.write((uint8_t*) WIFI_NAME, strlen(WIFI_NAME), WIFI_SSID_ZONE_IDX);
+        eeprom.write((uint8_t*) WIFI_PASSWORD, strlen(WIFI_PASSWORD), WIFI_PWD_ZONE_IDX);
     }
 #endif
 }
