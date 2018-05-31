@@ -14,7 +14,6 @@ class WiFiController
 public:
     WiFiController():isConnected(false) { }
 
-    bool getIsConnected() { return isConnected; }
     bool initApWiFi();
     bool initWiFi();
 
@@ -23,6 +22,8 @@ public:
 
     String * getWifiNetworks(int &count);
     void displayNetworkInfo();
+
+    bool getIsConnected();
 
     const char * getAPName() { return apName; }
     const char * getPassword() { return password; }

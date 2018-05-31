@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Azure IoT Cloud Compile</title>
+<script src="iotcFlash.js" type="module"></script>
+<style>@charset "UTF-8";
+html{font-size: 16px;}html, *{font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Droid Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.5; -webkit-text-size-adjust: 100%;}*{font-size: 1rem;}body{margin: 0; color: #212121; background: #f8f8f8;}section{display: block;}input{overflow: visible;}h1, h2{line-height: 1.2em; margin: 0.75rem 0.5rem; font-weight: 500;}h2 small{color: #424242; display: block; margin-top: -0.25rem;}h1{font-size: 2rem;}h2{font-size: 1.6875rem;}p{margin: 0.5rem;}small{font-size: 0.75em;}a{color: #0277bd; text-decoration: underline; opacity: 1; transition: opacity 0.3s;}a:visited{color: #01579b;}a:hover, a:focus{opacity: 0.75;}/*Definitions for the grid system.*/ .container{margin: 0 auto; padding: 0 0.75rem;}.row{box-sizing: border-box; display: -webkit-box; -webkit-box-flex: 0; -webkit-box-orient: horizontal; -webkit-box-direction: normal; display: -webkit-flex; display: flex; -webkit-flex: 0 1 auto; flex: 0 1 auto; -webkit-flex-flow: row wrap; flex-flow: row wrap;}[class^='col-sm-']{box-sizing: border-box; -webkit-box-flex: 0; -webkit-flex: 0 0 auto; flex: 0 0 auto; padding: 0 0.25rem;}.col-sm-10{max-width: 83.33333%; -webkit-flex-basis: 83.33333%; flex-basis: 83.33333%;}.col-sm-offset-1{margin-left: 8.33333%;}@media screen and (min-width: 768px){.col-md-4{max-width: 33.33333%; -webkit-flex-basis: 33.33333%; flex-basis: 33.33333%;}.col-md-offset-4{margin-left: 33.33333%;}}/*Definitions for navigation elements.*/ header{display: block; height: 2.75rem; background: #1e6bb8; color: #f5f5f5; padding: 0.125rem 0.5rem; white-space: nowrap; overflow-x: auto; overflow-y: hidden;}header .logo{color: #f5f5f5; font-size: 1.35rem; line-height: 1.8125em; margin: 0.0625rem 0.375rem 0.0625rem 0.0625rem; transition: opacity 0.3s;}header .logo{text-decoration: none;}/*Definitions for forms and input elements.*/ form{background: #9ccc0d; border: 1px solid #c9c9c9; margin: 0.5rem; padding: 0.75rem 0.5rem 1.125rem;}.input-group{display: inline-block;}.input-group.fluid{display: -webkit-box; -webkit-box-pack: justify; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;}.input-group.fluid>input{-webkit-box-flex: 1; max-width: 100%; -webkit-flex-grow: 1; flex-grow: 1; -webkit-flex-basis: 0; flex-basis: 0;}@media screen and (max-width: 767px){.input-group.fluid{-webkit-box-orient: vertical; -webkit-align-items: stretch; align-items: stretch; -webkit-flex-direction: column; flex-direction: column;}}[type="password"], select{box-sizing: border-box; background: #fafafa; color: #212121; border: 1px solid #c9c9c9; border-radius: 2px; margin: 0.25rem; padding: 0.5rem 0.75rem;}[type="text"], select{box-sizing: border-box; background: #fafafa; color: #212121; border: 1px solid #c9c9c9; border-radius: 2px; margin: 0.25rem; padding: 0.5rem 0.75rem;}fieldset.group{margin: 0; padding: 0; margin-bottom: 0.25em; margin-top: 0.5em; padding-bottom: 1.125em; padding-top: 0.5em; border: 1px solid #696666;}fieldset.group legend{margin: 0; padding: 0; margin-left: 15px; color: #696666; font-size: 1rem;}ul.checkbox{margin: 0; padding: 0; margin-left: 60px; list-style: none;}ul.checkbox li input{margin-right: .25em;}ul.checkbox li{border: 1px transparent solid; display:inline-block; width:12em;}ul.checkbox li label{margin-left: 5px;}input:not([type="button"]):not([type="submit"]):not([type="reset"]):hover, input:not([type="button"]):not([type="submit"]):not([type="reset"]):focus, select:hover, select:focus{border-color: #0288d1; box-shadow: none;}input:not([type="button"]):not([type="submit"]):not([type="reset"]):disabled, select:disabled{cursor: not-allowed; opacity: 0.75;}::-webkit-input-placeholder{opacity: 1; color: #616161;}::-moz-placeholder{opacity: 1; color: #616161;}::-ms-placeholder{opacity: 1; color: #616161;}::placeholder{opacity: 1; color: #616161;}button::-moz-focus-inner, [type="submit"]::-moz-focus-inner{border-style: none; padding: 0;}button, [type="submit"]{-webkit-appearance: button;}button{overflow: visible; text-transform: none;}button, [type="submit"], a.button, .button{display: inline-block; background: rgba(208, 208, 208, 0.75); color: #212121; border: 0; border-radius: 2px; padding: 0.5rem 0.75rem; margin: 0.5rem; text-decoration: none; transition: background 0.3s; cursor: pointer;}button:hover, button:focus, [type="submit"]:hover, [type="submit"]:focus, a.button:hover, a.button:focus, .button:hover, .button:focus{background: #d0d0d0; opacity: 1;}button:disabled, [type="submit"]:disabled, a.button:disabled, .button:disabled{cursor: not-allowed; opacity: 0.75;}/*Custom elements for forms and input elements.*/ button.primary, [type="submit"].primary, .button.primary{background: rgba(30, 107, 184, 0.9); color: #fafafa;}button.primary:hover, button.primary:focus, [type="submit"].primary:hover, [type="submit"].primary:focus, .button.primary:hover, .button.primary:focus{background: #0277bd;}#content{margin-top: 2em;}</style>
+<style>@media print {#ghostery-purple-box {display:none !important}}</style></head>
+<body> <header> <h1 class="logo">Azure IoT Cloud Compile - MXChip</h1> </header>
+  <section class="container"> <div id="content" class="row">
+    <div class="col-sm-10 col-sm-offset-1 col-md-4 col-md-offset-4" style="text-align:center;">
+    <form id='frm1'>
+        $OUTPUT
+
+        <div id="flashDiv" hidden></div>
+        <div id="log" class="log" hidden></div>
+    </form>
+        <h5 id='t4'>Click <a href="/index.html" target=_blank>here</a> to go back</h5>
+        <h5 id='t5'><a href="https://apps.azureiotcentral.com" target=_blank>AzureIoTCentral.com</a></h5>
+    </div></div></section>
+      <script>
+        if ($NO_ISSUE) {
+          var btn = document.getElementById('btn');
+          var btnD = document.getElementById('btnD');
+          if (navigator.usb) {
+            btn.style = "";
+            var trial = 0;
+            // usb support
+            var lastTrial = -1;
+            function clicker(e) {
+              if (e) {
+                e.cancelBubble = true;
+                if (lastTrial != -1) {
+                  clearTimeout(lastTrial);
+                  trial = -100;
+                }
+                window.connectButton();
+                trial = 0;
+              }
+              lastTrial = setTimeout(function() {
+                trial++;
+                if (trial > 0 && trial < 100) {
+                  var stlink = getSTLink();
+                  if (stlink && stlink.connected) {
+                    window.flashButton();
+                  } else {
+                    clicker();
+                  }
+                }
+              }, 1000);
+            }
+            btn.addEventListener('click', clicker)
+          }
+        }
+      </script>
+  </body>
+</html>

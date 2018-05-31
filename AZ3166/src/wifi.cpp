@@ -66,6 +66,10 @@ void WiFiController::shutdownApWiFi() {
     isConnected = false;
 }
 
+bool WiFiController::getIsConnected() {
+    return WiFi.status() == WL_CONNECTED;
+}
+
 String * WiFiController::getWifiNetworks(int &count) {
     LOG_VERBOSE("- WiFiController::getWifiNetworks");
     String foundNetworks = "";  // keep track of network SSID so as to remove duplicates from mesh and repeater networks

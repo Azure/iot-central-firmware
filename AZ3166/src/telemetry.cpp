@@ -13,8 +13,7 @@
 #include "../inc/stats.h"
 #include "../inc/registeredMethodHandlers.h"
 #include "../inc/oledAnimation.h"
-
-#define statePayloadTemplate "{\"%s\":\"%s\"}"
+#include "../inc/watchdogController.h"
 
 void TelemetryController::initializeTelemetryController(const char * iotCentralConfig) {
     assert(initializeCompleted == false);
@@ -73,11 +72,19 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
 void TelemetryController::loop() {
     // if we are about to reset then stop sending/processing any telemetry
     if (!initializeCompleted || !Globals::wiFiController.getIsConnected()) {
+        if (!Globals::wiFiController.getIsConnected()) {
+            Screen.print(0, "-NOT Connected- ");
+            Screen.print(1, "                ");
+            Screen.print(2, " Check WiFi ?   ");
+            Screen.print(3, "                ");
+        }
+
         delay(1);
         return;
     }
 
     const uint32_t currentMillis = millis(); // reduce number of times we call this
+    WatchdogController::reset();
 
     if ((currentMillis - lastTimeSync > NTP_SYNC_PERIOD)) {
         // re-sync the time from ntp
@@ -125,6 +132,7 @@ void TelemetryController::loop() {
         lastTelemetrySend = millis();
     }
 
+#ifndef DISABLE_SHAKE
     // example of sending a device twin reported property when the accelerometer detects a double tap
     if ((currentMillis - lastShakeTime > TELEMETRY_REPORTED_SEND_INTERVAL) &&
         Globals::sensorController.checkForShake()) {
@@ -146,6 +154,7 @@ void TelemetryController::loop() {
         }
         lastShakeTime = millis();
     }
+#endif // DISABLE_SHAKE
 
     // update the current display page
     if (currentInfoPage != lastInfoPage) {
@@ -195,6 +204,7 @@ TelemetryController::~TelemetryController() {
 void TelemetryController::buildTelemetryPayload(String *payload) {
     *payload = "{";
 
+#ifndef DISABLE_HUMIDITY
     // HTS221
     float humidity = 0.0;
     if ((telemetryState & HUMIDITY_CHECKED) == HUMIDITY_CHECKED) {
@@ -202,14 +212,18 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"humidity\":");
         payload->concat(String(humidity));
     }
+#endif
 
+#ifndef DISABLE_TEMPERATURE
     float temp = 0.0;
     if ((telemetryState & TEMP_CHECKED) == TEMP_CHECKED) {
         temp = Globals::sensorController.readTemperature();
         payload->concat(",\"temp\":");
         payload->concat(String(temp));
     }
+#endif // DISABLE_TEMPERATURE
 
+#ifndef DISABLE_PRESSURE
     // LPS22HB
     float pressure = 0.0;
     if ((telemetryState & PRESSURE_CHECKED) == PRESSURE_CHECKED) {
@@ -217,7 +231,9 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"pressure\":");
         payload->concat(String(pressure));
     }
+#endif // DISABLE_PRESSURE
 
+#ifndef DISABLE_MAGNETOMETER
     // LIS2MDL
     int magAxes[3];
     if ((telemetryState & MAG_CHECKED) == MAG_CHECKED) {
@@ -229,7 +245,9 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"magnetometerZ\":");
         payload->concat(String(magAxes[2]));
     }
+#endif // DISABLE_MAGNETOMETER
 
+#ifndef DISABLE_ACCELEROMETER
     // LSM6DSL
     int accelAxes[3];
     if ((telemetryState & ACCEL_CHECKED) == ACCEL_CHECKED) {
@@ -241,7 +259,9 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"accelerometerZ\":");
         payload->concat(String(accelAxes[2]));
     }
+#endif // DISABLE_ACCELEROMETER
 
+#ifndef DISABLE_GYROSCOPE
     int gyroAxes[3];
     if ((telemetryState & GYRO_CHECKED) == GYRO_CHECKED) {
         Globals::sensorController.readGyroscope(gyroAxes);
@@ -252,6 +272,7 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"gyroscopeZ\":");
         payload->concat(String(gyroAxes[2]));
     }
+#endif // DISABLE_GYROSCOPE
 
     payload->concat("}");
     payload->replace("{,", "{");
@@ -273,25 +294,7 @@ void TelemetryController::sendTelemetryPayload(const char *payload) {
 }
 
 void TelemetryController::sendStateChange() {
-    char stateChangePayload[STRING_BUFFER_4096] = {0};
-    char value[STRING_BUFFER_16] = {0};
-
-    switch(DeviceControl::getDeviceState()) {
-        case NORMAL:
-            strcpy(value, "NORMAL");
-            break;
-        case CAUTION:
-            strcpy(value, "CAUTION");
-            break;
-        case DANGER:
-            strcpy(value, "DANGER");
-            break;
-        default:
-            strcpy(value, "UNKNOWN");
-    }
-
-    unsigned length = snprintf(stateChangePayload, STRING_BUFFER_4096 - 1,
-                              statePayloadTemplate, "deviceState", value);
-
-    sendTelemetryPayload(stateChangePayload);
+    // SEND State example
+    const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
+    sendTelemetryPayload(stateMessage);
 }
