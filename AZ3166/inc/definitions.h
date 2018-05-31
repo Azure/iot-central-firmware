@@ -10,3 +10,6 @@
 // #define DISABLE_ACCELEROMETER
 // #define DISABLE_MAGNETOMETER
 // #define DISABLE_PRESSURE
+
+// if you have set any of the above(telemetry) uncomment the one below
+// #define COMPILE_TIME_DEFINITIONS_SET
