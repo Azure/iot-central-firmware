@@ -7,7 +7,7 @@
 #include "../inc/config.h"
 
 bool WiFiController::initApWiFi() {
-    LOG_VERBOSE("- WiFiController::initApWiFi");
+    LOG_VERBOSE("WiFiController::initApWiFi");
 
     byte mac[6] = {0};
     WiFi.macAddress(mac);
@@ -39,7 +39,7 @@ bool WiFiController::initApWiFi() {
 }
 
 bool WiFiController::initWiFi() {
-    LOG_VERBOSE("- WiFiController::initWiFi");
+    LOG_VERBOSE("WiFiController::initWiFi");
     Screen.clean();
     Screen.print("WiFi \r\n \r\nConnecting...");
 
@@ -55,19 +55,23 @@ bool WiFiController::initWiFi() {
 }
 
 void WiFiController::shutdownWiFi() {
-    LOG_VERBOSE("- WiFiController::shutdownWiFi");
+    LOG_VERBOSE("WiFiController::shutdownWiFi");
     WiFi.disconnect();
     isConnected = false;
 }
 
 void WiFiController::shutdownApWiFi() {
-    LOG_VERBOSE("- WiFiController::shutdownApWiFi");
+    LOG_VERBOSE("WiFiController::shutdownApWiFi");
     WiFi.disconnectAP();
     isConnected = false;
 }
 
+bool WiFiController::getIsConnected() {
+    return WiFi.status() == WL_CONNECTED;
+}
+
 String * WiFiController::getWifiNetworks(int &count) {
-    LOG_VERBOSE("- WiFiController::getWifiNetworks");
+    LOG_VERBOSE("WiFiController::getWifiNetworks");
     String foundNetworks = "";  // keep track of network SSID so as to remove duplicates from mesh and repeater networks
     int numSsid = WiFi.scanNetworks();
     count = 0;
@@ -106,7 +110,7 @@ String * WiFiController::getWifiNetworks(int &count) {
 }
 
 void WiFiController::displayNetworkInfo() {
-    LOG_VERBOSE("- WiFiController::displayNetworkInfo");
+    LOG_VERBOSE("WiFiController::displayNetworkInfo");
     char buff[STRING_BUFFER_128] = {0};
     IPAddress ip = WiFi.localIP();
     byte mac[6] = {0};

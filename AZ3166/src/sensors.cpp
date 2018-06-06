@@ -24,7 +24,7 @@ SensorController::~SensorController() {
 #undef FREEMEM
 
 void SensorController::initSensors() {
-    LOG_VERBOSE("- SensorController::initSensors");
+    LOG_VERBOSE("SensorController::initSensors");
     // LSM6DSL
     i2c = new DevI2C(D14, D15);
     accelGyro = new LSM6DSLSensor(*i2c, D4, D5);
@@ -56,7 +56,7 @@ void SensorController::initSensors() {
 
 // HTS221
 float SensorController::readHumidity() {
-    LOG_VERBOSE("- SensorController::readHumidity");
+    LOG_VERBOSE("SensorController::readHumidity");
 
     assert(tempHumidity != NULL);
     if (tempHumidity == NULL) {
@@ -73,7 +73,7 @@ float SensorController::readHumidity() {
 }
 
 float SensorController::readTemperature() {
-    LOG_VERBOSE("- SensorController::readTemperature");
+    LOG_VERBOSE("SensorController::readTemperature");
 
     assert(tempHumidity != NULL);
     if (tempHumidity == NULL) {
@@ -91,7 +91,7 @@ float SensorController::readTemperature() {
 
 // LPS22HB
 float SensorController::readPressure() {
-    LOG_VERBOSE("- SensorController::readPressure");
+    LOG_VERBOSE("SensorController::readPressure");
 
     assert(pressure != NULL);
     if (pressure == NULL) {
@@ -108,7 +108,7 @@ float SensorController::readPressure() {
 
 // LIS2MDL
 void SensorController::readMagnetometer(int *axes) {
-    LOG_VERBOSE("- SensorController::readMagnetometer");
+    LOG_VERBOSE("SensorController::readMagnetometer");
     bool hasFailed = false;
 
     assert(magnetometer != NULL);
@@ -129,7 +129,7 @@ void SensorController::readMagnetometer(int *axes) {
 
 // LSM6DSL
 void SensorController::readAccelerometer(int *axes) {
-    LOG_VERBOSE("- SensorController::readAccelerometer");
+    LOG_VERBOSE("SensorController::readAccelerometer");
     bool hasFailed = false;
 
     assert(magnetometer != NULL);
@@ -150,7 +150,7 @@ void SensorController::readAccelerometer(int *axes) {
 }
 
 void SensorController::readGyroscope(int *axes) {
-    LOG_VERBOSE("- SensorController::readGyroscope");
+    LOG_VERBOSE("SensorController::readGyroscope");
     bool hasFailed = false;
 
     assert(accelGyro != NULL);
@@ -171,8 +171,6 @@ void SensorController::readGyroscope(int *axes) {
 }
 
 bool SensorController::checkForShake() {
-    LOG_VERBOSE("- SensorController::checkForShake");
-
     int steps = 0;
     bool shake = false;
 
@@ -193,17 +191,17 @@ bool SensorController::checkForShake() {
 
 // RGB LED
 void SensorController::setLedColor(uint8_t red, uint8_t green, uint8_t blue) {
-    LOG_VERBOSE("- SensorController::setLedColor");
+    LOG_VERBOSE("SensorController::setLedColor");
     rgbLed.setColor(red, green, blue);
 }
 
 void SensorController::turnLedOff() {
-    LOG_VERBOSE("- SensorController::turnLedOff");
+    LOG_VERBOSE("SensorController::turnLedOff");
     rgbLed.turnOff();
 }
 
 void SensorController::transmitIR() {
-    LOG_VERBOSE("- SensorController::transmitIR");
+    LOG_VERBOSE("SensorController::transmitIR");
 
     assert(irdaSensor != NULL);
     if (irdaSensor == NULL) {
