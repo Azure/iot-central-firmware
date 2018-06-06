@@ -232,7 +232,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
                 unknown = true;
         }
 
-        LOG_VERBOSE("- Checkbox State %d", checkboxState);
+        LOG_VERBOSE("Checkbox State %d", checkboxState);
 
         if (unknown) {
             LOG_ERROR("Unkown key:'%s' idx:'%d'", key, idx);

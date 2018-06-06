@@ -68,9 +68,11 @@ struct Globals
 #define IOT_CENTRAL_ZONE_IDX      0x02
 #define IOT_CENTRAL_MAX_LEN       STRING_BUFFER_128
 #define AZIOTC_FW_MAJOR_VERSION 1
-#define AZIOTC_FW_MINOR_VERSION 2
+#define AZIOTC_FW_MINOR_VERSION 3
 #define AZIOTC_FW_PATCH_VERSION 0
 #define AZIOTC_FW_VERSION         TO_STRING(AZIOTC_FW_MAJOR_VERSION AZIOTC_FW_MINOR_VERSION AZIOTC_FW_PATCH_VERSION) "-MSIOTC"
+
+#include "definitions.h"
 
 // LOGS
 
@@ -86,6 +88,7 @@ struct Globals
 #else
 #define LOG_VERBOSE(...) \
     do { \
+        Serial.printf("  - "); \
         Serial.printf(__VA_ARGS__); \
         Serial.printf("\r\n"); \
         delay(5); \
@@ -95,7 +98,7 @@ struct Globals
 // Log Errors no matter what
 #define LOG_ERROR(...) \
     do { \
-        Serial.printf("Error at %s:%d\r\n\t", __FILE__, __LINE__); \
+        Serial.printf("X - Error at %s:%d\r\n\t", __FILE__, __LINE__); \
         Serial.printf(__VA_ARGS__); \
         Serial.printf("\r\n"); \
         delay(50); \

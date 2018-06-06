@@ -2,7 +2,11 @@
 # Licensed under the MIT license.
 
 .vscode/
+package-lock.json
 
 # Arduino build files and folders
 build/
+
+# iotc default build folder
+out/
 

@@ -12,6 +12,8 @@
 #include "../inc/stats.h"
 #include "../inc/wifi.h"
 
+#include "../inc/watchdogController.h"
+
 // forward declarations
 static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback(IOTHUB_MESSAGE_HANDLE message, void *userContextCallback);
 static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state, const unsigned char* payLoad, size_t size, void* userContextCallback);
@@ -21,6 +23,7 @@ static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, v
 static void deviceTwinConfirmationCallback(int status_code, void* userContextCallback);
 
 void IoTHubClient::initIotHubClient() {
+    LOG_VERBOSE("IoTHubClient::initIotHubClient START");
     char connectionString[AZ_IOT_HUB_MAX_LEN] = {0};
     ConfigController::readConnectionString(connectionString, AZ_IOT_HUB_MAX_LEN);
 
@@ -28,7 +31,12 @@ void IoTHubClient::initIotHubClient() {
     String deviceIdString = connString.substring(connString.indexOf("DeviceId=")
                             + 9, connString.indexOf(";SharedAccess"));
 
-    assert(deviceIdString.length() < IOT_CENTRAL_MAX_LEN);
+    if (deviceIdString.length() >= IOT_CENTRAL_MAX_LEN) {
+        LOG_ERROR("deviceIdString.length() >= IOT_CENTRAL_MAX_LEN...\n \
+deviceIdString : %s\n \
+connString: %s", deviceIdString.c_str(), connString.c_str());
+        return;
+    }
     memcpy(deviceId, deviceIdString.c_str(), deviceIdString.length());
 
     String hubNameString = connString.substring(connString.indexOf("HostName=")
@@ -102,6 +110,8 @@ void IoTHubClient::initIotHubClient() {
         hasError = true;
         return;
     }
+
+    LOG_VERBOSE("IoTHubClient::initIotHubClient END");
 }
 
 bool IoTHubClient::sendTelemetry(const char *payload) {
@@ -150,6 +160,7 @@ bool IoTHubClient::sendTelemetry(const char *payload) {
     // yield to process any work to/from the hub
     hubClientYield();
 
+    LOG_VERBOSE("IoTHubClient::sendTelemetry COMPLETED");
     return true;
 }
 
@@ -166,6 +177,7 @@ bool IoTHubClient::sendReportedProperty(const char *payload) {
         retValue = false;
     }
 
+    LOG_VERBOSE("IoTHubClient::sendReportedProperty COMPLETED");
     return retValue;
 }
 
@@ -207,11 +219,14 @@ void IoTHubClient::closeIotHubClient()
         IoTHubClient_LL_Destroy(iotHubClientHandle);
         iotHubClientHandle = NULL;
     }
+    LOG_VERBOSE("IoTHubClient::closeIotHubClient!");
 }
 
 static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
     (IOTHUB_MESSAGE_HANDLE message, void *userContextCallback)
 {
+    LOG_VERBOSE("IoTHubClient::receiveMessageCallback (%s)", message);
+
     int *counter = (int *)userContextCallback;
     const char *buffer;
     size_t size;
@@ -275,6 +290,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
 int DeviceDirectMethodCallback(const char* method_name, const unsigned char* payload,
     size_t size, unsigned char** response, size_t* resp_size, void* /* userContextCallback */)
 {
+    LOG_VERBOSE("IoTHubClient::DeviceDirectMethodCallback (%s)", method_name);
     // message format expected:
     // {
     //     "methodName": "reboot",
@@ -332,6 +348,7 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
 
 // every desired property change gets echoed back as a reported property
 void echoDesired(const char *propertyName, const char *message, const char *status, int statusCode) {
+    LOG_VERBOSE("IoTHubClient::echoDesired (%s)", message);
     JSObject rootObject(message);
     JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
     LOG_VERBOSE("echoDesired is received - pn: %s m: %s s: %s sc: %d", propertyName, message, status, statusCode);
@@ -392,6 +409,7 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
 }
 
 void callDesiredCallback(const char *propertyName, const char *payLoad, size_t size) {
+    LOG_VERBOSE("IoTHubClient::callDesiredCallback (%s)", payLoad);
     int status = 0;
     char *methodResponse;
     size_t responseSize;
@@ -423,8 +441,7 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
 
 void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
     const unsigned char* payLoad, size_t size, void* userContextCallback) {
-
-    LOG_VERBOSE("- on deviceTwinGetStateCallback");
+    LOG_VERBOSE("IoTHubClient::deviceTwinGetStateCallback (%s)", payLoad);
 
     ((char*)payLoad)[size] = 0x00;
     JSObject payloadObject((const char *)payLoad);
@@ -484,6 +501,7 @@ static void deviceTwinConfirmationCallback(int status_code, void* userContextCal
 
 static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
     IOTHUB_CLIENT_CONNECTION_STATUS_REASON reason, void* userContextCallback) {
+    LOG_VERBOSE("IoTHubClient::connectionStatusCallback");
 
     TelemetryController * telemetryController = NULL;
     if (Globals::loopController->withTelemetry()) {
@@ -504,6 +522,9 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
 
 static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback) {
     static int callbackCounter = 0;
+    // confirmation tells us that we were connected and things were working.
+    // so reset the watchdog controller until the next time.
+    WatchdogController::reset();
     EVENT_INSTANCE *eventInstance = (EVENT_INSTANCE *)userContextCallback;
     LOG_VERBOSE("Confirmation[%d] received for message tracking id = %d \
         with result = %s", callbackCounter++, eventInstance->messageTrackingId,

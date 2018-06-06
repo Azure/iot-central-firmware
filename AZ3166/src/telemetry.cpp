@@ -13,6 +13,7 @@
 #include "../inc/stats.h"
 #include "../inc/registeredMethodHandlers.h"
 #include "../inc/oledAnimation.h"
+#include "../inc/watchdogController.h"
 
 void TelemetryController::initializeTelemetryController(const char * iotCentralConfig) {
     assert(initializeCompleted == false);
@@ -28,6 +29,7 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
         LOG_ERROR("WiFi - NOT CONNECTED - return");
         return;
     }
+    WatchdogController::reset();
 
     // initialize the IoT Hub Client
     assert(iothubClient == NULL);
@@ -42,6 +44,7 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
         Screen.print(2, "Please reset \r\n   the device.  \r\n");
         return;
     }
+    WatchdogController::reset();
 
     // Register callbacks for cloud to device messages
     iothubClient->registerMethod("message", cloudMessage);  // C2D message
@@ -71,6 +74,13 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
 void TelemetryController::loop() {
     // if we are about to reset then stop sending/processing any telemetry
     if (!initializeCompleted || !Globals::wiFiController.getIsConnected()) {
+        if (!Globals::wiFiController.getIsConnected()) {
+            Screen.print(0, "-NOT Connected- ");
+            Screen.print(1, "                ");
+            Screen.print(2, " Check WiFi ?   ");
+            Screen.print(3, "                ");
+        }
+
         delay(1);
         return;
     }
@@ -123,6 +133,7 @@ void TelemetryController::loop() {
         lastTelemetrySend = millis();
     }
 
+#ifndef DISABLE_SHAKE
     // example of sending a device twin reported property when the accelerometer detects a double tap
     if ((currentMillis - lastShakeTime > TELEMETRY_REPORTED_SEND_INTERVAL) &&
         Globals::sensorController.checkForShake()) {
@@ -144,6 +155,7 @@ void TelemetryController::loop() {
         }
         lastShakeTime = millis();
     }
+#endif // DISABLE_SHAKE
 
     // update the current display page
     if (currentInfoPage != lastInfoPage) {
@@ -193,6 +205,7 @@ TelemetryController::~TelemetryController() {
 void TelemetryController::buildTelemetryPayload(String *payload) {
     *payload = "{";
 
+#ifndef DISABLE_HUMIDITY
     // HTS221
     float humidity = 0.0;
     if ((telemetryState & HUMIDITY_CHECKED) == HUMIDITY_CHECKED) {
@@ -200,14 +213,18 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"humidity\":");
         payload->concat(String(humidity));
     }
+#endif
 
+#ifndef DISABLE_TEMPERATURE
     float temp = 0.0;
     if ((telemetryState & TEMP_CHECKED) == TEMP_CHECKED) {
         temp = Globals::sensorController.readTemperature();
         payload->concat(",\"temp\":");
         payload->concat(String(temp));
     }
+#endif // DISABLE_TEMPERATURE
 
+#ifndef DISABLE_PRESSURE
     // LPS22HB
     float pressure = 0.0;
     if ((telemetryState & PRESSURE_CHECKED) == PRESSURE_CHECKED) {
@@ -215,7 +232,9 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"pressure\":");
         payload->concat(String(pressure));
     }
+#endif // DISABLE_PRESSURE
 
+#ifndef DISABLE_MAGNETOMETER
     // LIS2MDL
     int magAxes[3];
     if ((telemetryState & MAG_CHECKED) == MAG_CHECKED) {
@@ -227,7 +246,9 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"magnetometerZ\":");
         payload->concat(String(magAxes[2]));
     }
+#endif // DISABLE_MAGNETOMETER
 
+#ifndef DISABLE_ACCELEROMETER
     // LSM6DSL
     int accelAxes[3];
     if ((telemetryState & ACCEL_CHECKED) == ACCEL_CHECKED) {
@@ -239,7 +260,9 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"accelerometerZ\":");
         payload->concat(String(accelAxes[2]));
     }
+#endif // DISABLE_ACCELEROMETER
 
+#ifndef DISABLE_GYROSCOPE
     int gyroAxes[3];
     if ((telemetryState & GYRO_CHECKED) == GYRO_CHECKED) {
         Globals::sensorController.readGyroscope(gyroAxes);
@@ -250,12 +273,14 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
         payload->concat(",\"gyroscopeZ\":");
         payload->concat(String(gyroAxes[2]));
     }
+#endif // DISABLE_GYROSCOPE
 
     payload->concat("}");
     payload->replace("{,", "{");
 }
 
 void TelemetryController::sendTelemetryPayload(const char *payload) {
+    LOG_VERBOSE("TelemetryController::sendTelemetryPayload");
     if (iothubClient->sendTelemetry(payload)) {
         // flash the Azure LED
         digitalWrite(LED_AZURE, 1);
