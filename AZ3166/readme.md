@@ -128,9 +128,9 @@ the one the device is connected to.  In windows this can be found by looking at
 the device manager and looking in Ports for the COM port for the
 STMicroelectronics STLink Virtual COM Port.  On macOS the port will be the one
 with /dev/cu.usbmodemXXXX STMicroElectronics
-- Set the Serial board rate to 250000.  Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for
+- Set the Serial board rate to 9600.  Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for
 MacOS) and type **Arduino** then find and select **Arduino: Change Baud rate**
-and select 250000 from the list.
+and select 9600 from the list.
 - Select the board type. Use `CTRL+SHIFT+P` (or `CMD+SHIFT+P` for MacOS) and
 type **Arduino** and then find and select **Arduino: Change Board Type** and
 select **MXCHIP AZ3166** from the list.
@@ -164,7 +164,7 @@ to start the serial port monitor in VS Code.  Use `CTRL+SHIFT+P` macOS
 (`CMD+SHIFT+P`) and type **Arduino** then find and select
 **Arduino: Open Serial Monitor**.  The Serial port monitor will be opened in
 the output window and serial port messages will be displayed.  If the output
-is garbled then check to make sure you have the baud rate set at 250000.
+is garbled then check to make sure you have the baud rate set at 9600.
 
 For more complete debugging you can select the debug tool on the left-hand
 toolbar of VS Code.  Then set any breakpoints in the code as normal and press
