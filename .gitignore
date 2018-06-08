@@ -293,3 +293,7 @@ __pycache__/
 
 # VSCode
 .vscode/
+
+# Make && testing
+*.o
+new_baseline
