@@ -10,17 +10,19 @@
 #include "../inc/device.h"
 #include "../inc/oledAnimation.h"
 #include "../inc/fanSound.h"
+#include "../inc/watchdogController.h"
 
 // handler for the cloud to device (C2D) message
 int cloudMessage(const char *payload, size_t size, char **response, size_t* resp_size) {
     LOG_VERBOSE("Cloud to device (C2D) message recieved");
 
+    WatchdogController::reset(); // call came from cloud. we should be fine!
     // get parameters
 
     JSObject json(payload);
-    const char * text = json.getStringByName("text");
+    const char * text = json.getStringByName("displayedValue");
     if (text == NULL) {
-        LOG_ERROR("Object doesn't have a member 'text'");
+        LOG_ERROR("Object doesn't have a member 'displayedValue' : %s", payload);
         return 0;
     }
 
@@ -28,7 +30,7 @@ int cloudMessage(const char *payload, size_t size, char **response, size_t* resp
     Screen.clean();
     Screen.print(0, "New message:");
     Screen.print(1, text, true);
-    delay(2000);
+    delay(2500);
 
     return 200; /* status */
 }
@@ -39,16 +41,17 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
 
     Globals::sensorController.turnLedOff();
     delay(100);
+    WatchdogController::reset(); // give time for animation to run
 
     JSObject json(payload);
-    double retval = json.getNumberByName("cycles");
+    double retval = json.getNumberByName("countFrom");
     if (retval == INT_MAX || retval < 0) { // don't let overflow
-        LOG_ERROR("'cycles' is not a number");
+        LOG_ERROR("'countFrom' is not a number : %s", payload);
         return 0;
     }
 
-    int cycles = (int) retval;
-    for(int iter = 0; iter < cycles; iter++) {
+    int countFrom = (int) retval;
+    for(int iter = 0; iter < countFrom; iter++) {
         // Start off with red.
         rgbColour[0] = 255;
         rgbColour[1] = 0;
@@ -64,7 +67,7 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
                 rgbColour[incColour] += 1;
 
                 Globals::sensorController.setLedColor(rgbColour[0], rgbColour[1], rgbColour[2]);
-                delay(5);
+                delay(1);
             }
         }
     }
