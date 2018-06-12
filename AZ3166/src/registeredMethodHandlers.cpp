@@ -63,8 +63,12 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
         return 0;
     }
 
-    int countFrom = (int) retval;
-    for(int iter = 0; iter < countFrom; iter++) {
+    int32_t countFrom = (int32_t) retval;
+    if (countFrom > 100) { // keep loop is small
+        countFrom = 100;
+    }
+
+    for(int32_t iter = 0; iter < countFrom; iter++) {
         // Start off with red.
         rgbColour[0] = 255;
         rgbColour[1] = 0;
