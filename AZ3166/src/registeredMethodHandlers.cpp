@@ -39,11 +39,6 @@ int cloudMessage(const char *payload, size_t size, char **response, size_t* resp
         *resp_size = strlen(Globals::completedString);
     }
 
-    IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
-    if (hubClient != NULL) {
-        hubClient->sendReportedProperty(*payloadNL);
-    }
-
     return 200; /* status */
 }
 
@@ -68,6 +63,8 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
         countFrom = 100;
     }
 
+    char counterString[STRING_BUFFER_128] = {0};
+
     for(int32_t iter = 0; iter < countFrom; iter++) {
         // Start off with red.
         rgbColour[0] = 255;
@@ -87,6 +84,17 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
                 delay(1);
             }
         }
+
+        IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
+        if (hubClient != NULL) {
+            int n = snprintf(counterString, STRING_BUFFER_128 - 1, "{\"countdown\":{\"value\": %d}}", iter);
+            counterString[n] = 0;
+            hubClient->sendReportedProperty(counterString);
+        }
+
+        if (iter % 9 == 0) {
+            WatchdogController::reset(); // give time for animation to run
+        }
     }
 
     // return it to the status color
@@ -100,10 +108,6 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
         *resp_size = strlen(Globals::completedString);
     }
 
-    IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
-    if (hubClient != NULL) {
-        hubClient->sendReportedProperty(*payloadNL);
-    }
     return 200; /* status */
 }
 
