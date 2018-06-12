@@ -14,7 +14,7 @@
 #include "../inc/telemetry.h"
 
 // handler for the cloud to device (C2D) message
-int cloudMessage(const char *payload, size_t size, char **response, size_t* resp_size) {
+int dmEcho(const char *payload, size_t size, char **response, size_t* resp_size) {
     LOG_VERBOSE("Cloud to device (C2D) message recieved");
 
     WatchdogController::reset(); // call came from cloud. we should be fine!
@@ -42,7 +42,7 @@ int cloudMessage(const char *payload, size_t size, char **response, size_t* resp
     return 200; /* status */
 }
 
-int directMethod(const char *payload, size_t size, char **response, size_t* resp_size) {
+int dmCountdown(const char *payload, size_t size, char **response, size_t* resp_size) {
     // make the RGB LED color cycle
     unsigned int rgbColour[3];
 

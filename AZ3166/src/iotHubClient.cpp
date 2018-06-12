@@ -317,11 +317,12 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
 
     if (telemetryController != NULL && telemetryController->getHubClient() != NULL) {
         // lookup if the method has been registered to a function
+        IoTHubClient *hubClient = telemetryController->getHubClient();
         String methodName = method_name;
         methodName.toUpperCase();
-        for(int i = 0; i < telemetryController->getHubClient()->methodCallbackCount; i++) {
-            if (methodName == telemetryController->getHubClient()->methodCallbackList[i].name) {
-                status = telemetryController->getHubClient()->methodCallbackList[i].callback(
+        for(int i = 0; i < hubClient->methodCallbackCount; i++) {
+            if (methodName == hubClient->methodCallbackList[i].name) {
+                status = hubClient->methodCallbackList[i].callback(
                         (const char*)payload, size, &methodResponse, &responseSize);
                 break;
             }
@@ -374,7 +375,8 @@ void echoDesired(const char *propertyName, const char *message, const char *stat
         desiredVersion = rootObject.getNumberByName("$version");
     }
 
-    const char* echoTemplate = "{\"%s\":{\"value\":%d,\"statusCode\":%d,\"status\":\"%s\",\"desiredVersion\":%d}}";
+    const char* echoTemplate = "{\"%s\":{\"value\":%d,\"statusCode\":%d,\
+\"status\":\"%s\",\"desiredVersion\":%d}}";
     uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName,
         (int) value, // BAD HACK
         statusCode, status, (int) desiredVersion);

@@ -46,9 +46,9 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     }
     WatchdogController::reset();
 
-    // Register callbacks for cloud to device messages
-    iothubClient->registerMethod("echo", cloudMessage);  // C2D message
-    iothubClient->registerMethod("countdown", directMethod);  // direct method
+    // Register callbacks for direct messages
+    iothubClient->registerMethod("echo", dmEcho);
+    iothubClient->registerMethod("countdown", dmCountdown);
 
     // register callbacks for desired properties expected
     iothubClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
