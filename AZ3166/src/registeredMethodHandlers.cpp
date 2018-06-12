@@ -11,6 +11,7 @@
 #include "../inc/oledAnimation.h"
 #include "../inc/fanSound.h"
 #include "../inc/watchdogController.h"
+#include "../inc/telemetry.h"
 
 // handler for the cloud to device (C2D) message
 int cloudMessage(const char *payload, size_t size, char **response, size_t* resp_size) {
@@ -18,8 +19,9 @@ int cloudMessage(const char *payload, size_t size, char **response, size_t* resp
 
     WatchdogController::reset(); // call came from cloud. we should be fine!
     // get parameters
+    AutoString payloadNL(payload, size);
 
-    JSObject json(payload);
+    JSObject json(*payloadNL);
     const char * text = json.getStringByName("displayedValue");
     if (text == NULL) {
         LOG_ERROR("Object doesn't have a member 'displayedValue' : %s", payload);
@@ -32,6 +34,16 @@ int cloudMessage(const char *payload, size_t size, char **response, size_t* resp
     Screen.print(1, text, true);
     delay(2500);
 
+    if (response != NULL) {
+        *response = (char*) Globals::completedString;
+        *resp_size = strlen(Globals::completedString);
+    }
+
+    IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
+    if (hubClient != NULL) {
+        hubClient->sendReportedProperty(*payloadNL);
+    }
+
     return 200; /* status */
 }
 
@@ -43,7 +55,8 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
     delay(100);
     WatchdogController::reset(); // give time for animation to run
 
-    JSObject json(payload);
+    AutoString payloadNL(payload, size);
+    JSObject json(*payloadNL);
     double retval = json.getNumberByName("countFrom");
     if (retval == INT_MAX || retval < 0) { // don't let overflow
         LOG_ERROR("'countFrom' is not a number : %s", payload);
@@ -81,6 +94,11 @@ int directMethod(const char *payload, size_t size, char **response, size_t* resp
     if (response != NULL) {
         *response = (char*) Globals::completedString;
         *resp_size = strlen(Globals::completedString);
+    }
+
+    IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
+    if (hubClient != NULL) {
+        hubClient->sendReportedProperty(*payloadNL);
     }
     return 200; /* status */
 }
