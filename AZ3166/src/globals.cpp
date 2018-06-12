@@ -7,7 +7,7 @@
 #include "../inc/sensors.h"
 #include "../inc/loop.h"
 
-const char *     Globals::completedString = "completed";
+const char *     Globals::completedString = "{}";
 WiFiController   Globals::wiFiController;
 SensorController Globals::sensorController;
 LoopController * Globals::loopController = NULL;
