@@ -8,21 +8,25 @@
 #include <parson/parson.h>
 
 class AutoString {
+    static char buffer[STRING_BUFFER_512];
+    static bool buffer_in_use; // no multithread support
+
     char * data;
     unsigned length;
     bool persistent;
+    bool using_buffer;
 
 public:
-    AutoString(): data(NULL), length(0), persistent(false) { }
+    AutoString(): data(NULL), length(0), persistent(false), using_buffer(false) { }
 
-    AutoString(const char * str, unsigned lengthStr): persistent(false) {
+    AutoString(const char * str, unsigned lengthStr): persistent(false), using_buffer(false) {
         data = NULL;
         length = 0;
 
         initialize(str, lengthStr);
     }
 
-    AutoString(unsigned lengthStr): persistent(false) {
+    AutoString(unsigned lengthStr): persistent(false), using_buffer(false) {
         data = NULL;
         length = 0;
 
@@ -31,17 +35,26 @@ public:
 
     void initialize(const char * str, unsigned lengthStr) {
         if (str != NULL) {
-            data = strdup(str);
+            alloc(lengthStr + 1); // +1 for \0
+            assert(data != NULL); // out of memory?
+
+            memcpy(data, str, lengthStr);
+            data[lengthStr] = 0;
             length = lengthStr;
-            assert(data != NULL);
         }
     }
 
     void alloc(unsigned lengthStr) {
         assert(lengthStr != 0 && data == NULL);
-        data = (char*) malloc(lengthStr + 1 /* * sizeof(char) */);
-        assert(data != NULL);
-        memset(data, 0, lengthStr);
+
+        if (buffer_in_use || lengthStr > STRING_BUFFER_512) {
+            data = (char*) malloc(lengthStr /* * sizeof(char) */);
+        } else {
+            using_buffer = true;
+            buffer_in_use = true;
+            data = buffer;
+        }
+
         length = lengthStr;
     }
 
@@ -52,7 +65,14 @@ public:
 
     void clear() {
         if (data != NULL) {
-            free (data);
+            if (using_buffer) {
+                using_buffer = false;
+                buffer_in_use = false;
+                memset(data, 0, STRING_BUFFER_512);
+            } else {
+                free (data);
+            }
+            data = NULL;
         }
     }
 
