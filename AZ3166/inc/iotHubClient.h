@@ -30,17 +30,6 @@ class IoTHubClient
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
     int trackingId;
 
-    void checkConnection() {
-        if (needsReconnect) {
-            // simple reconnection of the client in the event of a disconnect
-            LOG_VERBOSE("Reconnecting to the IoT Hub");
-            closeIotHubClient();
-            initIotHubClient();
-
-            needsReconnect = false;
-        }
-    }
-
     void hubClientYield(void) {
         checkConnection();
 
@@ -70,6 +59,17 @@ public:
 
     bool wasInitialized() {
         return !hasError;
+    }
+
+    void checkConnection() {
+        if (needsReconnect) {
+            // simple reconnection of the client in the event of a disconnect
+            LOG_VERBOSE("Reconnecting to the IoT Hub");
+            closeIotHubClient();
+            initIotHubClient();
+
+            needsReconnect = false;
+        }
     }
 
     bool sendTelemetry(const char *payload);

@@ -420,20 +420,21 @@ void callDesiredCallback(const char *propertyName, const char *payLoad, size_t s
     }
 
     if (telemetryController != NULL && telemetryController->getHubClient() != NULL) {
+        IoTHubClient *hubClient = telemetryController->getHubClient();
         AutoString propName(propertyName, strlen(propertyName));
         strupr(*propName);
 
         int i = 0;
-        for(; i < telemetryController->getHubClient()->desiredCallbackCount; i++) {
-            if (strcmp(*propName, telemetryController->getHubClient()->desiredCallbackList[i].name) == 0) {
-                status = telemetryController->getHubClient()->desiredCallbackList[i].callback(payLoad,
+        for(; i < hubClient->desiredCallbackCount; i++) {
+            if (strcmp(*propName, hubClient->desiredCallbackList[i].name) == 0) {
+                status = hubClient->desiredCallbackList[i].callback(payLoad,
                             size, &methodResponse, &responseSize);
                 echoDesired(propertyName, payLoad, methodResponse, status);
                 break;
             }
         }
 
-        if (i == telemetryController->getHubClient()->desiredCallbackCount) {
+        if (i == hubClient->desiredCallbackCount) {
             LOG_ERROR("Property Name '%s' is not found @callDesiredCallback", *propName);
         }
     }
@@ -506,18 +507,21 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
     TelemetryController * telemetryController = NULL;
     if (Globals::loopController->withTelemetry()) {
         telemetryController = (TelemetryController*) Globals::loopController;
+    } else {
+        return;
     }
+
+    assert(telemetryController != NULL && telemetryController->getHubClient() != NULL);
 
     if (reason == IOTHUB_CLIENT_CONNECTION_NO_NETWORK) {
         LOG_ERROR("No network connection");
-        if (telemetryController != NULL && telemetryController->getHubClient() != NULL)
-            telemetryController->getHubClient()->needsReconnect = true;
+        telemetryController->getHubClient()->needsReconnect = true;
     } else if (result == IOTHUB_CLIENT_CONNECTION_UNAUTHENTICATED &&
-               reason == IOTHUB_CLIENT_CONNECTION_EXPIRED_SAS_TOKEN) {
+            reason == IOTHUB_CLIENT_CONNECTION_EXPIRED_SAS_TOKEN) {
         LOG_ERROR("Connection timeout");
-        if (telemetryController != NULL && telemetryController->getHubClient() != NULL)
-            telemetryController->getHubClient()->needsReconnect = true;
+        telemetryController->getHubClient()->needsReconnect = true;
     }
+    telemetryController->getHubClient()->checkConnection();
 }
 
 static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback) {
