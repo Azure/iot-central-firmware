@@ -50,12 +50,16 @@ class WiFiController;
 class SensorController;
 class LoopController;
 
+#define MAP_DATA_SIZE 546
 struct Globals
 {
-    static  const char *            completedString; // \"completed\"
+    static  const char *            completedString; // "{}"
+    static  const char *            responseString; // "{\"Response\":{}}"
     static  WiFiController          wiFiController;
     static  SensorController        sensorController;
     static  LoopController *        loopController;
+
+    static double                   locationData[MAP_DATA_SIZE];
 };
 
 // IOT HUB
@@ -101,7 +105,7 @@ struct Globals
         Serial.printf("X - Error at %s:%d\r\n\t", __FILE__, __LINE__); \
         Serial.printf(__VA_ARGS__); \
         Serial.printf("\r\n"); \
-        delay(50); \
+        delay(100); \
     } while(0)
 
 #endif // GLOBALS_H

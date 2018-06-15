@@ -71,6 +71,9 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
 }
 
 
+static int locationDataOffset = 0;
+static char locationString[STRING_BUFFER_128];
+
 void TelemetryController::loop() {
     // if we are about to reset then stop sending/processing any telemetry
     if (!initializeCompleted || !Globals::wiFiController.getIsConnected()) {
@@ -125,12 +128,40 @@ void TelemetryController::loop() {
     }
 
     // example of sending telemetry data
-    if (currentMillis - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
+    if (canSend() && currentMillis - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
+        setCanSend(false); // wait until the telemetry is sent
+
+        int n = snprintf(locationString, STRING_BUFFER_128 - 1,
+                "{\"location\":{\"lon\":%f,\"lat\":%f}}",
+                Globals::locationData[locationDataOffset++],
+                Globals::locationData[locationDataOffset++]);
+        locationString[n] = 0;
+        locationDataOffset %= MAP_DATA_SIZE;
+        if (iothubClient->sendReportedProperty(locationString)) {
+            LOG_VERBOSE("Reported property location successfully sent %s", locationString);
+            StatsController::incrementReportedCount();
+        } else {
+            LOG_ERROR("Reported property location failed to during sending");
+            StatsController::incrementErrorCount();
+        }
+
         String payload; // max payload size for Azure IoT
 
         buildTelemetryPayload(&payload);
         sendTelemetryPayload(payload.c_str());
         lastTelemetrySend = millis();
+    }
+
+    DirectMethodNode * task = iothubClient->popDirectMethod();
+    if (task) {
+        for(int i = 0; i < iothubClient->methodCallbackCount; i++) {
+            if (strcmp(task->methodName, iothubClient->methodCallbackList[i].name) == 0) {
+                iothubClient->methodCallbackList[i].callback(
+                        task->payload, task->length);
+                iothubClient->freeDirectMethod(task);
+                break;
+            }
+        }
     }
 
 #ifndef DISABLE_SHAKE
@@ -186,6 +217,7 @@ void TelemetryController::loop() {
             break;
     }
 
+    iothubClient->hubClientYield();
     delay(1);  // good practice to help prevent lockups
 }
 

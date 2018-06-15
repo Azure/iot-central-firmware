@@ -14,18 +14,12 @@
 #include "../inc/telemetry.h"
 
 // handler for the cloud to device (C2D) message
-int dmEcho(const char *payload, size_t size, char **response, size_t* resp_size) {
-    LOG_VERBOSE("Cloud to device (C2D) message recieved");
-
-    WatchdogController::reset(); // call came from cloud. we should be fine!
-    // get parameters
-    AutoString payloadNL(payload, size);
-
-    JSObject json(*payloadNL);
+void dmEcho(const char *payload, size_t size) {
+    JSObject json(payload);
     const char * text = json.getStringByName("displayedValue");
     if (text == NULL) {
         LOG_ERROR("Object doesn't have a member 'displayedValue' : %s", payload);
-        return 0;
+        return;
     }
 
     // display the message on the screen
@@ -33,29 +27,19 @@ int dmEcho(const char *payload, size_t size, char **response, size_t* resp_size)
     Screen.print(0, "New message:");
     Screen.print(1, text, true);
     delay(2500);
-
-    if (response != NULL) {
-        *response = (char*) Globals::completedString;
-        *resp_size = strlen(Globals::completedString);
-    }
-
-    return 200; /* status */
 }
 
-int dmCountdown(const char *payload, size_t size, char **response, size_t* resp_size) {
+void dmCountdown(const char *payload, size_t size) {
     // make the RGB LED color cycle
     unsigned int rgbColour[3];
 
     Globals::sensorController.turnLedOff();
-    delay(100);
-    WatchdogController::reset(); // give time for animation to run
-
-    AutoString payloadNL(payload, size);
-    JSObject json(*payloadNL);
+    JSObject json(payload);
     double retval = json.getNumberByName("countFrom");
+    LOG_VERBOSE("'countFrom' : %d", (int)retval);
     if (retval == INT_MAX || retval < 0) { // don't let overflow
         LOG_ERROR("'countFrom' is not a number : %s", payload);
-        return 0;
+        return;
     }
 
     int32_t countFrom = (int32_t) retval;
@@ -65,11 +49,13 @@ int dmCountdown(const char *payload, size_t size, char **response, size_t* resp_
 
     char counterString[STRING_BUFFER_128] = {0};
 
-    for(int32_t iter = 0; iter < countFrom; iter++) {
+    for(int32_t iter = countFrom; iter >= 0; iter--) {
         // Start off with red.
         rgbColour[0] = 255;
         rgbColour[1] = 0;
         rgbColour[2] = 0;
+
+        IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
 
         // Choose the colours to increment and decrement.
         for (int decColour = 0; decColour < 3; decColour += 1) {
@@ -81,20 +67,19 @@ int dmCountdown(const char *payload, size_t size, char **response, size_t* resp_
                 rgbColour[incColour] += 1;
 
                 Globals::sensorController.setLedColor(rgbColour[0], rgbColour[1], rgbColour[2]);
-                delay(1);
+                delay(3);
+            }
+            if (hubClient != NULL) {
+                hubClient->hubClientYield();
             }
         }
 
-        IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
         if (hubClient != NULL) {
             int n = snprintf(counterString, STRING_BUFFER_128 - 1, "{\"countdown\":{\"value\": %d}}", iter);
             counterString[n] = 0;
             hubClient->sendReportedProperty(counterString);
         }
-
-        if (iter % 9 == 0) {
-            WatchdogController::reset(); // give time for animation to run
-        }
+        WatchdogController::reset();
     }
 
     // return it to the status color
@@ -102,13 +87,6 @@ int dmCountdown(const char *payload, size_t size, char **response, size_t* resp_
     Globals::sensorController.turnLedOff();
     delay(100);
     DeviceControl::showState();
-
-    if (response != NULL) {
-        *response = (char*) Globals::completedString;
-        *resp_size = strlen(Globals::completedString);
-    }
-
-    return 200; /* status */
 }
 
 // this is the callback method for the fanSpeed desired property
