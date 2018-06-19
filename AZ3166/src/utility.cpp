@@ -7,6 +7,9 @@
 #include "SystemWiFi.h"
 #include "NTPClient.h"
 
+char AutoString::buffer[STRING_BUFFER_512] = {0};
+bool AutoString::buffer_in_use = false;
+
 const char * JSObject::toString() {
     assert(object != NULL);
 

@@ -191,7 +191,6 @@ bool SensorController::checkForShake() {
 
 // RGB LED
 void SensorController::setLedColor(uint8_t red, uint8_t green, uint8_t blue) {
-    LOG_VERBOSE("SensorController::setLedColor");
     rgbLed.setColor(red, green, blue);
 }
 

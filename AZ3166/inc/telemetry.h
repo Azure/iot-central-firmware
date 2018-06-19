@@ -20,12 +20,13 @@ class TelemetryController : public LoopController
     int lastInfoPage;
     uint8_t telemetryState;
     IoTHubClient * iothubClient;
+    bool           can_send;
 
     void initializeTelemetryController(const char * iotCentralConfig);
     TelemetryController(const char * iotCentralConfig):
         lastTelemetrySend(0), lastTimeSync(0), lastShakeTime(0),
         lastSwitchPress(0), currentInfoPage(0), lastInfoPage(-1),
-        telemetryState(0), iothubClient(NULL)
+        telemetryState(0), iothubClient(NULL), can_send(true)
     {
         initializeTelemetryController(iotCentralConfig);
     }
@@ -44,6 +45,8 @@ public:
     ~TelemetryController();
 
     IoTHubClient * getHubClient() { return iothubClient; }
+    bool canSend() { return can_send; }
+    void setCanSend(bool s) { can_send = s; }
 };
 
 #endif // TELEMETRY_CONTROLLER

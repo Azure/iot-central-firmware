@@ -293,3 +293,7 @@ __pycache__/
 
 # VSCode
 .vscode/
+
+# arduino
+.arduino15/
+BUILD/
