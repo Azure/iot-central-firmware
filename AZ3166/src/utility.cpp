@@ -124,7 +124,7 @@ unsigned urldecode(const char * url, unsigned length, AutoString * outURL) {
         return resultLength;
     }
 
-    outURL->alloc(length);
+    outURL->alloc(length + 1);
     for (unsigned i = 0; i < length; i++) {
         char c = *(url + i);
         if (c == '+') {

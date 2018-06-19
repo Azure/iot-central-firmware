@@ -54,6 +54,7 @@ public:
             buffer_in_use = true;
             data = buffer;
         }
+        memset(data, 0, lengthStr);
 
         length = lengthStr;
     }
