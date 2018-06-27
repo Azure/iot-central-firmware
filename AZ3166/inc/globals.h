@@ -51,10 +51,11 @@ class SensorController;
 class LoopController;
 
 #define MAP_DATA_SIZE 546
+
+#define EMPTY_JSON "{}"
 struct Globals
 {
-    static  const char *            completedString; // "{}"
-    static  const char *            responseString; // "{\"Response\":{}}"
+    static  const char *            completedString; // "completed"
     static  WiFiController          wiFiController;
     static  SensorController        sensorController;
     static  LoopController *        loopController;
@@ -73,7 +74,7 @@ struct Globals
 #define IOT_CENTRAL_MAX_LEN       STRING_BUFFER_128
 #define AZIOTC_FW_MAJOR_VERSION 1
 #define AZIOTC_FW_MINOR_VERSION 4
-#define AZIOTC_FW_PATCH_VERSION 0
+#define AZIOTC_FW_PATCH_VERSION 1
 #define AZIOTC_FW_VERSION         TO_STRING(AZIOTC_FW_MAJOR_VERSION AZIOTC_FW_MINOR_VERSION AZIOTC_FW_PATCH_VERSION) "-MSIOTC"
 
 #include "definitions.h"

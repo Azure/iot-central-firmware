@@ -325,7 +325,7 @@ int DeviceDirectMethodCallback(const char* method_name, const unsigned char* pay
 
         AutoString responseString(3);
         responseString.makePersistent();
-        sprintf(*responseString, "{}");
+        sprintf(*responseString, EMPTY_JSON);
         (*responseString)[2] = 0;
         *response = (unsigned char*)*responseString;
         *resp_size = 2;
