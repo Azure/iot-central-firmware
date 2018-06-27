@@ -102,7 +102,10 @@ public:
 
         while(tmp->next != lastNode) {
             tmp = tmp->next;
-            assert(tmp);
+            if (!tmp) {
+                LOG_ERROR("tmp shouldn't be NULL");
+                return NULL;
+            }
         }
 
         lastNode = tmp;

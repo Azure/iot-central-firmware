@@ -83,7 +83,17 @@ public:
         }
     }
 
-    void makePersistent() { persistent = true; }
+    void makePersistent() {
+        persistent = true;
+        if (using_buffer) {
+            AutoString tmp(data, length);
+            tmp.makePersistent();
+            clear();
+
+            data = tmp.data;
+            length = tmp.length;
+        }
+    }
 
     char* operator*() { return data; }
 
