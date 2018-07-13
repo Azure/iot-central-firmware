@@ -297,3 +297,4 @@ __pycache__/
 # arduino
 .arduino15/
 BUILD/
+.iotz.mxchip.tweak
