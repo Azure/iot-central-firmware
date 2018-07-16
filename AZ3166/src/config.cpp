@@ -17,7 +17,11 @@ void ConfigController::storeWiFi(AutoString &ssid, AutoString &password) {
     EEPROMInterface eeprom;
 
     eeprom.write((uint8_t*) *ssid, ssid.getLength(), WIFI_SSID_ZONE_IDX);
-    eeprom.write((uint8_t*) *password, password.getLength(), WIFI_PWD_ZONE_IDX);
+    if (password.getLength()) {
+        eeprom.write((uint8_t*) *password, password.getLength(), WIFI_PWD_ZONE_IDX);
+    } else {
+        eeprom.write((uint8_t*) "", 0, WIFI_PWD_ZONE_IDX);
+    }
 }
 
 void ConfigController::storeConnectionString(AutoString &connectionString) {
