@@ -244,8 +244,8 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
         pch = strtok(NULL, "&");
     }
 
-    if (ssid.getLength() == 0 || password.getLength() == 0 || connStr.getLength() == 0) {
-        LOG_ERROR("Missing ssid, password or connStr. Responsed with START page");
+    if (ssid.getLength() == 0 || connStr.getLength() == 0) {
+        LOG_ERROR("Missing ssid or connStr. Responsed with START page");
         processStartRequest(client);
         return;
     } else if (!pincodePasses) {
@@ -254,7 +254,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
     }
 
     // store the settings in EEPROM
-    assert(ssid.getLength() != 0 && password.getLength() != 0);
+    assert(ssid.getLength() != 0);
     ConfigController::storeWiFi(ssid, password);
 
     assert(connStr.getLength() != 0);
