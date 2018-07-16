@@ -117,7 +117,7 @@ void TelemetryController::loop() {
 
         // SEND EVENT example
         // build the event payload
-        const char * eventString = "{\"ButtonBPressed\": 1}";
+        const char * eventString = "{\"ButtonBPressed\": \"occured\"}";
         if (iothubClient->sendTelemetry(eventString)) {
             LOG_VERBOSE("Event successfully sent");
             StatsController::incrementReportedCount();
