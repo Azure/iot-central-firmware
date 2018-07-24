@@ -28,6 +28,16 @@ bool ApplicationController::initialize() {
     } else {
         WatchdogController::initialize(); // start the watchdog only for run mode
         LOG_VERBOSE("Configuration found entering telemetry mode.");
+        // wait 5 secs before initiating WiFi..
+        Screen.print(0, "Starting...     ");
+        Screen.print(1, "  please wait   ");
+        Screen.print(2, "or press A and B");
+        Screen.print(3, "for 'hard' RESET");
+        int wait_count = 0;
+        while(wait_count++ < 2500) {
+            wait_ms(2);
+        }
+
         Globals::loopController = TelemetryController::New(iotCentralConfig);
     }
 }
