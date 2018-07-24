@@ -18,6 +18,11 @@ bool DeviceControl::IsButtonClicked(unsigned char ulPin)
     return false;
 }
 
+void DeviceControl::setState(DeviceState state) {
+    deviceState = state;
+    showState();
+}
+
 void DeviceControl::showState() {
     switch(deviceState) {
         case NORMAL:

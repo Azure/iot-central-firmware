@@ -3,6 +3,8 @@
 
 #include "../inc/globals.h"
 #include "../inc/watchdogController.h"
+#include "../inc/telemetry.h"
+#include "../inc/device.h"
 
 Watchdog WatchdogController::watchdog;
 
@@ -16,6 +18,12 @@ void WatchdogController::initialize() {
     }
 }
 
-void WatchdogController::reset() {
+void WatchdogController::reset(bool setState) {
+    if (Globals::loopController && setState) {
+        if (DeviceControl::getDeviceState() != NORMAL) {
+            DeviceControl::setState(NORMAL);
+            ((TelemetryController*)Globals::loopController)->sendStateChange();
+        }
+    }
     watchdog.resetTimer();
 }

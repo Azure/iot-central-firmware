@@ -518,7 +518,9 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
 static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, void *userContextCallback) {
     // confirmation tells us that we were connected and things were working.
     // so reset the watchdog controller until the next time.
-    WatchdogController::reset();
+    static bool firstReset = true;
+    WatchdogController::reset(firstReset /* send telemetry */);
+    firstReset = false;
 
     TelemetryController * telemetryController = NULL;
     if (Globals::loopController->withTelemetry()) {

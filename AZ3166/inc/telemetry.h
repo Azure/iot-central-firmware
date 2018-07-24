@@ -33,7 +33,6 @@ class TelemetryController : public LoopController
 
     void buildTelemetryPayload(String *payload);
     void sendTelemetryPayload(const char *payload);
-    void sendStateChange();
 public:
     static TelemetryController * New(const char * iotCentralConfig) {
         return new TelemetryController(iotCentralConfig);
@@ -47,6 +46,7 @@ public:
     IoTHubClient * getHubClient() { return iothubClient; }
     bool canSend() { return can_send; }
     void setCanSend(bool s) { can_send = s; }
+    void sendStateChange();
 };
 
 #endif // TELEMETRY_CONTROLLER

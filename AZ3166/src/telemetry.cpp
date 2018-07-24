@@ -329,6 +329,9 @@ void TelemetryController::sendTelemetryPayload(const char *payload) {
 
 void TelemetryController::sendStateChange() {
     // SEND State example
+    assert (iothubClient != NULL && iothubClient->wasInitialized());
     const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
     sendTelemetryPayload(stateMessage);
+    iothubClient->hubClientYield();
+    delay(1);  // good practice to help prevent lockups
 }

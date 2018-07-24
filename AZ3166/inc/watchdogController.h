@@ -13,7 +13,7 @@ class WatchdogController
 
 public:
     static void initialize();
-    static void reset();
+    static void reset(bool setState = false);
 };
 
 #endif // WATCHDOG_CONTROLLER

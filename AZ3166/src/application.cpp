@@ -18,6 +18,9 @@ bool ApplicationController::initialize() {
     char iotCentralConfig[IOT_CENTRAL_MAX_LEN] = {0};
     ConfigController::readIotCentralConfig(iotCentralConfig, IOT_CENTRAL_MAX_LEN);
 
+    // start the state with DANGER and update to NORMAL if everything is fine.
+    DeviceControl::setState(DANGER);
+
     assert(Globals::loopController == NULL);
     if (iotCentralConfig[0] == 0 && iotCentralConfig[2] == 0) {
         LOG_ERROR("No configuration found...");
