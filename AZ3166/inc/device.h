@@ -17,6 +17,7 @@ public:
     static void incrementDeviceState();
     static DeviceState getDeviceState();
     static void showState();
+    static void setState(DeviceState state);
 };
 
 #endif /* DEVICE_H */
