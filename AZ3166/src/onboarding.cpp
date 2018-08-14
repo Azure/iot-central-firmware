@@ -196,7 +196,9 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
             case 4:
             {
                 if (strncmp(key, "SSID", 4) == 0) {
-                    urldecode(value, valueLength, &ssid);
+                    if(ssid.getLength() == 0){
+                        urldecode(value, valueLength, &ssid);
+                    }
                 } else if (strncmp(key, "PASS", 4) == 0) {
                     urldecode(value, valueLength, &password);
                 } else if (strncmp(key, "CONN", 4) == 0) {
