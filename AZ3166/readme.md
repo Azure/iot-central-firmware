@@ -48,6 +48,7 @@ emmitter on the board
 sequence on the RGB LED)
 - LED status of network, Azure IoT send events, Azure IoT error events, and
 current device state (NORMAL=green, CAUTION=amber, DANGER=red)
+- GroupSas and GroupX509 Authentication
 
 ***
 
@@ -91,20 +92,39 @@ factory resetting it.
 
 ## Updating the firmware on the device:
 
-The firmware on the device can be updated by downloading a newer version of the
-firmware from [https://aka.ms/devkit/prod/firmware/latest](https://aka.ms/devkit/prod/firmware/latest).
-Then with the device connected to the computer the file (iotCentral&lt;version&gt;.bin)
-can be copied onto the drive named AZ3166.  Once the file has been copied onto
-the device it will reset itself and boot up with the new firmware version.
-All configuration will remain on the device and if there are no breaking
-changes in the configuration the device will connect to Azure IoT and start
-sending data.
+Please visit our release page on Github for the latest firmware.
 
 ***
 
 ## Building the firmware:
 
-### Prerequisites:
+Install [iotz](https://github.com/azure/iotz). You will need `Docker` and `node.js` (8+) is installed on your machine.
+
+Once `iotz` is installed, `initialize` the project (once)
+```
+iotz init
+```
+
+and compile
+```
+iotz compile
+```
+
+finally, copy `BUILD/iotCentral.ino.bin` into mxchip disk drive
+
+### 3rd Party
+
+This firmware uses the following libraries:
+
+- Libraries installed by the MXChip IoT DevKit (https://microsoft.github.io/azure-iot-developer-kit/):
+    - AureIoTHub - https://github.com/Azure/azure-iot-arduino
+    - AzureIoTUtility - https://github.com/Azure/azure-iot-arduino-utility
+    - AzureIoTProtocol_MQTT - https://github.com/Azure/azure-iot-arduino-protocol-mqtt
+
+-   Third party libraries used:
+    - Parson ( http://kgabis.github.com/parson/ ) Copyright (c) 2012 - 2017 Krzysztof Gabis
+
+### Debugging:
 
 - Install the Azure IoT Developer Kit by following the manual installation
 instructions at [https://microsoft.github.io/azure-iot-developer-kit/docs/installation/](https://microsoft.github.io/azure-iot-developer-kit/docs/installation/)
@@ -143,20 +163,6 @@ type **Arduino** then find and select **Arduino: Upload**
 minutes.  If there are errors they will be displayed in the Output window
 - Once uploaded the device will restart and boot into the newly uploaded
 firmware and start executing
-
-### Dependencies:
-
-Uses the following libraries:
-
-- Libraries installed by the MXChip IoT DevKit (https://microsoft.github.io/azure-iot-developer-kit/):
-    - AureIoTHub - https://github.com/Azure/azure-iot-arduino
-    - AzureIoTUtility - https://github.com/Azure/azure-iot-arduino-utility
-    - AzureIoTProtocol_MQTT - https://github.com/Azure/azure-iot-arduino-protocol-mqtt
-
--   Third party libraries used:
-    - Parson ( http://kgabis.github.com/parson/ ) Copyright (c) 2012 - 2017 Krzysztof Gabis
-
-### Debugging:
 
 You can debug via Serial print commands in the code or with the ST-Link
 debugger that provides full visual debugging.  To observe Serial output you need

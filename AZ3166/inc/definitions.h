@@ -3,6 +3,11 @@
 
 // #define IOT_CENTRAL_CONNECTION_STRING "put the iot central connect string here"
 
+// use the ones below for GroupSAS or GroupX509
+// #define IOT_CENTRAL_SAS_SCOPE_ID ""
+// #define IOT_CENTRAL_SAS_REGISTRATION_ID ""
+// #define IOT_CENTRAL_SAS_KEY ""
+
 // #define DISABLE_HUMIDITY
 // #define DISABLE_TEMPERATURE
 // #define DISABLE_SHAKE
