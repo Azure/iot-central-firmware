@@ -223,7 +223,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
                     checkboxState = checkboxState | ACCEL_CHECKED;
                 } else if (strncmp(key, "PINCO", 5) == 0) {
                     if (valueLength > 4 || strncmp(value, Globals::wiFiController.getPassword(), 4) != 0) {
-                        LOG_ERROR("WRONG PIN CODE");
+                        LOG_ERROR("WRONG PIN CODE %s %s", value, Globals::wiFiController.getPassword());
                     } else {
                         pincodePasses = true;
                     }
