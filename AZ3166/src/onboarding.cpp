@@ -58,7 +58,7 @@ void OnboardingController::loop() {
     LOG_VERBOSE("initializeLoop: list for incoming clients");
 
     WiFiClient client = webServer->getClient();
-    if (client) // ( _pTcpSocket != NULL )
+    if (client)
     {
         LOG_VERBOSE("initializeLoop: new client");
         // an http request ends with a blank line
@@ -257,7 +257,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
         pch = strtok(NULL, "&");
     }
 
-    if (ssid.getLength() == 0 || sasKey.getLength() == 0) {
+    if (ssid.getLength() == 0 || ( *(*auth) == 'S' && sasKey.getLength() == 0) ) {
         LOG_ERROR("Missing ssid or connStr. Responsed with START page");
         processStartRequest(client);
         return;

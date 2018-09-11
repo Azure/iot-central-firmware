@@ -69,7 +69,10 @@ void ConfigController::storeKey(AutoString &auth, AutoString &scopeId, AutoStrin
     char buffer[AZ_IOT_HUB_MAX_LEN] = {0};
     memcpy(buffer, *scopeId, scopeId.getLength());
     memcpy(buffer + SAS_SCOPE_ID_ENDS, *regId, regId.getLength());
-    memcpy(buffer + SAS_REG_ID_ENDS, *key, key.getLength());
+    if (key.getLength() > 0) {
+        // 0 length for x509 sample cert
+        memcpy(buffer + SAS_REG_ID_ENDS, *key, key.getLength());
+    }
     LOG_VERBOSE("STORE scope:%s regId:%s key:%s", *scopeId, *regId, *key);
     if ((*auth)[0] == 'S') {
         LOG_VERBOSE("\tKEY SSYM");
@@ -84,7 +87,7 @@ void ConfigController::storeKey(AutoString &auth, AutoString &scopeId, AutoStrin
 }
 
 void ConfigController::readGroupSXKeyAndDeviceId(char * scopeId, char * registrationId, char * sas, bool &sasKey) {
-#if !defined(IOT_CENTRAL_SAS_KEY)
+#if !defined(IOT_CENTRAL_SAS_KEY) && !defined(IOT_CENTRAL_USE_X509_SAMPLE_CERT)
     char buffer[AZ_IOT_HUB_MAX_LEN];
     EEPROMInterface eeprom;
     eeprom.read((uint8_t*) buffer, AZ_IOT_HUB_MAX_LEN, 0, AZ_IOT_HUB_ZONE_IDX);
@@ -94,12 +97,18 @@ void ConfigController::readGroupSXKeyAndDeviceId(char * scopeId, char * registra
     strcpy(scopeId, buffer);
     strcpy(registrationId, buffer + SAS_SCOPE_ID_ENDS);
     strcpy(sas, buffer + SAS_REG_ID_ENDS);
-#else // !defined(IOT_CENTRAL_SAS_KEY)
+#else // !defined(IOT_CENTRAL_SAS_KEY) && !defined(IOT_CENTRAL_USE_X509_SAMPLE_CERT)
+#if defined(IOT_CENTRAL_SAS_KEY)
     strcpy(sas, IOT_CENTRAL_SAS_KEY);
-    strcpy(registrationId, IOT_CENTRAL_SAS_REGISTRATION_ID);
-    strcpy(scopeId, IOT_CENTRAL_SAS_SCOPE_ID);
+    strcpy(registrationId, IOT_CENTRAL_REGISTRATION_ID);
     sasKey = true;
-#endif // !defined(IOT_CENTRAL_SAS_KEY)
+#else // defined(IOT_CENTRAL_SAS_KEY)
+    sas[0] = 0;
+    sasKey = false;
+    strcpy(registrationId, "riot-device-cert");
+#endif // defined(IOT_CENTRAL_SAS_KEY)
+    strcpy(scopeId, IOT_CENTRAL_SCOPE_ID);
+#endif // !defined(IOT_CENTRAL_SAS_KEY) && !defined(IOT_CENTRAL_USE_X509_SAMPLE_CERT)
 }
 
 void ConfigController::readIotCentralConfig(char* iotCentralConfig, uint32_t buffer_size) {

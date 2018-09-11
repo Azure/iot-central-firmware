@@ -41,13 +41,20 @@ void IoTHubClient::initIotHubClient() {
         return;
     } else {
         char newConnectionString[AZ_IOT_HUB_MAX_LEN] = {0};
-        size_t pos = snprintf(newConnectionString, AZ_IOT_HUB_MAX_LEN,
-            "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
-            DevkitDPSGetIoTHubURI(),
-            DevkitDPSGetDeviceID(),
-            stringBuffer);
+        size_t pos;
+        if (sasKey) {
+            pos = snprintf(newConnectionString, AZ_IOT_HUB_MAX_LEN,
+                "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
+                DevkitDPSGetIoTHubURI(),
+                DevkitDPSGetDeviceID(),
+                stringBuffer);
+        } else {
+            pos = snprintf(newConnectionString, AZ_IOT_HUB_MAX_LEN,
+                "HostName=%s;DeviceId=%s;UseProvisioning=true",
+                DevkitDPSGetIoTHubURI(),
+                DevkitDPSGetDeviceID());
+        }
         assert(pos < AZ_IOT_HUB_MAX_LEN);
-        WatchdogController::reset();
         strncpy(stringBuffer, newConnectionString, pos);
         stringBuffer[pos] = char(0);
     }
@@ -79,6 +86,7 @@ connString: %s", deviceIdString.c_str(), connString.c_str());
         return;
     }
 
+    WatchdogController::reset();
     if ((iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(
         connString.c_str(), MQTT_Protocol)) == NULL) {
 
@@ -86,6 +94,7 @@ connString: %s", deviceIdString.c_str(), connString.c_str());
         hasError = true;
         return;
     }
+    WatchdogController::reset();
 
     IoTHubClient_LL_SetRetryPolicy(iotHubClientHandle, IOTHUB_CLIENT_RETRY_EXPONENTIAL_BACKOFF, 1200);
     bool traceOn = IOTHUB_TRACE_LOG_ENABLED;

@@ -16,10 +16,26 @@ must-revalidate\r\n\r\n"
 <div class=\"input-group fluid\"> <input type=\"password\" value=\"\" name=\"PASS\" id=\"password\" placeholder=\"WiFi Password\" style=\"width:100%;\"> </div>\
 <div class=\"input-group fluid\"> <input type=\"password\" value=\"\" name=\"PINCO\" id=\"PINCO\" placeholder=\"Device Pin Code\" style=\"width:100%;\"> </div>\
 <div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"SCOPEID\" id=\"SCOPEID\" placeholder=\"Scope Id\" style=\"width:100%;\"> </div>\
-<div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"REGID\" id=\"REGID\" placeholder=\"Registration Id\" style=\"width:100%;\"> </div>\
-<div class=\"input-group fluid\"> <select name=\"AUTH\" id=\"AUTH\" style=\"width:100%;\" required><option value=\"S\">Group SAS Key</option><option value=\"X\">Group X509 Device Key</option></select></div>\
-<div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"SASKEY\" id=\"SASKEY\" placeholder=\"SAS key or Device certificate\" style=\"width:100%;\"> </div>\
-<div class=\"input-group fluid\" style=\"text-align:left\"> <fieldset class=\"group\"> <legend>Select telemetry data to send</legend> <ul class=\"checkbox\"> <li><input type=\"checkbox\" name=\"TEMP\" id=\"temp\" checked><label for=\"temp\">Temperature</label></li><li><input type=\"checkbox\" name=\"ACCEL\" id=\"accel\" checked><label for=\"accel\">Accelerometer</label></li><li><input type=\"checkbox\" name=\"HUM\" id=\"hum\" checked><label for=\"hum\">Humidity</label></li><li><input type=\"checkbox\" name=\"GYRO\" id=\"gyro\" checked><label for=\"gyro\">Gyroscope</label></li><li><input type=\"checkbox\" name=\"PRES\" id=\"pres\" checked><label for=\"pres\">Pressure</label></li><li><input type=\"checkbox\" name=\"MAG\" id=\"mag\" checked><label for=\"mag\">Magnetometer</label></li></ul> </fieldset> </div><div class=\"input-group fluid\" style=\"padding-top: 20px;\"> <button type=\"submit\" class=\"primary\">Configure Device</button> </div></form> <h5>Click <a href=\"javascript:window.location.href=window.location.href\">here</a> to refresh the page if you do not see your network</h5> </div></div></section></body></html>"
+<div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"REGID\" id=\"REGID\" placeholder=\"Device Id\" style=\"width:100%;\"> </div>\
+<div class=\"input-group fluid\"> <select name=\"AUTH\" id=\"AUTH\" style=\"width:100%;\" required><option value=\"S\">Device SAS Key</option><option value=\"X\">Device X509 Key</option></select></div>\
+<div class=\"input-group fluid\"> <span id=\"link\" style=\"display:none;font-size:80%\"> Disconnect from MXCHIP AP and visit <a href=\"https://github.com/Azure/azure-iot-sdk-c/blob/master/provisioning_client/devdoc/using_provisioning_client.md\">here</a> to learn about creating a sample `dice_device_provision`. Once you have verified the sample root cert, come back here to use it with the device. Simply, putting scope id will be sufficient.</span> <input type=\"text\" value=\"\" name=\"SASKEY\" id=\"SASKEY\" placeholder=\"SAS key or Device certificate\" style=\"width:100%;\"> </div>\
+<div class=\"input-group fluid\" style=\"text-align:left\"> <fieldset class=\"group\"> <legend>Select telemetry data to send</legend> <ul class=\"checkbox\"> <li><input type=\"checkbox\" name=\"TEMP\" id=\"temp\" checked><label for=\"temp\">Temperature</label></li><li><input type=\"checkbox\" name=\"ACCEL\" id=\"accel\" checked><label for=\"accel\">Accelerometer</label></li><li><input type=\"checkbox\" name=\"HUM\" id=\"hum\" checked><label for=\"hum\">Humidity</label></li><li><input type=\"checkbox\" name=\"GYRO\" id=\"gyro\" checked><label for=\"gyro\">Gyroscope</label></li><li><input type=\"checkbox\" name=\"PRES\" id=\"pres\" checked><label for=\"pres\">Pressure</label></li><li><input type=\"checkbox\" name=\"MAG\" id=\"mag\" checked><label for=\"mag\">Magnetometer</label></li></ul> </fieldset> </div><div class=\"input-group fluid\" style=\"padding-top: 20px;\"> <button type=\"submit\" class=\"primary\">Configure Device</button> </div></form> <h5>Click <a href=\"javascript:window.location.href=window.location.href\">here</a> to refresh the page if you do not see your network</h5> </div></div></section>\
+<script>\
+var sel = document.getElementById('AUTH');\
+sel.onchange = function(e) {\
+  var s = document.getElementById('SASKEY');\
+  var r = document.getElementById('REGID');\
+  var l = document.getElementById('link');\
+  if (sel.selectedIndex == 1) {\
+    s.style='display:none'; r.value = 'riot-device-cert'; r.disabled = true;\
+    l.style='';\
+  } else {\
+    l.style='display:none';\
+    s.style = ''; r.value=''; delete r['disabled'];\
+  }\
+}\
+</script>\
+</body></html>"
 
 #define HTTP_START_PAGE_HTML HTTP_STATUS_200 HTTP_START_PAGE_HTML_
 #define HTTP_404_RESPONSE HTTP_STATUS_404 HTTP_HEADER_NO_CACHE
