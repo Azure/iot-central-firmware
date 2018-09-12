@@ -1,14 +1,14 @@
 # Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. 
+# Licensed under the MIT license.
 
 import datetime
 import json
 from collections import OrderedDict
 
-def init(name, firmwareVersion):
+def init(firmwareVersion):
     global device
     device = {}
-    device["name"] = name
+    device["name"] = "AzureIoTCentralSample"
     device["firmwareVersion"] = firmwareVersion
     device["deviceState"] = "NORMAL"
     device["sentCount"] = 0

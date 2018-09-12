@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. 
+# Licensed under the MIT license.
 
 from datetime import datetime
 import json
 import iothub_client
 from iothub_client import IoTHubClient, IoTHubClientError, IoTHubTransportProvider, IoTHubClientResult
 from iothub_client import IoTHubMessage, IoTHubMessageDispositionResult, IoTHubError, DeviceMethodReturnValue
-from iothub_client import IoTHubClientRetryPolicy, GetRetryPolicyReturnValue
+from iothub_client import IoTHubClientRetryPolicy, GetRetryPolicyReturnValue, IoTHubSecurityType
 import deviceState
 import logger
 from collections import OrderedDict
@@ -19,15 +19,22 @@ class IotHubClient:
     METHOD_CONTEXT = 0
     CONNECTION_STATUS_CONTEXT = 0
 
-    def __init__(self, connectionString):
+    def __init__(self, iothub_uri, device_id, is_sas):
         self.methodCallbackList = {}
         self.desiredCallbackList = {}
-        self.connectionString = connectionString
+        self.iothub_uri = iothub_uri
+        self.device_id = device_id
+
+        if is_sas:
+            self.security_type = IoTHubSecurityType.SAS
+        else:
+            self.security_type = IoTHubSecurityType.X509
+
+        self.protocol = IoTHubTransportProvider.MQTT
         self.methodCallbackCount = 0
         self.connectionCallbackCount = 0
         self.sendCallbackCount = 0
         self.sendReportedStateCallbackCount = 0
-
         try:
             self.client = self.iothub_client_init()
 
@@ -38,7 +45,8 @@ class IotHubClient:
 
     def iothub_client_init(self):
         # prepare iothub client
-        client = IoTHubClient(self.connectionString, IoTHubTransportProvider.MQTT)
+        print("- creating the client with {0} {1} {2} {3}", self.iothub_uri, self.device_id, self.security_type, self.protocol)
+        client = IoTHubClient(self.iothub_uri, self.device_id, self.security_type, self.protocol)
 
         # set the time until a message times out
         client.set_option("messageTimeout", self.MESSAGE_TIMEOUT)
@@ -91,7 +99,7 @@ class IotHubClient:
         # message format expected:
         # {
         #     "methodName" : "<method name>",
-        #     "payload" : {    
+        #     "payload" : {
         #         "input1": "someInput",
         #         "input2": "anotherInput"
         #         ...

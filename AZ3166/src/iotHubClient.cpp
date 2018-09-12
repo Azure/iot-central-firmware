@@ -29,10 +29,11 @@ void IoTHubClient::initIotHubClient() {
     char scopeId[STRING_BUFFER_128] = {0};
     char registrationId[STRING_BUFFER_128] = {0};
     bool sasKey = false;
+#ifndef IOT_CENTRAL_CONNECTION_STRING
     ConfigController::readGroupSXKeyAndDeviceId(scopeId, registrationId, stringBuffer, sasKey);
     LOG_VERBOSE("SCOPEID: %s REGID: %s KEY: %s IS_SAS: %d", scopeId, registrationId, stringBuffer, sasKey);
 
-    DevkitDPSSetLogTrace(SERIAL_VERBOSE_LOGGING_ENABLED);
+    DevkitDPSSetLogTrace(IOTHUB_TRACE_LOG_ENABLED);
     DevkitDPSSetAuthType(sasKey ? DPS_AUTH_SYMMETRIC_KEY : DPS_AUTH_X509_GROUP);
     if (!DevkitDPSClientStart("global.azure-devices-provisioning.net",
                         scopeId, registrationId, stringBuffer, NULL, 0)) {
@@ -58,12 +59,15 @@ void IoTHubClient::initIotHubClient() {
         strncpy(stringBuffer, newConnectionString, pos);
         stringBuffer[pos] = char(0);
     }
-    // Previously;
-    // ConfigController::readConnectionString(stringBuffer, AZ_IOT_HUB_MAX_LEN);
-
+#else // IOT_CENTRAL_CONNECTION_STRING
+    ConfigController::readConnectionString(stringBuffer, AZ_IOT_HUB_MAX_LEN);
+#endif // IOT_CENTRAL_CONNECTION_STRING
+    LOG_VERBOSE("ConnectionString: %s", stringBuffer);
     String connString(stringBuffer);
+    int nextIndex = connString.indexOf(";SharedAccess") > 0 ? connString.indexOf(";SharedAccess")
+                                                            : connString.indexOf(";UseProvisioning");
     String deviceIdString = connString.substring(connString.indexOf("DeviceId=")
-                            + 9, connString.indexOf(";SharedAccess"));
+                            + 9, nextIndex);
 
     if (deviceIdString.length() >= IOT_CENTRAL_MAX_LEN) {
         LOG_ERROR("deviceIdString.length() >= IOT_CENTRAL_MAX_LEN...\n \
@@ -94,7 +98,6 @@ connString: %s", deviceIdString.c_str(), connString.c_str());
         hasError = true;
         return;
     }
-    WatchdogController::reset();
 
     IoTHubClient_LL_SetRetryPolicy(iotHubClientHandle, IOTHUB_CLIENT_RETRY_EXPONENTIAL_BACKOFF, 1200);
     bool traceOn = IOTHUB_TRACE_LOG_ENABLED;
@@ -147,6 +150,7 @@ connString: %s", deviceIdString.c_str(), connString.c_str());
         return;
     }
 
+    WatchdogController::reset();
     LOG_VERBOSE("IoTHubClient::initIotHubClient END");
 }
 

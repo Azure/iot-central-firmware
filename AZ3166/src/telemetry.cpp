@@ -71,8 +71,9 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
 }
 
 
-static int locationDataOffset = 0;
+static int  locationDataOffset = 0;
 static char locationString[STRING_BUFFER_128];
+static int  sendCount = -1;
 
 void TelemetryController::loop() {
     // if we are about to reset then stop sending/processing any telemetry
@@ -131,22 +132,25 @@ void TelemetryController::loop() {
     if (canSend() && currentMillis - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
         setCanSend(false); // wait until the telemetry is sent
 
-        int n = snprintf(locationString, STRING_BUFFER_128 - 1,
-                "{\"location\":{\"lon\":%f,\"lat\":%f}}",
-                Globals::locationData[locationDataOffset++],
-                Globals::locationData[locationDataOffset++]);
-        locationString[n] = 0;
-        locationDataOffset %= MAP_DATA_SIZE;
-        if (iothubClient->sendReportedProperty(locationString)) {
-            LOG_VERBOSE("Reported property location successfully sent %s", locationString);
-            StatsController::incrementReportedCount();
-        } else {
-            LOG_ERROR("Reported property location failed to during sending");
-            StatsController::incrementErrorCount();
+        // send location once on each fifth (aprox 30 secs)
+        if (++sendCount % 6 == 0) {
+            int n = snprintf(locationString, STRING_BUFFER_128 - 1,
+                    "{\"location\":{\"lon\":%f,\"lat\":%f}}",
+                    Globals::locationData[locationDataOffset++],
+                    Globals::locationData[locationDataOffset++]);
+            locationString[n] = 0;
+            locationDataOffset %= MAP_DATA_SIZE;
+            if (iothubClient->sendReportedProperty(locationString)) {
+                LOG_VERBOSE("Reported property location successfully sent %s", locationString);
+                StatsController::incrementReportedCount();
+            } else {
+                LOG_ERROR("Reported property location failed to during sending");
+                StatsController::incrementErrorCount();
+            }
+            sendCount = 0;
         }
 
         String payload; // max payload size for Azure IoT
-
         buildTelemetryPayload(&payload);
         sendTelemetryPayload(payload.c_str());
         lastTelemetrySend = millis();

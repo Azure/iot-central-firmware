@@ -99,7 +99,7 @@ struct Globals
         Serial.printf("  - "); \
         Serial.printf(__VA_ARGS__); \
         Serial.printf("\r\n"); \
-        delay(5); \
+        delay(100); \
     } while(0)
 #endif
 
