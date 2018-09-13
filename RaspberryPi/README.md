@@ -49,7 +49,7 @@ Please follow the steps below;
 - Copy the contents of the `RaspberryPi` folder into your Raspberry Pi.
 
 **X509**
-- Please follow [this tool](https://github.com/azure/iot-central-firmware/tree/master/tools/dice) to create the sample x509 root cert (dice_device_provision) for your Azure IoT Central account.
+- Please use [this tool](https://github.com/azure/iot-central-firmware/tree/master/tools/dice) to create the sample x509 root cert (dice_device_provision) for your Azure IoT Central account.
 - Find `SECURITY_DEVICE_TYPE = ProvisioningSecurityDeviceType.X509 # OR .SAS` line under `main.py` and make sure `X509` is being used
 - Run `./start.sh`
 - See `riot-device-cert` device under the Azure IoT Central `Device Explorer` `Unassociated devices` page.
