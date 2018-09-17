@@ -17,9 +17,29 @@ must-revalidate\r\n\r\n"
 <div class=\"input-group fluid\"> <input type=\"password\" value=\"\" name=\"PINCO\" id=\"PINCO\" title=\"Device Pin Code\" placeholder=\"Device Pin Code\" style=\"width:100%;\"> </div>\
 <div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"SCOPEID\" id=\"SCOPEID\" title=\"Scope Id\" placeholder=\"Scope Id\" style=\"width:100%;\"> </div>\
 <div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"REGID\" id=\"REGID\" title=\"Device Id\" placeholder=\"Device Id\" style=\"width:100%;\"> </div>\
-<div class=\"input-group fluid\"> <select name=\"AUTH\" id=\"AUTH\" style=\"width:100%;\" required><option value=\"S\">SAS Key</option><option value=\"X\">X509 Certificate</option></select></div>\
-<div class=\"input-group fluid\"> <span id=\"link\" style=\"display:none;font-size:80%\"> Setting the scope id is enough to authenticate with x509 option. This sample firmware already has the client cert builtin. Use <a href=\"https://github.com/azure/iot-central-firmware/tree/master/tools/dice\">this tool</a> to create the matching sample root cert.</span> <input type=\"text\" value=\"\" name=\"SASKEY\" id=\"SASKEY\" title=\"Primary SAS device key\" placeholder=\"Primary SAS device key\" style=\"width:100%;\"> </div>\
-<div class=\"input-group fluid\" style=\"text-align:left\"> <fieldset class=\"group\"> <legend>Select telemetry data to send</legend> <ul class=\"checkbox\"> <li><input type=\"checkbox\" name=\"TEMP\" id=\"temp\" checked><label for=\"temp\">Temperature</label></li><li><input type=\"checkbox\" name=\"ACCEL\" id=\"accel\" checked><label for=\"accel\">Accelerometer</label></li><li><input type=\"checkbox\" name=\"HUM\" id=\"hum\" checked><label for=\"hum\">Humidity</label></li><li><input type=\"checkbox\" name=\"GYRO\" id=\"gyro\" checked><label for=\"gyro\">Gyroscope</label></li><li><input type=\"checkbox\" name=\"PRES\" id=\"pres\" checked><label for=\"pres\">Pressure</label></li><li><input type=\"checkbox\" name=\"MAG\" id=\"mag\" checked><label for=\"mag\">Magnetometer</label></li></ul> </fieldset> </div><div class=\"input-group fluid\" style=\"padding-top: 20px;\"> <button type=\"submit\" class=\"primary\">Configure Device</button> </div></form> <h5>Click <a href=\"javascript:window.location.href=window.location.href\">here</a> to refresh the page if you do not see your network</h5> </div></div></section>\
+<div class=\"input-group fluid\"> <select name=\"AUTH\" id=\"AUTH\" style=\"width:100%;\" \
+required><option value=\"S\">SAS Key</option><option value=\"X\">X509 Certificate</option></select></div>\
+<div class=\"input-group fluid\"> <span id=\"link\" style=\"display:none;font-size:80%\"> \
+Setting the scope id is enough to authenticate with x509 option. \
+This sample firmware already has the client cert builtin. Use \
+<a href=\"https://github.com/azure/iot-central-firmware/tree/master/tools/dice\">this tool</a> \
+to create the matching sample root cert.</span> <input type=\"text\" value=\"\" \
+name=\"SASKEY\" id=\"SASKEY\" title=\"Primary/Secondary device key\" \
+placeholder=\"Primary/Secondary device key\" style=\"width:100%;\"> </div>\
+<div class=\"input-group fluid\" style=\"text-align:left\"> <fieldset class=\"group\"> \
+<legend>Select telemetry data to send</legend> <ul class=\"checkbox\"> \
+<li><input type=\"checkbox\" name=\"TEMP\" id=\"temp\" checked><label for=\"temp\">\
+Temperature</label></li><li><input type=\"checkbox\" name=\"ACCEL\" id=\"accel\" \
+checked><label for=\"accel\">Accelerometer</label></li><li><input type=\"checkbox\" \
+name=\"HUM\" id=\"hum\" checked><label for=\"hum\">Humidity</label></li><li><input \
+type=\"checkbox\" name=\"GYRO\" id=\"gyro\" checked><label for=\"gyro\">Gyroscope</label></li>\
+<li><input type=\"checkbox\" name=\"PRES\" id=\"pres\" checked><label for=\"pres\">\
+Pressure</label></li><li><input type=\"checkbox\" name=\"MAG\" id=\"mag\" checked>\
+<label for=\"mag\">Magnetometer</label></li></ul> </fieldset> </div><div \
+class=\"input-group fluid\" style=\"padding-top: 20px;\"> <button type=\"submit\" \
+class=\"primary\">Configure Device</button> </div></form> <h5>Click \
+<a href=\"javascript:window.location.href=window.location.href\">here</a> to \
+refresh the page if you do not see your network</h5> </div></div></section>\
 <script>\
 var sel = document.getElementById('AUTH');\
 sel.onchange = function(e) {\
@@ -31,7 +51,7 @@ sel.onchange = function(e) {\
     l.style='';\
   } else {\
     l.style='display:none';\
-    s.style = ''; r.value=''; delete r['disabled'];\
+    s.style = ''; r.value=''; r.disabled = undefined;\
   }\
 }\
 </script>\
