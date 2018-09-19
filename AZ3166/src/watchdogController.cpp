@@ -8,8 +8,8 @@
 
 Watchdog WatchdogController::watchdog;
 
-void WatchdogController::initialize() {
-    if (!watchdog.configure(32767))
+void WatchdogController::initialize(int timer) {
+    if (!watchdog.configure(timer))
     {
         // unlikely. returns false only when the timeout is beyond the supported range
         // Min timeout period at 32kHz LSI: 0.125ms, with 4 prescaler divider

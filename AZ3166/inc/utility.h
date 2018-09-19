@@ -98,6 +98,7 @@ public:
     char* operator*() { return data; }
 
     unsigned getLength() { return length; }
+    void setLength(unsigned l) { length = l; }
 };
 
 class JSObject

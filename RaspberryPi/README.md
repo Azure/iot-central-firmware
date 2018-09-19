@@ -11,9 +11,6 @@ The aim of this firmware and code is two-fold:
 
 ## Features Implemented:
 
-- Simple onboarding via a web UX (http://&lt;ip-of-raspberry-pi&gt;/start)
-- Web page shows the current status of the device (http://&lt;ip-of-raspberry-pi&gt;/stats)
-- <img src="images/stats.jpg" alt="Stats web page" style="width: 400px;"/>
 - Telemetry sent for all onboard sensors (configurable)
 - State change telemetry sent when the joystick is pressed in a direction (NORMAL, CAUTION, DANGER, EXTREME-DANGER)
 - Reported twin property die number is sent when shaking the device  (uses accelerometer sensor data)
@@ -39,6 +36,43 @@ You will need the following hardware for the project:
 You should install the latest Raspian operationg system by following these instructions (https://www.raspberrypi.org/learning/software-guide/)
 
 <img src="images/device.jpg" alt="Device features" style="width: 800px;"/>
+
+## Setting up the device
+
+tips;
+*This sample only works with `Raspbian` (stretch).*
+*What is scope-id? See [general documentation site](https://aka.ms/iotcentral-doc-raspi)*
+
+Please follow the steps below;
+
+- Update `main.py` `ID_SCOPE =        "<scope id>" # put the scope id here` with your scope-id
+- Copy the contents of the `RaspberryPi` folder into your Raspberry Pi.
+
+**X509**
+- Please use [this tool](https://github.com/azure/iot-central-firmware/tree/master/tools/dice) to create the sample x509 root cert (dice_device_provision) for your Azure IoT Central account.
+- Find `SECURITY_DEVICE_TYPE = ProvisioningSecurityDeviceType.X509 # OR .SAS` line under `main.py` and make sure `X509` is being used
+- Run `./start.sh`
+- See `riot-device-cert` device under the Azure IoT Central `Device Explorer` `Unassociated devices` page.
+Go ahead and associate with Raspberry Pi template in order to make the sample functioning properly.
+
+**SAS**
+Follow the steps below to grab a specialized version of SDK
+```
+git clone https://github.com/Azure/azure-iot-sdk-python.git --recursive
+cd azure-iot-sdk-python/c
+git checkout dps_symm_key
+```
+
+As a next step; you should define both `SYMMETRIC_KEY_VALUE` and `REGISTRATION_NAME` under
+`azure-iot-sdk-python/c/dps_symm_key/provisioning_client/adapters/hsm_client_key.c`
+
+Now, compile the Python SDK by following [this documentation](https://github.com/Azure/azure-iot-sdk-python/blob/master/doc/python-devbox-setup.md)
+*Remember; you already cloned a specialized Python SDK and you shouldn't clone it again*
+
+As a next step, find and copy `provisioning_device_client.so` and `iothub_client.so` under the build
+and update the `src` folder of this repository with those.
+
+Finally, find `SECURITY_DEVICE_TYPE = ProvisioningSecurityDeviceType.X509 # OR .SAS` line under `main.py` and make sure `SAS` is being used
 
 ## Connecting the device to Azure IoT Central:
 

@@ -1,12 +1,12 @@
 # Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. 
+# Licensed under the MIT license.
 
 import configState
 from counter import SenseHatCounter
 
 sense = None
 display = None
-firmwareVersion = "0.9-AIoTC"
+firmwareVersion = "1.0-AIoTC"
 
 def init():
     if configState.config["simulateSenseHat"]:

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # Copyright (c) Microsoft. All rights reserved.
@@ -18,21 +18,27 @@ import utility
 import logger
 import registeredMethods
 import globals
+from provisioning_device_client import ProvisioningDeviceClient, ProvisioningTransportProvider, ProvisioningSecurityDeviceType, ProvisioningError, ProvisioningHttpProxyOptions
+from provisioning_device_client_args import get_prov_client_opt, OptionError
 
 from iotHub import IotHubClient
 from counter import SenseHatCounter
-from webserver import WebServer
+
+GLOBAL_PROV_URI = "global.azure-devices-provisioning.net"
+ID_SCOPE =        "<scope id>" # put the scope id here
+
+SECURITY_DEVICE_TYPE = ProvisioningSecurityDeviceType.X509 # OR .SAS
+PROTOCOL = ProvisioningTransportProvider.MQTT
 
 iotHubClient = None
 telemetryThread = None
-webServerThread = None
 stopProcess = False
-webServer = None
 kill_received = False
+IOTHUB_URI =      None
+IOTHUB_DID =      None
 
 def initSensors():
     globals.sense.set_imu_config(True, True, True)
-
 
 def readSensors():
     dataPayload = "{"
@@ -62,26 +68,101 @@ def readSensors():
 
     return dataPayload
 
+def register_status_callback(reg_status, user_context):
+    print ( "")
+    print ( "Register status callback: ")
+    print ( "reg_status = %s" % reg_status)
+    print ( "user_context = %s" % user_context)
+    print ( "")
+    return
 
-def initHub():
+
+def register_device_callback(register_result, iothub_uri, device_id, user_context):
+    global kill_received
     global iotHubClient
-    iotHubClient = IotHubClient(configState.config["hubConnectionString"])
+    global IOTHUB_URI
+    global SECURITY_DEVICE_TYPE
+    global PROTOCOL
+    global IOTHUB_DID
 
-    # register a method for direct method execution
-    # called with:
-    #   iothub-explorer device-method <device-name> rainbow '{"timeInSec":10}' 3600
-    iotHubClient.registerMethod("rainbow", registeredMethods.directMethod)
+    print ( "")
+    print ( "Register device callback: " )
+    print ( "   register_result = %s" % register_result)
+    print ( "   iothub_uri = %s" % iothub_uri)
+    print ( "   user_context = %s" % user_context)
+    IOTHUB_URI = iothub_uri
+    IOTHUB_DID = device_id
 
-    # register a method for cloud to device (C2D) execution
-    # called with:
-    #   iothub-explorer send <device-name> '{"methodName":"message", "payload":{"text":"Hello World!!!", "color":[255,0,0]}}'
-    iotHubClient.registerMethod("message", registeredMethods.cloudMessage)
+    if iothub_uri:
+        print ( "")
+        print ( "Device successfully registered!" )
 
-    # register callbacks for desired properties expected
-    iotHubClient.registerDesiredProperty("fanspeed", registeredMethods.fanSpeedDesiredChange)
-    iotHubClient.registerDesiredProperty("setvoltage", registeredMethods.voltageDesiredChange)
-    iotHubClient.registerDesiredProperty("setcurrent", registeredMethods.currentDesiredChange)
-    iotHubClient.registerDesiredProperty("activateir", registeredMethods.irOnDesiredChange)
+        iotHubClient = IotHubClient(IOTHUB_URI, IOTHUB_DID, False if SECURITY_DEVICE_TYPE == ProvisioningSecurityDeviceType.X509 else True)
+
+        # register a method for direct method execution
+        # called with:
+        #   iothub-explorer device-method <device-name> rainbow '{"timeInSec":10}' 3600
+        iotHubClient.registerMethod("rainbow", registeredMethods.directMethod)
+
+        # register a method for cloud to device (C2D) execution
+        # called with:
+        #   iothub-explorer send <device-name> '{"methodName":"message", "payload":{"text":"Hello World!!!", "color":[255,0,0]}}'
+        iotHubClient.registerMethod("message", registeredMethods.cloudMessage)
+
+        # register callbacks for desired properties expected
+        iotHubClient.registerDesiredProperty("fanspeed", registeredMethods.fanSpeedDesiredChange)
+        iotHubClient.registerDesiredProperty("setvoltage", registeredMethods.voltageDesiredChange)
+        iotHubClient.registerDesiredProperty("setcurrent", registeredMethods.currentDesiredChange)
+        iotHubClient.registerDesiredProperty("activateir", registeredMethods.irOnDesiredChange)
+
+        while not kill_received:
+            print "reading sensors\n"
+            globals.display.increment(1)
+            sensorData = readSensors()
+            print "debug display\n"
+            debugDisplay(sensorData)
+            print "send data\n"
+            sendDataToHub(sensorData)
+            print "display show\n"
+            globals.display.show()
+
+            time.sleep(5)
+    else:
+        print ( "")
+        print ( "Device registration failed!" )
+
+    print ("done..")
+
+
+def provision_device():
+    global GLOBAL_PROV_URI
+    global ID_SCOPE
+    global SECURITY_DEVICE_TYPE
+    global PROTOCOL
+
+    try:
+        provisioning_client = ProvisioningDeviceClient(GLOBAL_PROV_URI, ID_SCOPE, SECURITY_DEVICE_TYPE, PROTOCOL)
+
+        version_str = provisioning_client.get_version_string()
+        print ( "\nProvisioning API Version: %s\n" % version_str )
+
+        provisioning_client.set_option("logtrace", True)
+
+        provisioning_client.register_device(register_device_callback, None, register_status_callback, None)
+
+        try:
+            # Try Python 2.xx first
+            raw_input("Press Enter to interrupt...\n")
+        except:
+            pass
+            # Use Python 3.xx in the case of exception
+            input("Press Enter to interrupt...\n")
+
+    except ProvisioningError as provisioning_error:
+        print ( "Unexpected error %s" % provisioning_error )
+        return
+    except KeyboardInterrupt:
+        print ( "Provisioning Device Client sample stopped" )
 
 
 def sendDataToHub(data):
@@ -95,30 +176,9 @@ def debugDisplay(data):
         logger.log(json.dumps(jsonData, indent=4, sort_keys=True))
 
 
-def webServerStart(port):
-    global kill_received
-
-    webServer = WebServer(port)
-    while not kill_received:
-        time.sleep(1)
-    webServer.shutdown()
-
-
 def sendTelemetryStart():
-    global kill_received
-
     initSensors()
-
-    initHub()
-
-    while not kill_received:
-        globals.display.increment(1)
-        sensorData = readSensors()
-        debugDisplay(sensorData)
-        sendDataToHub(sensorData)
-        globals.display.show()
-
-        time.sleep(configState.config["telemetryInterval"])
+    provision_device()
 
 
 def joystickStart():
@@ -273,48 +333,34 @@ def main():
         wlan0Ip = utility.getIpAddress('wlan0')
         eth0Ip = utility.getIpAddress('eth0')
 
-        if configState.config["hubConnectionString"] == "":
-            deviceState.init("", globals.firmwareVersion)
-            deviceState.setIPaddress(wlan0Ip, eth0Ip)
+        deviceState.init(globals.firmwareVersion)
+        deviceState.setIPaddress(wlan0Ip, eth0Ip)
+        showIPOnDisplay(configState.config["showIp"])
 
-            showIPOnDisplay(True)
+        threads = []
 
-            webServerStart(8080)
-        else:
-            # initialize device state
-            deviceState.init(utility.getDeviceName(configState.config["hubConnectionString"]), globals.firmwareVersion)
-            deviceState.setIPaddress(wlan0Ip, eth0Ip)
-            showIPOnDisplay(configState.config["showIp"])
+        # # start the telemetry thread
+        telemetryThread = Thread(target=sendTelemetryStart, args=())
+        telemetryThread.start()
 
-            threads = []
+        # start the joystick monitor thread
+        joystickThread = Thread(target=joystickStart, args=())
+        joystickThread.start()
 
-            # start the web server thread
-            webServerThread = Thread(target=webServerStart, args=(8080,))
-            webServerThread.daemon = True
-            webServerThread.start()
+        # # start the accelerometer monitor thread
+        accelerometerThread = Thread(target=accelerometerStart, args=())
+        accelerometerThread.start()
 
-            # # start the telemetry thread
-            telemetryThread = Thread(target=sendTelemetryStart, args=())
-            telemetryThread.start()
+        global kill_received
+        print("\nPress ctrl-c to stop the process")
 
-            # start the joystick monitor thread
-            joystickThread = Thread(target=joystickStart, args=())
-            joystickThread.start()
+        try:
+            signal.pause()
 
-            # # start the accelerometer monitor thread
-            accelerometerThread = Thread(target=accelerometerStart, args=())
-            accelerometerThread.start()
-
-            global kill_received
-            print("\nPress ctrl-c to stop the process")
-
-            try:
-                signal.pause()
-
-            except KeyboardInterrupt:
-                print("\nCtrl-c received! Sending kill to threads...")
-                kill_received = True
-                globals.sense.clear()
+        except KeyboardInterrupt:
+            print("\nCtrl-c received! Sending kill to threads...")
+            kill_received = True
+            globals.sense.clear()
 
 
 # kick off the process

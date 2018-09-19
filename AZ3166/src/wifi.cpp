@@ -21,7 +21,7 @@ bool WiFiController::initApWiFi() {
     macAddress[length] = char(0);
     LOG_VERBOSE("MAC address %s", macAddress);
 
-    memcpy(password, macAddress, 4);
+    memcpy(password, macAddress + 8, 4);
     password[4] = 0;
 
     // passcode below is not widely compatible. See the password is used as pincode for onboarding

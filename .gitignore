@@ -298,3 +298,6 @@ __pycache__/
 .arduino15/
 BUILD/
 .iotz.mxchip.tweak
+AZ3166/devkit-sdk/
+AZ3166/Makefile
+AZ3166/mxchip_tweak
