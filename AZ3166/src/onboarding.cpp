@@ -11,6 +11,9 @@
 #include "../inc/webServer.h"
 #include "../inc/config.h"
 #include "../inc/httpHtmlData.h"
+#include "../inc/watchdogController.h"
+
+static WatchdogController resetController;
 
 void OnboardingController::initializeConfigurationSetup() {
     LOG_VERBOSE("OnboardingController::initializeConfigurationSetup");
@@ -55,7 +58,7 @@ void OnboardingController::loop() {
     LOG_VERBOSE("initializeLoop: list for incoming clients");
 
     WiFiClient client = webServer->getClient();
-    if (client) // ( _pTcpSocket != NULL )
+    if (client)
     {
         LOG_VERBOSE("initializeLoop: new client");
         // an http request ends with a blank line
@@ -89,6 +92,8 @@ void OnboardingController::loop() {
                             Screen.print(2, "Press 'reset'");
                             Screen.print(3, "         now :)");
                             client.write((uint8_t*)HTTP_COMPLETE_RESPONSE, sizeof(HTTP_COMPLETE_RESPONSE) - 1);
+                            resetController.initialize(3000);
+                            resetController.reset();
                         } else {
                             LOG_ERROR("User has landed on COMPLETE page without actually completing the setup. Writing the START page to client.");
                             processStartRequest(client);
@@ -161,7 +166,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
     char buff[dataLength] = {0};
     data.toCharArray(buff, dataLength);
     char *pch = strtok(buff, "&");
-    AutoString ssid, password, connStr;
+    AutoString ssid, password, auth, scopeId, regId, sasKey;
     uint8_t checkboxState = 0x00; // bit order - see globals.h
 
     while (pch != NULL)
@@ -201,8 +206,8 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
                     }
                 } else if (strncmp(key, "PASS", 4) == 0) {
                     urldecode(value, valueLength, &password);
-                } else if (strncmp(key, "CONN", 4) == 0) {
-                    urldecode(value, valueLength, &connStr);
+                } else if (strncmp(key, "AUTH", 4) == 0) {
+                    urldecode(value, valueLength, &auth);
                 } else if (strncmp(key, "TEMP", 4) == 0) {
                     checkboxState = checkboxState | TEMP_CHECKED;
                 } else if (strncmp(key, "PRES", 4) == 0) {
@@ -220,10 +225,12 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
                     checkboxState = checkboxState | ACCEL_CHECKED;
                 } else if (strncmp(key, "PINCO", 5) == 0) {
                     if (valueLength > 4 || strncmp(value, Globals::wiFiController.getPassword(), 4) != 0) {
-                        LOG_ERROR("WRONG PIN CODE");
+                        LOG_ERROR("WRONG PIN CODE %s %s", value, Globals::wiFiController.getPassword());
                     } else {
                         pincodePasses = true;
                     }
+                } else if (strncmp(key, "REGID", 5) == 0) {
+                    urldecode(value, valueLength, &regId);
                 } else {
                     unknown = true;
                 }
@@ -231,7 +238,13 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
             break;
 
             default:
-                unknown = true;
+                if (idx == 6 && strncmp(key, "SASKEY", 6) == 0) {
+                    urldecode(value, valueLength, &sasKey);
+                } else if (idx == 7 && strncmp(key, "SCOPEID", 7) == 0) {
+                    urldecode(value, valueLength, &scopeId);
+                } else {
+                    unknown = true;
+                }
         }
 
         LOG_VERBOSE("Checkbox State %d", checkboxState);
@@ -246,7 +259,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
         pch = strtok(NULL, "&");
     }
 
-    if (ssid.getLength() == 0 || connStr.getLength() == 0) {
+    if (ssid.getLength() == 0 || ( *(*auth) == 'S' && sasKey.getLength() == 0) ) {
         LOG_ERROR("Missing ssid or connStr. Responsed with START page");
         processStartRequest(client);
         return;
@@ -259,8 +272,8 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
     assert(ssid.getLength() != 0);
     ConfigController::storeWiFi(ssid, password);
 
-    assert(connStr.getLength() != 0);
-    ConfigController::storeConnectionString(connStr);
+    assert(auth.getLength() != 0);
+    ConfigController::storeKey(auth, scopeId, regId, sasKey);
 
     AutoString configData(3);
     snprintf(*configData, 3, "%d", checkboxState);

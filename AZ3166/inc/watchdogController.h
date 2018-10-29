@@ -12,7 +12,7 @@ class WatchdogController
     static Watchdog watchdog;
 
 public:
-    static void initialize();
+    static void initialize(int timer = 32767);
     static void reset(bool setState = false);
 };
 

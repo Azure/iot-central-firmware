@@ -35,6 +35,7 @@ bool ApplicationController::initialize() {
         Screen.print(3, "for 'hard' RESET");
         int wait_count = 0;
         while(wait_count++ < 2500) {
+            loop(); // listen for A + B button press
             wait_ms(2);
         }
 
