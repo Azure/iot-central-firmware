@@ -27,7 +27,7 @@ from counter import SenseHatCounter
 GLOBAL_PROV_URI = "global.azure-devices-provisioning.net"
 ID_SCOPE =        "<scope id>" # put the scope id here
 
-SECURITY_DEVICE_TYPE = ProvisioningSecurityDeviceType.X509 # OR .SAS
+SECURITY_DEVICE_TYPE = ProvisioningSecurityDeviceType.X509
 PROTOCOL = ProvisioningTransportProvider.MQTT
 
 iotHubClient = None
@@ -97,7 +97,10 @@ def register_device_callback(register_result, iothub_uri, device_id, user_contex
         print ( "")
         print ( "Device successfully registered!" )
 
-        iotHubClient = IotHubClient(IOTHUB_URI, IOTHUB_DID, False if SECURITY_DEVICE_TYPE == ProvisioningSecurityDeviceType.X509 else True)
+        if register_result == "SAS_KEY":
+            iotHubClient = IotHubClient(iothub_uri) # <- connectionString
+        else:
+            iotHubClient = IotHubClient(IOTHUB_URI, IOTHUB_DID, False if SECURITY_DEVICE_TYPE == ProvisioningSecurityDeviceType.X509 else True)
 
         # register a method for direct method execution
         # called with:
@@ -141,14 +144,18 @@ def provision_device():
     global PROTOCOL
 
     try:
+        ### X509 START
         provisioning_client = ProvisioningDeviceClient(GLOBAL_PROV_URI, ID_SCOPE, SECURITY_DEVICE_TYPE, PROTOCOL)
-
         version_str = provisioning_client.get_version_string()
         print ( "\nProvisioning API Version: %s\n" % version_str )
-
         provisioning_client.set_option("logtrace", True)
-
         provisioning_client.register_device(register_device_callback, None, register_status_callback, None)
+        ### X509 END
+
+        ### SAS START
+        ### import dps and see `USAGE` part for Symmetric Key
+        ### create the connection string using dps.py logic and
+        ### call `register_device_callback` with ("SAS_KEY", connectionString, deviceId, null)
 
         try:
             # Try Python 2.xx first

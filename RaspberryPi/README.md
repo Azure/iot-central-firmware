@@ -56,12 +56,11 @@ Please follow the steps below;
 Go ahead and associate with Raspberry Pi template in order to make the sample functioning properly.
 
 **SAS**
-Follow the steps below to grab a specialized version of SDK
-```
-git clone https://github.com/Azure/azure-iot-sdk-python.git --recursive
-cd azure-iot-sdk-python/c
-git checkout dps_symm_key
-```
+Take a look at the sample `dps.py` for generating connection string using the
+`Primary or Secondary` / `Scope ID` from Azure IoT Central with your choice of `device id`
+
+Current Python sample is based on `x509` with builtin sample certificate. Feel
+free to update the logic to symmetric key by uncommenting the x509 related part under `provision_device`
 
 As a next step; you should define both `SYMMETRIC_KEY_VALUE` and `REGISTRATION_NAME` under
 `azure-iot-sdk-python/c/dps_symm_key/provisioning_client/adapters/hsm_client_key.c`
