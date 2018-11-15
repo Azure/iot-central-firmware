@@ -6,7 +6,7 @@
 
 #include "globals.h"
 #include "loop.h"
-#include "iotHubClient.h"
+#include "AzureIOTClient.h"
 
 class String;
 
@@ -19,14 +19,14 @@ class TelemetryController : public LoopController
     int currentInfoPage;
     int lastInfoPage;
     uint8_t telemetryState;
-    IoTHubClient * iothubClient;
+    AzureIOTClient * iotClient;
     bool           can_send;
 
     void initializeTelemetryController(const char * iotCentralConfig);
     TelemetryController(const char * iotCentralConfig):
         lastTelemetrySend(0), lastTimeSync(0), lastShakeTime(0),
         lastSwitchPress(0), currentInfoPage(0), lastInfoPage(-1),
-        telemetryState(0), iothubClient(NULL), can_send(true)
+        telemetryState(0), iotClient(NULL), can_send(true)
     {
         initializeTelemetryController(iotCentralConfig);
     }
@@ -43,7 +43,7 @@ public:
     void loop() override;
     ~TelemetryController();
 
-    IoTHubClient * getHubClient() { return iothubClient; }
+    AzureIOTClient * getClient() { return iotClient; }
     bool canSend() { return can_send; }
     void setCanSend(bool s) { can_send = s; }
     void sendStateChange();
