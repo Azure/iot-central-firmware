@@ -68,7 +68,17 @@ do { \
     CHECK_NOT_NULL(x) \
     x ## _len = strlen_s_(x, INT_MAX); \
     if (x ## _len == 0 || x ## _len > maxlen) { \
-        IOTC_LOG(TO_STR(x) "has length %d", x ## _len); return 1; \
+        IOTC_LOG("ERROR: " TO_STR(x) "has length %d", x ## _len); return 1; \
+    } \
+} while(0)
+
+#define GET_LENGTH_NOT_NULL(x, maxlen) \
+unsigned x ## _len = 0; \
+do { \
+    CHECK_NOT_NULL(x) \
+    x ## _len = strlen_s_(x, INT_MAX); \
+    if (x ## _len > maxlen) { \
+        IOTC_LOG("ERROR: " TO_STR(x) " has length %d", x ## _len); return 1; \
     } \
 } while(0)
 
@@ -452,8 +462,8 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 
     CHECK_NOT_NULL(ctx)
     GET_LENGTH_NOT_NULL_NOT_EMPTY(scope, 256);
-    GET_LENGTH_NOT_NULL_NOT_EMPTY(keyORcert, 256);
-    GET_LENGTH_NOT_NULL_NOT_EMPTY(device_id, 256);
+    GET_LENGTH_NOT_NULL(keyORcert, 256);
+    GET_LENGTH_NOT_NULL(device_id, 256);
 
     IOTContextInternal *internal = (IOTContextInternal*)ctx;
     MUST_CALL_AFTER_INIT(internal);
@@ -464,37 +474,39 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     bool traceOn;
 
     DevkitDPSSetLogTrace(gLogLevel > IOTC_LOGGING_API_ONLY);
-  #ifdef MXCHIP_AZ3166
+#ifdef MXCHIP_AZ3166
     // TODO: move it to PAL
     if (type == IOTC_CONNECT_SYMM_KEY)
         DevkitDPSSetAuthType(DPS_AUTH_SYMMETRIC_KEY);
     else if (type == IOTC_CONNECT_X509_CERT)
         DevkitDPSSetAuthType(DPS_AUTH_X509_GROUP);
-    else
+    else if (type != IOTC_CONNECT_CONNECTION_STRING)
     {
         IOTC_LOG("ERROR: (iotc_connect) wrong value for IOTConnectType. ERR:0x0001");
         errorCode = 1;
         goto fnc_exit;
     }
-  #endif // MXCHIP_AZ3166
+#endif // MXCHIP_AZ3166
 
     strcpy(stringBuffer, keyORcert);
-    if (!DevkitDPSClientStart(internal->endpoint == NULL ? DEFAULT_ENDPOINT : internal->endpoint,
-                      scope, device_id, stringBuffer, NULL, 0)) {
-        IOTC_LOG("ERROR: (iotc_connect) device registration step has failed. ERR:0x0002");
-        errorCode = 2;
-        goto fnc_exit;
-    } else if (type == IOTC_CONNECT_SYMM_KEY) {
-        pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
-            "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
-            DevkitDPSGetIoTHubURI(),
-            DevkitDPSGetDeviceID(),
-            keyORcert);
-    } else if (type == DPS_AUTH_X509_GROUP) {
-        pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
-            "HostName=%s;DeviceId=%s;UseProvisioning=true",
-            DevkitDPSGetIoTHubURI(),
-            DevkitDPSGetDeviceID());
+    if (type != IOTC_CONNECT_CONNECTION_STRING) {
+        if (!DevkitDPSClientStart(internal->endpoint == NULL ? DEFAULT_ENDPOINT : internal->endpoint,
+                        scope, device_id, stringBuffer, NULL, 0)) {
+            IOTC_LOG("ERROR: (iotc_connect) device registration step has failed. ERR:0x0002");
+            errorCode = 2;
+            goto fnc_exit;
+        } else if (type == IOTC_CONNECT_SYMM_KEY) {
+            pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
+                "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
+                DevkitDPSGetIoTHubURI(),
+                DevkitDPSGetDeviceID(),
+                keyORcert);
+        } else if (type == DPS_AUTH_X509_GROUP) {
+            pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
+                "HostName=%s;DeviceId=%s;UseProvisioning=true",
+                DevkitDPSGetIoTHubURI(),
+                DevkitDPSGetDeviceID());
+        }
     }
 
     if (pos == 0 || pos >= AZ_IOT_HUB_MAX_LEN) {

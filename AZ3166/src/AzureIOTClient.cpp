@@ -170,6 +170,7 @@ void AzureIOTClient::init() {
     ConfigController::readGroupSXKeyAndDeviceId(scopeId, registrationId, stringBuffer, sasKey);
     LOG_VERBOSE("SCOPEID: %s REGID: %s KEY: %s IS_SAS: %d", scopeId, registrationId, stringBuffer, sasKey);
 
+    deviceId = strdup(registrationId);
     int errorCode = iotc_init_context(&context);
     assert(errorCode == 0);
     errorCode = iotc_connect(context, scopeId, stringBuffer, registrationId, sasKey ? IOTC_CONNECT_SYMM_KEY : IOTC_CONNECT_X509_CERT);
@@ -242,35 +243,10 @@ void AzureIOTClient::close()
     LOG_ERROR("AzureIOTClient::close!");
 }
 
-// scrolling text global variables
 void AzureIOTClient::displayDeviceInfo() {
-    // char buff[STRING_BUFFER_128] = {0};
+    char buff[STRING_BUFFER_128] = {0};
 
-    // if (needsCopying) {
-    //     // code to scroll the larger hubname if it exceeds 16 characters
-    //     if (waitCount >= 3) {
-    //         waitCount = 0;
-    //         const size_t hubNameLength = strlen(hubName);
-    //         if (hubNameLength > AZ3166_DISPLAY_MAX_COLUMN) {
-    //             unsigned length = min(hubNameLength - displayCharPos, AZ3166_DISPLAY_MAX_COLUMN);
-    //             memcpy(displayHubName, hubName + displayCharPos, length);
-    //             displayHubName[length] = char(0); // future proof
-    //             if ((size_t) AZ3166_DISPLAY_MAX_COLUMN + displayCharPos >= hubNameLength) {
-    //                 displayCharPos = 0;
-    //             } else {
-    //                 displayCharPos++;
-    //             }
-    //         } else { // hubNameLength > AZ3166_DISPLAY_MAX_COLUMN
-    //             memcpy(displayHubName, hubName, hubNameLength);
-    //             displayHubName[hubNameLength] = char(0); // future proof
-    //             needsCopying = false; // no need to do this again
-    //         } // hubNameLength > AZ3166_DISPLAY_MAX_COLUMN
-    //     } else {
-    //         waitCount++;
-    //     } // waitCount >= 3
-    // } // needsCopying
-
-    // snprintf(buff, STRING_BUFFER_128 - 1, "Device:\r\n%s\r\n%.16s\r\nf/w: %s",
-    //     deviceId, displayHubName, AZIOTC_FW_VERSION);
-    // Screen.print(0, buff);
+    snprintf(buff, STRING_BUFFER_128 - 1, "Device:\r\n%s\r\n\r\nf/w: %s",
+        deviceId, AZIOTC_FW_VERSION);
+    Screen.print(0, buff);
 }

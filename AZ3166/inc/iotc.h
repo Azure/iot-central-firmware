@@ -38,8 +38,9 @@ typedef short IOTProtocol;
 #define IOTC_LOGGING_ALL      0x10
 typedef short IOTLogLevel;
 
-#define IOTC_CONNECT_SYMM_KEY  0x01
-#define IOTC_CONNECT_X509_CERT 0x02
+#define IOTC_CONNECT_SYMM_KEY          0x01
+#define IOTC_CONNECT_X509_CERT         0x02
+#define IOTC_CONNECT_CONNECTION_STRING 0x04
 typedef short IOTConnectType;
 
 #define IOTC_CONNECTION_EXPIRED_SAS_TOKEN    0x01

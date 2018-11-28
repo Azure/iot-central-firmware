@@ -39,6 +39,7 @@ class AzureIOTClient
     bool hasError;
     int displayCharPos;
     int waitCount;
+    char *deviceId;
 
     DirectMethodNode *rootNode, *lastNode;
 
