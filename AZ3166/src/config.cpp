@@ -77,6 +77,11 @@ void ConfigController::storeKey(AutoString &auth, AutoString &scopeId, AutoStrin
     if ((*auth)[0] == 'S') {
         LOG_VERBOSE("\tKEY SSYM");
         memcpy(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "SSYM", 4);
+    } else if ((*auth)[0] == 'C') {
+        LOG_VERBOSE("\tKEY Connection String");
+        memcpy(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "CSTR", 4);
+        memcpy(buffer, *key, key.getLength());
+        buffer[key.getLength()] = 0;
     } else {
         LOG_VERBOSE("\tKEY X509");
         memcpy(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "X509", 4);
@@ -86,17 +91,27 @@ void ConfigController::storeKey(AutoString &auth, AutoString &scopeId, AutoStrin
     eeprom.write((uint8_t*) buffer, AZ_IOT_HUB_MAX_LEN, AZ_IOT_HUB_ZONE_IDX);
 }
 
-void ConfigController::readGroupSXKeyAndDeviceId(char * scopeId, char * registrationId, char * sas, bool &sasKey) {
+void ConfigController::readGroupSXKeyAndDeviceId(char * scopeId, char * registrationId, char * sas, char &atype) {
 #if !defined(IOT_CENTRAL_SAS_KEY) && !defined(IOT_CENTRAL_USE_X509_SAMPLE_CERT)
     char buffer[AZ_IOT_HUB_MAX_LEN];
     EEPROMInterface eeprom;
     eeprom.read((uint8_t*) buffer, AZ_IOT_HUB_MAX_LEN, 0, AZ_IOT_HUB_ZONE_IDX);
-    sasKey = strncmp(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "SSYM", 4) == 0;
-    if (!sasKey && strncmp(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "X509", 4) != 0) return;
+    atype = strncmp(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "SSYM", 4) == 0 ? 'S' : ' ';
 
-    strcpy(scopeId, buffer);
-    strcpy(registrationId, buffer + SAS_SCOPE_ID_ENDS);
-    strcpy(sas, buffer + SAS_REG_ID_ENDS);
+    if (atype == ' ' && strncmp(buffer + (AZ_IOT_HUB_MAX_LEN - 4), "X509", 4) == 0)
+        atype = 'X';
+    else if (atype == ' ')
+        atype = 'C';
+
+    if (atype == 'C') {
+        strcpy(sas, buffer);
+        *scopeId = '\0';
+        *registrationId = '\0';
+    } else {
+        strcpy(scopeId, buffer);
+        strcpy(registrationId, buffer + SAS_SCOPE_ID_ENDS);
+        strcpy(sas, buffer + SAS_REG_ID_ENDS);
+    }
 #else // !defined(IOT_CENTRAL_SAS_KEY) && !defined(IOT_CENTRAL_USE_X509_SAMPLE_CERT)
 #if defined(IOT_CENTRAL_SAS_KEY)
     strcpy(sas, IOT_CENTRAL_SAS_KEY);

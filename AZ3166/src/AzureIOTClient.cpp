@@ -161,19 +161,43 @@ void AzureIOTClient::init() {
     char stringBuffer[AZ_IOT_HUB_MAX_LEN] = {0};
     char scopeId[STRING_BUFFER_128] = {0};
     char registrationId[STRING_BUFFER_128] = {0};
-    bool sasKey = false;
+    char atype;
 
     iotc_set_logging(IOTHUB_TRACE_LOG_ENABLED ? IOTC_LOGGING_ALL : (
                         SERIAL_VERBOSE_LOGGING_ENABLED ?
                             IOTC_LOGGING_API_ONLY : IOTC_LOGGING_DISABLED));
 
-    ConfigController::readGroupSXKeyAndDeviceId(scopeId, registrationId, stringBuffer, sasKey);
-    LOG_VERBOSE("SCOPEID: %s REGID: %s KEY: %s IS_SAS: %d", scopeId, registrationId, stringBuffer, sasKey);
+    ConfigController::readGroupSXKeyAndDeviceId(scopeId, registrationId, stringBuffer, atype);
+    LOG_VERBOSE("SCOPEID: %s REGID: %s KEY: %s AuthType: %c", scopeId, registrationId, stringBuffer, atype);
 
     deviceId = strdup(registrationId);
     int errorCode = iotc_init_context(&context);
     assert(errorCode == 0);
-    errorCode = iotc_connect(context, scopeId, stringBuffer, registrationId, sasKey ? IOTC_CONNECT_SYMM_KEY : IOTC_CONNECT_X509_CERT);
+
+    IOTConnectType connectType;
+
+#ifdef IOT_CENTRAL_CONNECTION_STRING
+    connectType = IOTC_CONNECT_CONNECTION_STRING;
+    memcpy(stringBuffer, IOT_CENTRAL_CONNECTION_STRING, strlen(IOT_CENTRAL_CONNECTION_STRING));
+#else
+    switch(atype) {
+        case 'C':
+            connectType = IOTC_CONNECT_CONNECTION_STRING;
+            LOG_VERBOSE("- auth type => IOTC_CONNECT_CONNECTION_STRING");
+            break;
+        case 'X':
+            connectType = IOTC_CONNECT_X509_CERT;
+            LOG_VERBOSE("- auth type => IOTC_CONNECT_X509_CERT");
+            break;
+        case 'S':
+            connectType = IOTC_CONNECT_SYMM_KEY;
+            LOG_VERBOSE("- auth type => IOTC_CONNECT_SYMM_KEY");
+            break;
+        default:
+            abort(); // unlikely
+    }
+#endif
+    errorCode = iotc_connect(context, scopeId, stringBuffer, registrationId, connectType);
     assert(errorCode == 0);
 
     iotc_on(context, "MessageSent", onMessageSent, this);
