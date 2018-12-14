@@ -18,7 +18,7 @@ must-revalidate\r\n\r\n"
 <div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"SCOPEID\" id=\"SCOPEID\" title=\"Scope Id\" placeholder=\"Scope Id\" style=\"width:100%;\"> </div>\
 <div class=\"input-group fluid\"> <input type=\"text\" value=\"\" name=\"REGID\" id=\"REGID\" title=\"Device Id\" placeholder=\"Device Id\" style=\"width:100%;\"> </div>\
 <div class=\"input-group fluid\"> <select name=\"AUTH\" id=\"AUTH\" style=\"width:100%;\" \
-required><option value=\"S\">SAS Key</option><option value=\"X\">X509 Certificate</option></select></div>\
+required><option value=\"S\">SAS Key</option><option value=\"X\">X509 Certificate</option><option value=\"C\">Connection string</option></select></div>\
 <div class=\"input-group fluid\"> <span id=\"link\" style=\"display:none;font-size:80%\"> \
 Setting the scope id is enough to authenticate with x509 option. \
 This sample firmware already has the client cert builtin. Use \
@@ -44,13 +44,24 @@ refresh the page if you do not see your network</h5> </div></div></section>\
 var sel = document.getElementById('AUTH');\
 sel.onchange = function(e) {\
   var s = document.getElementById('SASKEY');\
+  var cid = document.getElementById('SCOPEID');\
   var r = document.getElementById('REGID');\
   var l = document.getElementById('link');\
   if (sel.selectedIndex == 1) {\
     s.style='display:none'; r.value = 'riot-device-cert'; r.disabled = true;\
     l.style='';\
-  } else {\
+    cid.style='';\
+  } \
+  else if (sel.selectedIndex == 2) {\
+    s.title='Connection String'; \
+    s.placeholder='Connection String';\
+    cid.style='display:none';\
+  } \
+  else {\
     l.style='display:none';\
+    cid.style='';\
+    s.title = 'Primary/Secondary device key'; \
+    s.placeholder = 'Primary/Secondary device key'; \
     s.style = ''; r.value=''; r.disabled = undefined;\
   }\
 }\

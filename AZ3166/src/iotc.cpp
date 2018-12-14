@@ -461,8 +461,8 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
   const char* device_id, IOTConnectType type) {
 
     CHECK_NOT_NULL(ctx)
-    GET_LENGTH_NOT_NULL_NOT_EMPTY(scope, 256);
-    GET_LENGTH_NOT_NULL(keyORcert, 256);
+    GET_LENGTH_NOT_NULL(scope, 256);
+    GET_LENGTH_NOT_NULL(keyORcert, 512);
     GET_LENGTH_NOT_NULL(device_id, 256);
 
     IOTContextInternal *internal = (IOTContextInternal*)ctx;
@@ -507,14 +507,17 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
                 DevkitDPSGetIoTHubURI(),
                 DevkitDPSGetDeviceID());
         }
+        stringBuffer[pos] = 0;
+    } else {
+        pos = strlen(stringBuffer);
     }
 
+    IOTC_LOG("ConnectionString: %s", stringBuffer);
     if (pos == 0 || pos >= AZ_IOT_HUB_MAX_LEN) {
         IOTC_LOG("ERROR: (iotc_connect) connection information is out of buffer. ERR:0x000F");
         errorCode = 15;
         goto fnc_exit;
     }
-    stringBuffer[pos] = 0;
 
     if (platform_init() != 0) {
         IOTC_LOG("ERROR: (iotc_connect) Failed to initialize the SDK platform. ERR:0x0003");
