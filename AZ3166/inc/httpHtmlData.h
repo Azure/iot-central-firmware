@@ -55,22 +55,21 @@ document.getElementById('frm').onsubmit = function(e) {\
   }\
 };\
 sel.onchange = function(e) {\
+  var s = document.getElementById('SASKEY');\
   var cid = document.getElementById('SCOPEID');\
+  var r = document.getElementById('REGID');\
   var l = document.getElementById('link');\
   if (sel.selectedIndex == 1) {\
     s.style='display:none'; r.value = 'riot-device-cert'; r.disabled = true;\
     l.style='';\
     cid.style='';\
-    r.style='';\
   } \
   else if (sel.selectedIndex == 2) {\
     s.title='Connection String'; \
     s.placeholder='Connection String';\
     cid.style='display:none';\
-    r.style='display:none';\
   } \
   else {\
-    r.style='';\
     l.style='display:none';\
     cid.style='';\
     s.title = 'Primary/Secondary device key'; \
