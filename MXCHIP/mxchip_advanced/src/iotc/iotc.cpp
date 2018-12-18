@@ -6,12 +6,11 @@
 #include <limits.h>
 #include <stdint.h>
 #include <assert.h>
-#include "../inc/iotc.h"
-#include "../inc/utility.h"
+#include "iotc.h"
+#include "json.h"
 
-// MXCHIP
-#define MXCHIP_AZ3166
 #ifdef MXCHIP_AZ3166
+#include <Arduino.h>
 #include <DevkitDPSClient.h>
 #include <AzureIotHub.h>
 #endif // MXCHIP_AZ3166
@@ -297,8 +296,8 @@ void sendOnError(IOTContextInternal *internal, const char* message) {
 
 void echoDesired(IOTContextInternal *internal, const char *propertyName,
   const char *message, const char *status, int statusCode) {
-    JSObject rootObject(message);
-    JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
+    AzureIOTC::JSObject rootObject(message);
+    AzureIOTC::JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
 
     const char* methodName = rootObject.getStringByName("methodName");
     rootObject.getObjectByName(propertyName, &propertyNameObject);
@@ -364,12 +363,12 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
     assert(internal != NULL);
 
     ((char*)payLoad)[size] = 0x00;
-    JSObject payloadObject((const char *)payLoad);
+    AzureIOTC::JSObject payloadObject((const char *)payLoad);
 
     if (update_state == DEVICE_TWIN_UPDATE_PARTIAL && payloadObject.getNameAt(0) != NULL) {
         callDesiredCallback(internal, payloadObject.getNameAt(0), reinterpret_cast<const char*>(payLoad), size);
     } else {
-        JSObject desired, reported;
+        AzureIOTC::JSObject desired, reported;
 
         // loop through all the desired properties
         // look to see if the desired property has an associated reported property
@@ -384,7 +383,7 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
         for (unsigned i = 0, count = desired.getCount(); i < count; i++) {
             const char * itemName = desired.getNameAt(i);
             if (itemName != NULL && itemName[0] != '$') {
-                JSObject keyObject;
+                AzureIOTC::JSObject keyObject;
                 const char * version = NULL, * desiredVersion = NULL,
                            * value = NULL, * desiredValue = NULL;
                 bool containsKey = reported.getObjectByName(itemName, &keyObject);
@@ -400,7 +399,7 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
                     LOG_VERBOSE("key: %s found in reported and versions match", itemName);
                 } else if (containsKey && strcmp(desiredValue, value) != 0){
                     LOG_VERBOSE("key: %s either not found in reported or versions do not match\r\n", itemName);
-                    JSObject itemValue;
+                    AzureIOTC::JSObject itemValue;
                     if (desired.getObjectAt(i, &itemValue) && itemValue.toString() != NULL) {
                         LOG_VERBOSE("itemValue: %s", itemValue.toString());
                     } else {

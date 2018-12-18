@@ -90,25 +90,6 @@ struct Globals
 // CAUTION: Fan sound is aprox 80KB . So, make sure you got enough sram left ;)
 // #define ENABLE_FAN_SOUND
 
-#if SERIAL_VERBOSE_LOGGING_ENABLED != 1
-#define LOG_VERBOSE(...)
-#else
-#define LOG_VERBOSE(...) \
-    do { \
-        Serial.printf("  - "); \
-        Serial.printf(__VA_ARGS__); \
-        Serial.printf("\r\n"); \
-        delay(100); \
-    } while(0)
-#endif
-
-// Log Errors no matter what
-#define LOG_ERROR(...) \
-    do { \
-        Serial.printf("X - Error at %s:%d\r\n\t", __FILE__, __LINE__); \
-        Serial.printf(__VA_ARGS__); \
-        Serial.printf("\r\n"); \
-        delay(100); \
-    } while(0)
+#include "../src/iotc/iotc.h"
 
 #endif // GLOBALS_H

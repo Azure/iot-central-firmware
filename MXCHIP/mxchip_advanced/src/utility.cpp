@@ -10,48 +10,6 @@
 char AutoString::buffer[STRING_BUFFER_512] = {0};
 bool AutoString::buffer_in_use = false;
 
-const char * JSObject::toString() {
-    assert(object != NULL);
-
-    JSON_Value * val = json_object_get_wrapping_value(object);
-    if (val == NULL) return NULL;
-    return json_value_get_string(val);
-}
-
-JSObject::~JSObject() {
-    if (value != NULL && isSubObject == false) {
-        json_value_free(value);
-        value = NULL;
-    }
-}
-
-bool JSObject::getObjectAt(unsigned index, JSObject * outJSObject) {
-    if (index >= getCount()) return false;
-
-    JSON_Value * subValue =  json_object_get_value_at(object, index);
-    if (subValue == NULL) return false;
-
-    outJSObject->isSubObject = true;
-    outJSObject->value = subValue;
-    outJSObject->toObject();
-    if (outJSObject->object == NULL) return false;
-
-    return true;
-}
-
-bool JSObject::getObjectByName(const char * name, JSObject * outJSObject) {
-    JSON_Object* subObject = json_object_get_object(object, name);
-    if (subObject == NULL) {
-        // outJSObject->value memory freed by it's own de-constructor.
-        return false; // let consumer file the log
-    }
-
-    outJSObject->value = json_object_get_wrapping_value(object);
-    outJSObject->object = subObject;
-    outJSObject->isSubObject = true;
-    return true;
-}
-
 // As there is a problem of sprintf %f in Arduino, follow https://github.com/blynkkk/blynk-library/issues/14 to implement dtostrf
 char * dtostrf(double number, signed char width, unsigned char prec, char *s) {
     if(isnan(number)) {
