@@ -1,18 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license.
 
-#ifndef IOT_HUB_CLIENT_H
-#define IOT_HUB_CLIENT_H
+#ifndef AZURE_IOT_CLIENT_H
+#define AZURE_IOT_CLIENT_H
 
-typedef int (*hubDesiredCallback)(const char *, size_t, char **response, size_t* resp_size);
-typedef void (*hubMethodCallback)(const char *, size_t);
+typedef int (*hubMethodCallback)(const char *, size_t);
 
 #include <AzureIotHub.h>
-
-typedef struct CALLBACK_LOOKUP_TAG_D {
-    char* name;
-    hubDesiredCallback callback;
-} CALLBACK_LOOKUP_D;
+#include "iotc.h"
 
 typedef struct CALLBACK_LOOKUP_TAG_M {
     char* name;
@@ -32,49 +27,42 @@ struct DirectMethodNode
 
     DirectMethodNode *next;
     DirectMethodNode():
-        methodName(NULL), payload(NULL), next(NULL), length(0) { }
+        methodName(NULL), payload(NULL), length(0), next(NULL) { }
     DirectMethodNode(char *m, char *p, size_t s):
-        methodName(m), payload(p), next(NULL), length(s) { }
+        methodName(m), payload(p), length(s), next(NULL) { }
 };
 
-class IoTHubClient
+class AzureIOTClient
 {
+    IOTContext context;
+
     bool hasError;
-    char deviceId[IOT_CENTRAL_MAX_LEN];
-    char hubName[IOT_CENTRAL_MAX_LEN];
     int displayCharPos;
     int waitCount;
-    bool needsCopying;
-    char displayHubName[AZ3166_DISPLAY_MAX_COLUMN + 1];
-    IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
-    int trackingId;
+    char *deviceId;
 
     DirectMethodNode *rootNode, *lastNode;
 
-    void initIotHubClient();
-    void closeIotHubClient();
+    void init();
+    void close();
 
 public:
-    IoTHubClient(): hasError(false), displayCharPos(0),
-                    waitCount(3), needsCopying(true),
-                    iotHubClientHandle(NULL), trackingId(0), rootNode(NULL),
-                    lastNode(NULL), methodCallbackCount(0),
+    AzureIOTClient(): context(NULL), hasError(false), displayCharPos(0),
+                    rootNode(NULL), lastNode(NULL), methodCallbackCount(0),
                     desiredCallbackCount(0), needsReconnect(false)
     {
-        memset(deviceId, 0, IOT_CENTRAL_MAX_LEN);
-        memset(hubName,  0, IOT_CENTRAL_MAX_LEN);
-        initIotHubClient();
+        init();
     }
 
-    ~IoTHubClient()
+    ~AzureIOTClient()
     {
-        closeIotHubClient();
+        close();
     }
 
     void hubClientYield(void) {
         checkConnection();
 
-        IoTHubClient_LL_DoWork(iotHubClientHandle);
+        iotc_do_work(context);
         ThreadAPI_Sleep(1 /* waitTime */);
     }
 
@@ -130,8 +118,8 @@ public:
         if (needsReconnect) {
             // simple reconnection of the client in the event of a disconnect
             LOG_VERBOSE("Reconnecting to the IoT Hub");
-            closeIotHubClient();
-            initIotHubClient();
+            close();
+            init();
 
             needsReconnect = false;
         }
@@ -141,15 +129,15 @@ public:
     bool sendReportedProperty(const char *payload);
 
     bool registerMethod(const char *methodName, hubMethodCallback callback);
-    bool registerDesiredProperty(const char *propertyName, hubDesiredCallback callback);
+    bool registerDesiredProperty(const char *propertyName, hubMethodCallback callback);
 
     void displayDeviceInfo(); // TODO: should this go under device?
 
     int methodCallbackCount;
     int desiredCallbackCount;
     CALLBACK_LOOKUP_M methodCallbackList[MAX_CALLBACK_COUNT];
-    CALLBACK_LOOKUP_D desiredCallbackList[MAX_CALLBACK_COUNT];
+    CALLBACK_LOOKUP_M desiredCallbackList[MAX_CALLBACK_COUNT];
     bool needsReconnect;
 };
 
-#endif /* IOT_HUB_CLIENT_H */
+#endif /* AZURE_IOT_CLIENT_H */

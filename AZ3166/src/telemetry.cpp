@@ -8,7 +8,7 @@
 #include "../inc/wifi.h"
 #include "../inc/sensors.h"
 #include "../inc/utility.h"
-#include "../inc/iotHubClient.h"
+#include "../inc/AzureIOTClient.h"
 #include "../inc/device.h"
 #include "../inc/stats.h"
 #include "../inc/registeredMethodHandlers.h"
@@ -32,12 +32,12 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     WatchdogController::reset();
 
     // initialize the IoT Hub Client
-    assert(iothubClient == NULL);
-    iothubClient = new IoTHubClient();
-    if (iothubClient == NULL || !iothubClient->wasInitialized()) {
-        if (iothubClient != NULL) {
-            delete iothubClient;
-            iothubClient = NULL;
+    assert(iotClient == NULL);
+    iotClient = new AzureIOTClient();
+    if (iotClient == NULL || !iotClient->wasInitialized()) {
+        if (iotClient != NULL) {
+            delete iotClient;
+            iotClient = NULL;
         }
         Screen.print(0, "Error:");
         Screen.print(1, "");
@@ -47,14 +47,14 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     WatchdogController::reset();
 
     // Register callbacks for direct messages
-    iothubClient->registerMethod("echo", dmEcho);
-    iothubClient->registerMethod("countdown", dmCountdown);
+    iotClient->registerMethod("echo", dmEcho);
+    iotClient->registerMethod("countdown", dmCountdown);
 
     // register callbacks for desired properties expected
-    iothubClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
-    iothubClient->registerDesiredProperty("setVoltage", voltageDesiredChange);
-    iothubClient->registerDesiredProperty("setCurrent", currentDesiredChange);
-    iothubClient->registerDesiredProperty("activateIR", irOnDesiredChange);
+    iotClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
+    iotClient->registerDesiredProperty("setVoltage", voltageDesiredChange);
+    iotClient->registerDesiredProperty("setCurrent", currentDesiredChange);
+    iotClient->registerDesiredProperty("activateIR", irOnDesiredChange);
 
     // show the state of the device on the RGB LED
     DeviceControl::showState();
@@ -69,7 +69,6 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
 
     initializeCompleted = true;
 }
-
 
 static int  locationDataOffset = 0;
 static char locationString[STRING_BUFFER_128];
@@ -119,7 +118,7 @@ void TelemetryController::loop() {
         // SEND EVENT example
         // build the event payload
         const char * eventString = "{\"ButtonBPressed\": \"occurred\"}";
-        if (iothubClient->sendTelemetry(eventString)) {
+        if (iotClient->sendTelemetry(eventString)) {
             LOG_VERBOSE("Event successfully sent");
             StatsController::incrementReportedCount();
         } else {
@@ -140,7 +139,7 @@ void TelemetryController::loop() {
                     Globals::locationData[locationDataOffset++]);
             locationString[n] = 0;
             locationDataOffset %= MAP_DATA_SIZE;
-            if (iothubClient->sendReportedProperty(locationString)) {
+            if (iotClient->sendReportedProperty(locationString)) {
                 LOG_VERBOSE("Reported property location successfully sent %s", locationString);
                 StatsController::incrementReportedCount();
             } else {
@@ -156,13 +155,13 @@ void TelemetryController::loop() {
         lastTelemetrySend = millis();
     }
 
-    DirectMethodNode * task = iothubClient->popDirectMethod();
+    DirectMethodNode * task = iotClient->popDirectMethod();
     if (task) {
-        for(int i = 0; i < iothubClient->methodCallbackCount; i++) {
-            if (strcmp(task->methodName, iothubClient->methodCallbackList[i].name) == 0) {
-                iothubClient->methodCallbackList[i].callback(
+        for(int i = 0; i < iotClient->methodCallbackCount; i++) {
+            if (strcmp(task->methodName, iotClient->methodCallbackList[i].name) == 0) {
+                iotClient->methodCallbackList[i].callback(
                         task->payload, task->length);
-                iothubClient->freeDirectMethod(task);
+                iotClient->freeDirectMethod(task);
                 break;
             }
         }
@@ -181,7 +180,7 @@ void TelemetryController::loop() {
         AnimationController::rollDieAnimation(die);
 
         AutoString shakeString(shakeProperty.c_str(), shakeProperty.length());
-        if (iothubClient->sendReportedProperty(*shakeString)) {
+        if (iotClient->sendReportedProperty(*shakeString)) {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
             StatsController::incrementReportedCount();
         } else {
@@ -214,24 +213,24 @@ void TelemetryController::loop() {
         }
             break;
         case 1: // Device information
-            iothubClient->displayDeviceInfo();
+            iotClient->displayDeviceInfo();
             break;
         case 2:  // Network information
             Globals::wiFiController.displayNetworkInfo();
             break;
     }
 
-    iothubClient->hubClientYield();
+    iotClient->hubClientYield();
     delay(1);  // good practice to help prevent lockups
 }
 
 TelemetryController::~TelemetryController() {
     initializeCompleted = false;
 
-    if (iothubClient != NULL) {
+    if (iotClient != NULL) {
         // cleanup the Azure IoT client
-        delete iothubClient;
-        iothubClient = NULL;
+        delete iotClient;
+        iotClient = NULL;
     }
 
     // cleanup the WiFi
@@ -317,7 +316,7 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
 
 void TelemetryController::sendTelemetryPayload(const char *payload) {
     LOG_VERBOSE("TelemetryController::sendTelemetryPayload");
-    if (iothubClient->sendTelemetry(payload)) {
+    if (iotClient->sendTelemetry(payload)) {
         // flash the Azure LED
         digitalWrite(LED_AZURE, 1);
         delay(500);
@@ -333,9 +332,9 @@ void TelemetryController::sendTelemetryPayload(const char *payload) {
 
 void TelemetryController::sendStateChange() {
     // SEND State example
-    assert (iothubClient != NULL && iothubClient->wasInitialized());
+    assert (iotClient != NULL && iotClient->wasInitialized());
     const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
     sendTelemetryPayload(stateMessage);
-    iothubClient->hubClientYield();
+    iotClient->hubClientYield();
     delay(1);  // good practice to help prevent lockups
 }

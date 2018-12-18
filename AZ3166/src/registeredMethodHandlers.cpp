@@ -14,12 +14,12 @@
 #include "../inc/telemetry.h"
 
 // handler for the cloud to device (C2D) message
-void dmEcho(const char *payload, size_t size) {
+int dmEcho(const char *payload, size_t size) {
     JSObject json(payload);
     const char * text = json.getStringByName("displayedValue");
     if (text == NULL) {
         LOG_ERROR("Object doesn't have a member 'displayedValue' : %s", payload);
-        return;
+        return 0;
     }
 
     // display the message on the screen
@@ -27,9 +27,11 @@ void dmEcho(const char *payload, size_t size) {
     Screen.print(0, "New message:");
     Screen.print(1, text, true);
     delay(2500);
+
+    return 0;
 }
 
-void dmCountdown(const char *payload, size_t size) {
+int dmCountdown(const char *payload, size_t size) {
     // make the RGB LED color cycle
     unsigned int rgbColour[3];
 
@@ -39,7 +41,7 @@ void dmCountdown(const char *payload, size_t size) {
     LOG_VERBOSE("'countFrom' : %d", (int)retval);
     if (retval == INT_MAX || retval < 0) { // don't let overflow
         LOG_ERROR("'countFrom' is not a number : %s", payload);
-        return;
+        return 0;
     }
 
     int32_t countFrom = (int32_t) retval;
@@ -55,7 +57,7 @@ void dmCountdown(const char *payload, size_t size) {
         rgbColour[1] = 0;
         rgbColour[2] = 0;
 
-        IoTHubClient *hubClient = ((TelemetryController*)Globals::loopController)->getHubClient();
+        AzureIOTClient *hubClient = ((TelemetryController*)Globals::loopController)->getClient();
 
         // Choose the colours to increment and decrement.
         for (int decColour = 0; decColour < 3; decColour += 1) {
@@ -87,10 +89,12 @@ void dmCountdown(const char *payload, size_t size) {
     Globals::sensorController.turnLedOff();
     delay(100);
     DeviceControl::showState();
+
+    return 0;
 }
 
 // this is the callback method for the fanSpeed desired property
-int fanSpeedDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
+int fanSpeedDesiredChange(const char *message, size_t size) {
     char fan1[] = {
         '.', '.', '.', '.', '.', '.', '.', '.',
         '.', '.', '.', '.', '.', '.', '.', '.',
@@ -132,13 +136,6 @@ int fanSpeedDesiredChange(const char *message, size_t size, char **response, siz
     }
 
     StatsController::incrementDesiredCount();
-
-    if (response != NULL) {
-        *response = (char*) Globals::completedString;
-        *resp_size = strlen(Globals::completedString);
-    }
-
-    return 200; /* status */
 }
 
 void animateCircular(char ** source, unsigned length) {
@@ -153,7 +150,7 @@ void animateCircular(char ** source, unsigned length) {
     }
 }
 
-int voltageDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
+int voltageDesiredChange(const char *message, size_t size) {
     LOG_VERBOSE("setVoltage desired property just got called");
 
     char voltage1[] = {
@@ -190,16 +187,9 @@ int voltageDesiredChange(const char *message, size_t size, char **response, size
     animateCircular(voltage, 4);
 
     StatsController::incrementDesiredCount();
-
-    if (response != NULL) {
-        *response = (char*) Globals::completedString;
-        *resp_size = strlen(Globals::completedString);
-    }
-
-    return 200; /* status */
 }
 
-int currentDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
+int currentDesiredChange(const char *message, size_t size) {
     LOG_VERBOSE("setCurrent desired property just got called");
 
     char current1[] = {
@@ -236,16 +226,9 @@ int currentDesiredChange(const char *message, size_t size, char **response, size
     animateCircular(current, 4);
 
     StatsController::incrementDesiredCount();
-
-    if (response != NULL) {
-        *response = (char*) Globals::completedString;
-        *resp_size = strlen(Globals::completedString);
-    }
-
-    return 200; /* status */
 }
 
-int irOnDesiredChange(const char *message, size_t size, char **response, size_t* resp_size) {
+int irOnDesiredChange(const char *message, size_t size) {
     LOG_VERBOSE("activateIR desired property just got called");
 
     Screen.clean();
@@ -254,10 +237,4 @@ int irOnDesiredChange(const char *message, size_t size, char **response, size_t*
     Globals::sensorController.transmitIR();
 
     StatsController::incrementDesiredCount();
-
-    if (response != NULL) {
-        *response = (char*) Globals::completedString;
-        *resp_size = strlen(Globals::completedString);
-    }
-    return 200; /* status */
 }
