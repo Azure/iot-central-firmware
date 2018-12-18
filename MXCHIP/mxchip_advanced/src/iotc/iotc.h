@@ -4,6 +4,13 @@
 #ifndef AZURE_IOTC_API
 #define AZURE_IOTC_API
 
+// MXCHIP
+#define MXCHIP_AZ3166
+
+#ifdef MXCHIP_AZ3166
+#include <Arduino.h>
+#endif
+
 // ***** Type definitions *****
 typedef struct HTTP_PROXY_OPTIONS_TAG
 {
@@ -142,5 +149,28 @@ int iotc_on(IOTContext ctx, const char* eventName, IOTCallback callback, void *a
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_do_work(IOTContext ctx);
+
+#ifndef LOG_VERBOSE
+#if SERIAL_VERBOSE_LOGGING_ENABLED != 1
+#define LOG_VERBOSE(...)
+#else
+#define LOG_VERBOSE(...) \
+    do { \
+        Serial.printf("  - "); \
+        Serial.printf(__VA_ARGS__); \
+        Serial.printf("\r\n"); \
+        delay(100); \
+    } while(0)
+#endif // SERIAL_VERBOSE_LOGGING_ENABLED != 1
+
+// Log Errors no matter what
+#define LOG_ERROR(...) \
+    do { \
+        Serial.printf("X - Error at %s:%d\r\n\t", __FILE__, __LINE__); \
+        Serial.printf(__VA_ARGS__); \
+        Serial.printf("\r\n"); \
+        delay(100); \
+    } while(0)
+#endif // !LOG_VERBOSE
 
 #endif // AZURE_IOTC_API

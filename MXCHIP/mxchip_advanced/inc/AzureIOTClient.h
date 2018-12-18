@@ -7,7 +7,7 @@
 typedef int (*hubMethodCallback)(const char *, size_t);
 
 #include <AzureIotHub.h>
-#include "iotc.h"
+#include "../src/iotc/iotc.h"
 
 typedef struct CALLBACK_LOOKUP_TAG_M {
     char* name;
