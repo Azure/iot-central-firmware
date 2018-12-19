@@ -1,25 +1,17 @@
 # Azure IoT Central Firmware
 
-Reference firmware implementation repository for some of the supported devices.
+Reference firmware / sample implementation repository for some of the supported devices / frameworks.
 
 - **Are you looking for a particular device sample?**
 Create an issue on this repository and let us know.
 
 ## Contents
 
-- [Azure MXChip IoT DevKit (AZ3166)](./AZ3166)
+- [Azure MXChip IoT DevKit (AZ3166)](./MXCHIP)
 - [Raspberry Pi 2/3](./RaspberryPi)
+- [HTTP Only C#](./HttpOnly/CSharp)
+- [HTTP Only Bash/Node.js](./HttpOnly/Bash)
 
-## Previous Releases
-
-You can access to previous releases from https://github.com/Microsoft/microsoft-iot-central-firmware/releases
-
-## Status
-
-This project is in active development. Check our roadmap below; (have an idea? create an issue on this repo.)
-
-- Sound activated connection
-- OCR activated connection
 
 ## Reporting Security Issues
 
