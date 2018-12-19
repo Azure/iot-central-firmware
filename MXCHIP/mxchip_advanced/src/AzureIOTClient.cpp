@@ -13,7 +13,7 @@
 
 #include "../inc/watchdogController.h"
 
-void onMessageSent(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
+void onMessageSent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     static bool firstReset = true;
     WatchdogController::reset(firstReset /* send telemetry */);
     firstReset = false;
@@ -24,8 +24,8 @@ void onMessageSent(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
         telemetryController->setCanSend(true);
     }
 
-    if (callbackInfo.appContext != NULL) {
-        int *id = (int*)callbackInfo.appContext;
+    if (callbackInfo->appContext != NULL) {
+        int *id = (int*)callbackInfo->appContext;
         LOG_VERBOSE("Confirmation received for message tracking id = %d", *id);
         delete id;
     } else {
@@ -33,11 +33,11 @@ void onMessageSent(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
     }
 }
 
-void onMessageReceived(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
-    LOG_VERBOSE("AzureIOTClient::receiveMessageCallback (%s)", callbackInfo.payload);
+void onMessageReceived(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+    LOG_VERBOSE("AzureIOTClient::receiveMessageCallback (%s)", callbackInfo->payload != NULL ? callbackInfo->payload : "None");
 
-    const char *buffer = callbackInfo.payload;
-    unsigned size = callbackInfo.payload_length;
+    const char *buffer = callbackInfo->payload;
+    unsigned size = callbackInfo->payload_length;
 
     // message format expected:
     // {
@@ -53,12 +53,12 @@ void onMessageReceived(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
     String methodName = json.getStringByName("methodName");
     if (methodName.length() == 0) {
         LOG_ERROR("Object doesn't have a member 'methodName'");
-        callbackInfo.statusCode = IOTC_MESSAGE_REJECTED;
+        callbackInfo->statusCode = IOTC_MESSAGE_REJECTED;
         return;
     }
     methodName.toUpperCase();
 
-    AzureIOTClient *client = (AzureIOTClient*) callbackInfo.appContext;
+    AzureIOTClient *client = (AzureIOTClient*) callbackInfo->appContext;
 
     if (client != NULL) {
         // lookup if the method has been registered to a function
@@ -84,44 +84,44 @@ void onMessageReceived(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
     return;
 }
 
-void onCommand(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
-    LOG_VERBOSE("AzureIOTClient::onCommand (methodName:%s)", callbackInfo.tag);
+void onCommand(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+    LOG_VERBOSE("AzureIOTClient::onCommand (methodName:%s)", callbackInfo->tag != NULL ? callbackInfo->tag : "None");
     WatchdogController::reset();
 
-    AzureIOTClient *client = (AzureIOTClient*) callbackInfo.appContext;
+    AzureIOTClient *client = (AzureIOTClient*) callbackInfo->appContext;
 
     if (client != NULL) {
         // lookup if the method has been registered to a function
-        String methodName = callbackInfo.tag;
+        String methodName = callbackInfo->tag;
         methodName.toUpperCase();
         for(int i = 0; i < client->methodCallbackCount; i++) {
             if (methodName == client->methodCallbackList[i].name) {
-                AutoString payloadCopy((const char*)callbackInfo.payload, callbackInfo.payload_length); // payload may not be null ended
+                AutoString payloadCopy((const char*)callbackInfo->payload, callbackInfo->payload_length); // payload may not be null ended
                 payloadCopy.makePersistent();
                 char *pcopy = *payloadCopy;
                 assert(pcopy);
                 char *mcopy = strdup(methodName.c_str());
                 assert(mcopy);
 
-                client->pushDirectMethod(mcopy, pcopy, callbackInfo.payload_length);
+                client->pushDirectMethod(mcopy, pcopy, callbackInfo->payload_length);
                 break;
             }
         }
     }
 }
 
-void onConnectionStatus(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
-    LOG_VERBOSE("AzureIOTClient::connectionStatusCallback result:%d", callbackInfo.statusCode);
-    AzureIOTClient *client = (AzureIOTClient*) callbackInfo.appContext;
+void onConnectionStatus(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+    LOG_VERBOSE("AzureIOTClient::connectionStatusCallback result:%d", callbackInfo->statusCode);
+    AzureIOTClient *client = (AzureIOTClient*) callbackInfo->appContext;
     assert(client != NULL);
 
-    if (callbackInfo.statusCode != IOTC_CONNECTION_OK) {
-        if (callbackInfo.statusCode == IOTC_CONNECTION_DEVICE_DISABLED) {
+    if (callbackInfo->statusCode != IOTC_CONNECTION_OK) {
+        if (callbackInfo->statusCode == IOTC_CONNECTION_DEVICE_DISABLED) {
             LOG_ERROR("Device was disabled.");
-        } else if (callbackInfo.statusCode == IOTC_CONNECTION_NO_NETWORK) {
+        } else if (callbackInfo->statusCode == IOTC_CONNECTION_NO_NETWORK) {
             LOG_ERROR("No network connection");
             client->needsReconnect = true;
-        } else if (callbackInfo.statusCode != IOTC_CONNECTION_BAD_CREDENTIAL) {
+        } else if (callbackInfo->statusCode != IOTC_CONNECTION_BAD_CREDENTIAL) {
             LOG_ERROR("Connection timeout");
             client->needsReconnect = true;
         } else {
@@ -132,26 +132,26 @@ void onConnectionStatus(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
     }
 }
 
-void onError(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
-    LOG_ERROR("onError => %s", callbackInfo.tag);
+void onError(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+    LOG_ERROR("onError => %s", callbackInfo->tag != NULL ? callbackInfo->tag : "None");
 }
 
-void onSettingsUpdated(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
-    AzureIOTClient *client = (AzureIOTClient*) callbackInfo.appContext;
+void onSettingsUpdated(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+    AzureIOTClient *client = (AzureIOTClient*) callbackInfo->appContext;
     assert(client != NULL);
     int i = 0;
-    AutoString propName(callbackInfo.tag, strlen(callbackInfo.tag));
+    AutoString propName(callbackInfo->tag, strlen(callbackInfo->tag));
     strupr(*propName);
 
     for(; i < client->desiredCallbackCount; i++) {
         if (strcmp(*propName, client->desiredCallbackList[i].name) == 0) {
-            client->desiredCallbackList[i].callback(callbackInfo.payload, callbackInfo.payload_length);
+            client->desiredCallbackList[i].callback(callbackInfo->payload, callbackInfo->payload_length);
             break;
         }
     }
 
     if (i == client->desiredCallbackCount) {
-        callbackInfo.callbackResponse = strdup("TargetNotFound"); // iotc will free the memory
+        callbackInfo->callbackResponse = strdup("TargetNotFound"); // iotc will free the memory
         LOG_ERROR("Property Name '%s' is not found @callDesiredCallback", *propName);
     }
 }

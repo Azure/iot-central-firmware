@@ -9,11 +9,32 @@
 #include "iotc.h"
 #include "json.h"
 
-#ifdef MXCHIP_AZ3166
-#include <Arduino.h>
-#include <DevkitDPSClient.h>
+#ifdef TARGET_MXCHIP_AZ3166
+#include "azure_prov_client/prov_device_ll_client.h"
+#include "azure_prov_client/prov_security_factory.h"
+#include "azure_prov_client/prov_transport_mqtt_client.h"
 #include <AzureIotHub.h>
-#endif // MXCHIP_AZ3166
+#include "provisioning_client/adapters/hsm_client_key.h"
+int prov_dev_set_symmetric_key_info(const char* registration_name, const char* symmetric_key) {
+    hsm_client_set_registration_name_and_key(registration_name, symmetric_key);
+    return 0;
+}
+#endif // TARGET_MXCHIP_AZ3166
+
+#ifdef ESP_PLATFORM
+#include "iothub_client.h"
+#include "iothub_message.h"
+#include "azure_c_shared_utility/threadapi.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/platform.h"
+#include "iothubtransportmqtt.h"
+#include "iothub_client_version.h"
+#include "iothub_device_client_ll.h"
+#include "iothub_client_options.h"
+#include "azure_prov_client/prov_device_ll_client.h"
+#include "azure_prov_client/prov_security_factory.h"
+#include "azure_prov_client/prov_transport_mqtt_client.h"
+#endif
 
 #define AZ_IOT_HUB_MAX_LEN 1024
 #define DEFAULT_ENDPOINT "global.azure-devices-provisioning.net"
@@ -164,7 +185,7 @@ static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, v
         info.appContext = eventInstance->appContext;
         info.statusCode = (int)result;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::MessageSent].callback(internal, info);
+        internal->callbacks[IOTCallbacks::MessageSent].callback(internal, &info);
     }
 
     freeEventInstance(eventInstance);
@@ -197,7 +218,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
         info.appContext = internal->callbacks[IOTCallbacks::MessageReceived].appContext;
         info.statusCode = 0;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::MessageReceived].callback(internal, info);
+        internal->callbacks[IOTCallbacks::MessageReceived].callback(internal, &info);
         if (info.statusCode != 0) {
             return CONVERT_TO_IOTHUB_MESSAGE(info.statusCode);
         }
@@ -226,7 +247,7 @@ static int onCommand(const char* method_name, const unsigned char* payload,
         info.appContext = internal->callbacks[IOTCallbacks::Command].appContext;
         info.statusCode = 0;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::Command].callback(internal, info);
+        internal->callbacks[IOTCallbacks::Command].callback(internal, &info);
 
         if (info.callbackResponse != NULL) {
             *response = (unsigned char*) info.callbackResponse;
@@ -275,7 +296,7 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
         info.appContext = internal->callbacks[IOTCallbacks::ConnectionStatus].appContext;
         info.statusCode = CONVERT_TO_IOTC_CONNECT_ENUM(reason);
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::ConnectionStatus].callback(internal, info);
+        internal->callbacks[IOTCallbacks::ConnectionStatus].callback(internal, &info);
     }
 }
 
@@ -290,7 +311,7 @@ void sendOnError(IOTContextInternal *internal, const char* message) {
         info.appContext = internal->callbacks[IOTCallbacks::Error].appContext;
         info.statusCode = 1;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::Error].callback(internal, info);
+        internal->callbacks[IOTCallbacks::Error].callback(internal, &info);
     }
 }
 
@@ -348,7 +369,7 @@ void callDesiredCallback(IOTContextInternal *internal, const char *propertyName,
         info.appContext = internal->callbacks[IOTCallbacks::SettingsUpdated].appContext;
         info.statusCode = 200;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::SettingsUpdated].callback(internal, info);
+        internal->callbacks[IOTCallbacks::SettingsUpdated].callback(internal, &info);
         if (info.callbackResponse) {
             response = (const char*)info.callbackResponse;
         }
@@ -455,6 +476,57 @@ int iotc_free_context(IOTContext ctx) {
     return 0;
 }
 
+typedef struct REGISTRATION_CONTEXT_TAG
+{
+    char* iothub_uri;
+    int registration_complete;
+} REGISTRATION_CONTEXT;
+
+static void registation_status_callback(PROV_DEVICE_REG_STATUS reg_status, void* user_context)
+{
+    if (user_context == NULL)
+    {
+        IOTC_LOG("ERROR: (registation_status_callback) user_context is NULL");
+    }
+    else
+    {
+        if (reg_status == PROV_DEVICE_REG_STATUS_CONNECTED)
+        {
+            IOTC_LOG("- IOTC: Registration status: CONNECTED");
+        }
+        else if (reg_status == PROV_DEVICE_REG_STATUS_REGISTERING)
+        {
+            IOTC_LOG("- IOTC: Registration status: REGISTERING");
+        }
+        else if (reg_status == PROV_DEVICE_REG_STATUS_ASSIGNING)
+        {
+            IOTC_LOG("- IOTC: Registration status: ASSIGNING");
+        }
+    }
+}
+
+static void register_device_callback(PROV_DEVICE_RESULT register_result, const char* iothub_uri, const char* device_id, void* user_context)
+{
+    if (user_context == NULL)
+    {
+        IOTC_LOG("ERROR: (register_device_callback) user_context is NULL");
+    }
+    else
+    {
+        REGISTRATION_CONTEXT* user_ctx = (REGISTRATION_CONTEXT*)user_context;
+        if (register_result == PROV_DEVICE_RESULT_OK)
+        {
+            user_ctx->iothub_uri = strdup(iothub_uri);
+            user_ctx->registration_complete = 1;
+        }
+        else
+        {
+            IOTC_LOG("ERROR: (register_device_callback) Failure encountered on registration!");
+            user_ctx->registration_complete = 2;
+        }
+    }
+}
+
 /* extern */
 int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
   const char* device_id, IOTConnectType type) {
@@ -470,57 +542,80 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     char stringBuffer[AZ_IOT_HUB_MAX_LEN] = {0};
     int errorCode = 0;
     size_t pos = 0;
-    bool traceOn;
+    bool traceOn = gLogLevel > IOTC_LOGGING_API_ONLY;
 
-    DevkitDPSSetLogTrace(gLogLevel > IOTC_LOGGING_API_ONLY);
-#ifdef MXCHIP_AZ3166
-    // TODO: move it to PAL
-    if (type == IOTC_CONNECT_SYMM_KEY)
-        DevkitDPSSetAuthType(DPS_AUTH_SYMMETRIC_KEY);
-    else if (type == IOTC_CONNECT_X509_CERT)
-        DevkitDPSSetAuthType(DPS_AUTH_X509_GROUP);
-    else if (type != IOTC_CONNECT_CONNECTION_STRING)
-    {
-        IOTC_LOG("ERROR: (iotc_connect) wrong value for IOTConnectType. ERR:0x0001");
-        errorCode = 1;
-        goto fnc_exit;
-    }
-#endif // MXCHIP_AZ3166
-
-    strcpy(stringBuffer, keyORcert);
-    if (type != IOTC_CONNECT_CONNECTION_STRING) {
-        if (!DevkitDPSClientStart(internal->endpoint == NULL ? DEFAULT_ENDPOINT : internal->endpoint,
-                        scope, device_id, stringBuffer, NULL, 0)) {
-            IOTC_LOG("ERROR: (iotc_connect) device registration step has failed. ERR:0x0002");
-            errorCode = 2;
+    if (type == IOTC_CONNECT_CONNECTION_STRING) {
+        strcpy(stringBuffer, keyORcert);
+        pos = strlen(stringBuffer);
+    } else {
+        if (type == IOTC_CONNECT_SYMM_KEY) {
+            prov_dev_set_symmetric_key_info(device_id, keyORcert);
+            prov_dev_security_init(SECURE_DEVICE_TYPE_SYMMETRIC_KEY);
+        } else {
+            prov_dev_security_init(SECURE_DEVICE_TYPE_X509);
+        }
+        PROV_DEVICE_LL_HANDLE handle;
+        if ((handle = Prov_Device_LL_Create(internal->endpoint == NULL ?
+            DEFAULT_ENDPOINT : internal->endpoint, scope, Prov_Device_MQTT_Protocol)) == NULL)
+        {
+            IOTC_LOG("ERROR: (iotc_connect) device registration step has failed.");
+            errorCode = 1;
             goto fnc_exit;
-        } else if (type == IOTC_CONNECT_SYMM_KEY) {
+        }
+
+        REGISTRATION_CONTEXT user_ctx = { 0 };
+
+        Prov_Device_LL_SetOption(handle, "logtrace", &traceOn);
+#if defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
+        if (Prov_Device_LL_SetOption(handle, "TrustedCerts", certificates) != PROV_DEVICE_RESULT_OK)
+        {
+            IOTC_LOG("ERROR: (iotc_connect) Failed to set option \"TrustedCerts\".");
+            errorCode = 1;
+            goto fnc_exit;
+        } else
+#endif // defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
+        if (Prov_Device_LL_Register_Device(handle, register_device_callback, &user_ctx, registation_status_callback, &user_ctx) != PROV_DEVICE_RESULT_OK)
+        {
+            IOTC_LOG("ERROR: (iotc_connect) Failed calling Prov_Device_LL_Register_Device.");
+            errorCode = 1;
+            goto fnc_exit;
+        }
+        else
+        {
+            // Waiting the register to be completed
+            do
+            {
+                Prov_Device_LL_DoWork(handle);
+                ThreadAPI_Sleep(5);
+            } while (user_ctx.registration_complete == 0);
+        }
+        // Free DPS client
+        Prov_Device_LL_Destroy(handle);
+
+        if (user_ctx.registration_complete == 2) {
+            IOTC_LOG("ERROR: (iotc_connect) device registration step has failed.");
+            errorCode = 1;
+            goto fnc_exit;
+        }
+
+        if (type == IOTC_CONNECT_SYMM_KEY) {
             pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
                 "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
-                DevkitDPSGetIoTHubURI(),
-                DevkitDPSGetDeviceID(),
+                user_ctx.iothub_uri,
+                device_id,
                 keyORcert);
-        } else if (type == DPS_AUTH_X509_GROUP) {
+        } else if (type == IOTC_CONNECT_X509_CERT) {
             pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
                 "HostName=%s;DeviceId=%s;UseProvisioning=true",
-                DevkitDPSGetIoTHubURI(),
-                DevkitDPSGetDeviceID());
+                user_ctx.iothub_uri,
+                device_id);
         }
-        stringBuffer[pos] = 0;
-    } else {
-        pos = strlen(stringBuffer);
     }
 
     IOTC_LOG("ConnectionString: %s", stringBuffer);
     if (pos == 0 || pos >= AZ_IOT_HUB_MAX_LEN) {
         IOTC_LOG("ERROR: (iotc_connect) connection information is out of buffer. ERR:0x000F");
         errorCode = 15;
-        goto fnc_exit;
-    }
-
-    if (platform_init() != 0) {
-        IOTC_LOG("ERROR: (iotc_connect) Failed to initialize the SDK platform. ERR:0x0003");
-        errorCode = 3;
         goto fnc_exit;
     }
 
@@ -533,14 +628,14 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     }
 
     IoTHubClient_LL_SetRetryPolicy(internal->clientHandle, IOTHUB_CLIENT_RETRY_EXPONENTIAL_BACKOFF, 1200);
-#ifndef MXCHIP_AZ3166
-#error "implement certs for non mxchip"
-#endif
+
+#if defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
     if (IoTHubClient_LL_SetOption(internal->clientHandle, "TrustedCerts",
         certificates /* src/cores/arduino/az_iot/azureiotcerts.h */) != IOTHUB_CLIENT_OK) {
         IOTC_LOG("ERROR: Failed to set option \"TrustedCerts\" IoTHubClient_LL_SetOption failed. ERR:0x0005");
         return 5;
     }
+#endif // defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
 
     traceOn = gLogLevel > IOTC_LOGGING_API_ONLY;
     IoTHubClient_LL_SetOption(internal->clientHandle, "logtrace", &traceOn);
@@ -636,7 +731,7 @@ int iotc_set_trusted_certs(IOTContext ctx, const char* certs) {
 }
 
 /* extern */
-int iotc_set_proxy(IOTContext ctx, HTTP_PROXY_OPTIONS proxy) {
+int iotc_set_proxy(IOTContext ctx, IOTC_HTTP_PROXY_OPTIONS proxy) {
     CHECK_NOT_NULL(ctx)
 
     IOTContextInternal *internal = (IOTContextInternal*)ctx;

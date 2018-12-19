@@ -1,0 +1,13 @@
+.settings
+.project
+.cproject
+.vscode/
+
+build
+sdkconfig
+sdkconfig.old
+main/iotc/iotc.cpp
+main/iotc/iotc.h
+main/iotc/json.h
+main/iotc/parson.h
+main/iotc/parson.c

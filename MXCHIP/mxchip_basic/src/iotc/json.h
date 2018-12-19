@@ -1,10 +1,15 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifndef AZURE_IOTC_API_JSON
 #define AZURE_IOTC_API_JSON
 
+#ifdef ESP_PLATFORM
+#include "parson.h"
+#else
 #include <parson/parson.h>
+#endif
+
 #include "iotc.h"
 
 namespace AzureIOTC

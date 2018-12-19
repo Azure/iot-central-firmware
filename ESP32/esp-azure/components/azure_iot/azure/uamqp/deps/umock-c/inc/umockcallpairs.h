@@ -1,0 +1,33 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+#ifndef UMOCKCALLPAIRS_H
+#define UMOCKCALLPAIRS_H
+
+#ifdef __cplusplus
+#include <cstddef>
+extern "C" {
+#else
+#include <stddef.h>
+#endif
+
+typedef struct PAIRED_HANDLE_TAG
+{
+    void* handle_value;
+    char* handle_type;
+} PAIRED_HANDLE;
+
+typedef struct PAIRED_HANDLES_TAG
+{
+    PAIRED_HANDLE* paired_handles;
+    size_t paired_handle_count;
+} PAIRED_HANDLES;
+
+extern int umockcallpairs_track_create_paired_call(PAIRED_HANDLES* paired_handles, const void* handle, const char* handle_type, size_t handle_type_size);
+extern int umockcallpairs_track_destroy_paired_call(PAIRED_HANDLES* paired_handles, const void* handle);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* UMOCKCALLPAIRS_H */
