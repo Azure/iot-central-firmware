@@ -1,5 +1,9 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 #define SERIAL_VERBOSE_LOGGING_ENABLED 1
 #include "src/iotc/iotc.h"
+#include <string.h>
 #include <EEPROMInterface.h>
 #include "AZ3166WiFi.h"
 
@@ -22,12 +26,16 @@ static IOTContext context = NULL;
 // IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
 // const char* scopeId = "<ENTER SCOPE ID HERE>";
 // const char* deviceId = "<ENTER DEVICE ID HERE>";
-// const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>"; // see github.com/Azure/dps-keygen
+// const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
 
-void onEvent(IOTContext ctx, IOTCallbackInfo &callbackInfo) {
-  LOG_VERBOSE("- [%s] event was received. Payload => %s", callbackInfo.eventName, callbackInfo.payload);
-  Screen.print(0, callbackInfo.eventName);
-  Screen.print(1, "               ");
+static bool isConnected = false;
+
+void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+    if (strcmp(callbackInfo->eventName, "ConnectionStatus") == 0) {
+        LOG_VERBOSE("Is connected ? %s (%d)", callbackInfo->statusCode == IOTC_CONNECTION_OK ? "YES" : "NO", callbackInfo->statusCode);
+        isConnected = callbackInfo->statusCode == IOTC_CONNECTION_OK;
+    }
+    LOG_VERBOSE("- [%s] event was received. Payload => %s", callbackInfo->eventName, callbackInfo->payload != NULL ? callbackInfo->payload : "None");
 }
 
 void setup()
@@ -43,27 +51,27 @@ void setup()
     eeprom.write((uint8_t*) WIFI_PASSWORD, strlen(WIFI_PASSWORD), WIFI_PWD_ZONE_IDX);
 
     if(WiFi.begin() == WL_CONNECTED) {
-      LOG_VERBOSE("WiFi WL_CONNECTED");
-      digitalWrite(LED_WIFI, 1);
-      Screen.print(2, "Connected");
+        LOG_VERBOSE("WiFi WL_CONNECTED");
+        digitalWrite(LED_WIFI, 1);
+        Screen.print(2, "Connected");
     } else {
-      Screen.print("WiFi\r\nNot Connected\r\nWIFI_SSID?\r\n");
-      return;
+        Screen.print("WiFi\r\nNot Connected\r\nWIFI_SSID?\r\n");
+        return;
     }
 
     // Azure IOT Central setup
     int errorCode = iotc_init_context(&context);
     if (errorCode != 0) {
-      LOG_ERROR("Error initializing IOTC. Code %d", errorCode);
-      return;
+        LOG_ERROR("Error initializing IOTC. Code %d", errorCode);
+        return;
     }
 
     iotc_set_logging(IOTC_LOGGING_API_ONLY);
 
     errorCode = iotc_connect(context, scopeId, deviceKey, deviceId, connectType);
     if (errorCode != 0) {
-      LOG_ERROR("Error @ iotc_connect. Code %d", errorCode);
-      return;
+        LOG_ERROR("Error @ iotc_connect. Code %d", errorCode);
+        return;
     }
 
     // for the simplicity of this sample, used same callback for all the events below
@@ -78,21 +86,21 @@ void setup()
 static unsigned counter = 0;
 void loop()
 {
-  if (!context) return;
+    if (!context) return;
 
-  if (counter++ % 5 == 0) { // send telemetry every 5 seconds
-    char msg[64] = {0};
-    int pos = snprintf(msg, sizeof(msg) - 1, "{\"temp\": %d}", 10 + (rand() % 20));
-    msg[pos] = 0;
-    int errorCode = iotc_send_telemetry(context, msg, pos, NULL);
-    Screen.print(0, "Sent..");
-    Screen.print(1, msg);
+    if (counter++ % 5 == 0 && isConnected) { // send telemetry every 5 seconds
+        char msg[64] = {0};
+        int pos = snprintf(msg, sizeof(msg) - 1, "{\"temp\": %d}", 10 + (rand() % 20));
+        msg[pos] = 0;
+        int errorCode = iotc_send_telemetry(context, msg, pos, NULL);
+        Screen.print(0, "Sent..");
+        Screen.print(1, msg);
 
-    if (errorCode != 0) {
-      LOG_ERROR("Sending message has failed with error code %d", errorCode);
+        if (errorCode != 0) {
+            LOG_ERROR("Sending message has failed with error code %d", errorCode);
+        }
     }
-  }
 
-  delay(1000); // wait 1 sec
-  iotc_do_work(context); // do background work for iotc
+    delay(1000); // wait 1 sec
+    iotc_do_work(context); // do background work for iotc
 }

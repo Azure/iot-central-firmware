@@ -1,0 +1,41 @@
+menu "Azure IoT Central Configuration"
+
+config WIFI_SSID
+    string "WiFi SSID"
+	default ""
+	help
+		SSID (network name) for the example to connect to.
+
+config WIFI_PASSWORD
+    string "WiFi Password"
+	default ""
+	help
+		WiFi password (WPA or WPA2) for the example to use.
+
+		Can be left blank if the network has no security set.
+
+config DEVICE_CREDENTIALS_SCOPEID
+    string "Scope Id"
+	default ""
+	help
+		String containing scope id.
+
+		You can get this from the Azure IoT Central >> Device Explorer >> Device >> Connect
+
+config DEVICE_CREDENTIALS_DEVICEID
+    string "Device Id"
+	default ""
+	help
+		String containing device id.
+
+		You can get this from the Azure IoT Central >> Device Explorer >> Device >> Connect
+
+config DEVICE_CREDENTIALS_KEY
+    string "Device Key"
+	default ""
+	help
+		String containing device primary or secondary key.
+
+		You can get this from the Azure IoT Central >> Device Explorer >> Device >> Connect
+
+endmenu

@@ -1,19 +1,19 @@
-# Azure IoT Central Firmware
+## Azure IoT Central Firmware
 
 Reference firmware / sample implementation repository for some of the supported devices / frameworks.
 
 - **Are you looking for a particular device sample?**
 Create an issue on this repository and let us know.
 
-## Contents
+### Contents
 
 - [Azure MXChip IoT DevKit (AZ3166)](./MXCHIP)
-- [Raspberry Pi 2/3](./RaspberryPi)
+- [ESP32/ESP8266 Espressif] (./ESP32)
 - [HTTP Only C#](./HttpOnly/CSharp)
 - [HTTP Only Bash/Node.js](./HttpOnly/Bash)
+- [Raspberry Pi - Python](./RaspberryPi)
 
-
-## Reporting Security Issues
+### Reporting Security Issues
 
 Security issues and bugs should be reported privately, via email, to the Microsoft Security
 Response Center (MSRC) at [secure@microsoft.com](mailto:secure@microsoft.com). You should
@@ -22,7 +22,7 @@ email to ensure we received your original message. Further information, includin
 [MSRC PGP](https://technet.microsoft.com/en-us/security/dn606155) key, can be found in
 the [Security TechCenter](https://technet.microsoft.com/en-us/security/default).
 
-## Contributing
+### Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us

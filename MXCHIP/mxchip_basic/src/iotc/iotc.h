@@ -1,24 +1,30 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifndef AZURE_IOTC_API
 #define AZURE_IOTC_API
 
+#ifndef ESP_PLATFORM
 // MXCHIP
-#define MXCHIP_AZ3166
+#define TARGET_MXCHIP_AZ3166
+#endif
 
-#ifdef MXCHIP_AZ3166
+#ifdef TARGET_MXCHIP_AZ3166
 #include <Arduino.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ***** Type definitions *****
-typedef struct HTTP_PROXY_OPTIONS_TAG
+typedef struct IOTC_HTTP_PROXY_OPTIONS_TAG
 {
   const char* host_address;
   int port;
   const char* username;
   const char* password;
-} HTTP_PROXY_OPTIONS;
+} IOTC_HTTP_PROXY_OPTIONS;
 
 typedef struct IOTCallbackInfo_TAG {
   const char* eventName;
@@ -107,7 +113,7 @@ int iotc_set_trusted_certs(IOTContext ctx, const char* certs);
 // Set the proxy settings
 // Call this before `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_set_proxy(IOTContext ctx, HTTP_PROXY_OPTIONS proxy);
+int iotc_set_proxy(IOTContext ctx, IOTC_HTTP_PROXY_OPTIONS proxy);
 
 // Sends a telemetry payload (JSON)
 // Call this after `connect`
@@ -138,7 +144,7 @@ eventName:
   SettingsUpdated
   Error
 */
-typedef void (*IOTCallback)(IOTContext ctx, IOTCallbackInfo &callbackInfo);
+typedef void(*IOTCallback)(IOTContext, IOTCallbackInfo*);
 
 // Register to one of the events listed above
 // Call this after `init_context`
@@ -150,27 +156,37 @@ int iotc_on(IOTContext ctx, const char* eventName, IOTCallback callback, void *a
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_do_work(IOTContext ctx);
 
+#ifdef TARGET_MXCHIP_AZ3166
+    #define SERIAL_PRINT Serial.printf
+#else
+    #define SERIAL_PRINT printf
+#endif
+
+#define SERIAL_VERBOSE_LOGGING_ENABLED 1
+
 #ifndef LOG_VERBOSE
 #if SERIAL_VERBOSE_LOGGING_ENABLED != 1
 #define LOG_VERBOSE(...)
 #else
 #define LOG_VERBOSE(...) \
     do { \
-        Serial.printf("  - "); \
-        Serial.printf(__VA_ARGS__); \
-        Serial.printf("\r\n"); \
-        delay(100); \
+        SERIAL_PRINT("  - "); \
+        SERIAL_PRINT(__VA_ARGS__); \
+        SERIAL_PRINT("\r\n"); \
     } while(0)
 #endif // SERIAL_VERBOSE_LOGGING_ENABLED != 1
 
 // Log Errors no matter what
 #define LOG_ERROR(...) \
     do { \
-        Serial.printf("X - Error at %s:%d\r\n\t", __FILE__, __LINE__); \
-        Serial.printf(__VA_ARGS__); \
-        Serial.printf("\r\n"); \
-        delay(100); \
+        SERIAL_PRINT("X - Error at %s:%d\r\n\t", __FILE__, __LINE__); \
+        SERIAL_PRINT(__VA_ARGS__); \
+        SERIAL_PRINT("\r\n"); \
     } while(0)
 #endif // !LOG_VERBOSE
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // AZURE_IOTC_API

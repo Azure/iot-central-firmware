@@ -4,7 +4,12 @@
 #ifndef AZURE_IOTC_API_JSON
 #define AZURE_IOTC_API_JSON
 
+#ifdef ESP_PLATFORM
+#include "parson.h"
+#else
 #include <parson/parson.h>
+#endif
+
 #include "iotc.h"
 
 namespace AzureIOTC
