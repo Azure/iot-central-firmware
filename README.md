@@ -8,7 +8,7 @@ Create an issue on this repository and let us know.
 ### Contents
 
 - [Azure MXChip IoT DevKit (AZ3166)](./MXCHIP)
-- [ESP32/ESP8266 Espressif] (./ESP32)
+- [ESP32/ESP8266 Espressif](./ESP32)
 - [HTTP Only C#](./HttpOnly/CSharp)
 - [HTTP Only Bash/Node.js](./HttpOnly/Bash)
 - [Raspberry Pi - Python](./RaspberryPi)
