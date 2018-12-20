@@ -14,10 +14,23 @@
 
 ### Configuring your Azure IOT Hub Device Connection String, Wi-Fi and serial port
 
+- Visit [AzureIoTCentral](https://apps.azureiotcentral.com) and create a `new application`.
+- Select `Sample Devkits`
+- Add a new `mxchip` device. (real device) (Under the `Device Explorer`) (Reason for `mxchip` selection is pre-populated template)
+- Browse into device window and click/open `Connect` on the top-right of the device screen
+- Grab `scopeId`, `device Id` and `primary key` and use them on the next step
+- `cd esp-azure`
 - Go to `make menuconfig` -> `Azure IoT Central` to configure your Azure IOT Central Device credentials, Wi-Fi SSID and Password;
 - Go to `make menuconfig` -> `Serial flasher config` to configure you serial port.
 
-### 3. Building your demo and flash to ESP device with `$make flash`.
+### Implementation details
+
+See [esp-azure/main/azure-iot-central.c](./esp-azure/main/azure-iot-central.c) for IoTCentral specific connection and telemetry codes.
+If you want to learn more advanced functionality, visit [../MXCHIP/mxchip_advanced/src/AzureIOTClient.cpp](../MXCHIP/mxchip_advanced/src/AzureIOTClient.cpp)
+
+Both projects use `iotc` wrapper. You can use the IoTCentral related logic interchangebly on both side.
+
+### Building your demo and flash to ESP device with `make flash`.
 
 !!! (node-mcu) Press the button on the right if the process hangs on `connecting..`
 
@@ -27,7 +40,7 @@ If failed, please:
 - make sure you have selected the corrected serial port;
   - command `> sudo usermod -a -G dialout $USER` can also be used.
 
-To monitor the device output while running, run
+### To monitor the device output while running, run
 
 ``` bash
 make monitor
