@@ -116,14 +116,15 @@ void ConfigController::readGroupSXKeyAndDeviceId(char * scopeId, char * registra
 #if defined(IOT_CENTRAL_SAS_KEY)
     strcpy(sas, IOT_CENTRAL_SAS_KEY);
     strcpy(registrationId, IOT_CENTRAL_REGISTRATION_ID);
-    sasKey = true;
+    atype = 'S';
 #else // defined(IOT_CENTRAL_SAS_KEY)
     sas[0] = 0;
-    sasKey = false;
+    atype = 'X';
     strcpy(registrationId, "riot-device-cert");
 #endif // defined(IOT_CENTRAL_SAS_KEY)
     strcpy(scopeId, IOT_CENTRAL_SCOPE_ID);
 #endif // !defined(IOT_CENTRAL_SAS_KEY) && !defined(IOT_CENTRAL_USE_X509_SAMPLE_CERT)
+    assert(atype == 'X' || atype == 'C' || atype == 'S');
 }
 
 void ConfigController::readIotCentralConfig(char* iotCentralConfig, uint32_t buffer_size) {
