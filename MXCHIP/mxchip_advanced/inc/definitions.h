@@ -1,6 +1,7 @@
 // #define WIFI_NAME "put the WiFi network name here and uncomment"
 // #define WIFI_PASSWORD "put the WiFi network password here and uncomment"
 
+// do not uncomment the one below if you are going to use SAS or X509
 // #define IOT_CENTRAL_CONNECTION_STRING "put the iot central connect string here"
 
 // use the ones below for SAS or X509
