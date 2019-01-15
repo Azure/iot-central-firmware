@@ -13,7 +13,7 @@ for your own firmware for Azure IoT Central.
 - Select `Sample Devkits`
 - Add a new `Raspberry Pi` device. (real device) (Under the `Device Explorer`)
 - Browse into device window and click/open `Connect` on the top-right of the device screen
-- Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `mxchip_basic.ino`
+- Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `app.py`
 
 Install `iotc` python client
 ```
