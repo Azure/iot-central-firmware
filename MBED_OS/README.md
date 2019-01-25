@@ -15,9 +15,7 @@
 // const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
 ```
 
-Create a `src/` folder and copy `../iotc` folder into it.
-
-Compile it! and deploy to your device.
+Compile it! and deploy to your device. (see below)
 
 - Use MBED online compiler
 
