@@ -15,9 +15,7 @@
 // const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
 ```
 
-Create a `src/` folder and copy `../iotc` folder into it.
-
-Compile it! and deploy to your device.
+Compile it! and deploy to your device. (see below)
 
 - Download Arduino-CLI from [this link](https://github.com/arduino/arduino-cli#download-the-latest-stable-release)
 
