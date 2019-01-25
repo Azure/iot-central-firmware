@@ -299,3 +299,14 @@ __pycache__/
 BUILD/
 .iotz.mxchip.tweak
 devkit-sdk/
+
+.DS_Store
+
+MBED_OS/iotz-mbed-deps/
+MBED_OS/mbed_config.h
+MBED_OS/mbed_settings.py
+MBED_OS/Makefile
+MBED_OS/GettingStarted.html
+MBED_OS/.mbedignore
+MBED_OS/.mbed
+MBED_OS/mbed-os/
