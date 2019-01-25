@@ -1,0 +1,49 @@
+# ESP8266 basic example for Azure IoT Central
+
+- Visit [AzureIoTCentral](https://apps.azureiotcentral.com) and create a `new application`.
+- Select `Sample Devkits`
+- Add a new `mxchip` device. (real device) (Under the `Device Explorer`)
+- Browse into device window and click/open `Connect` on the top-right of the device screen
+- Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `esp8266_arduino.ino`
+
+```
+// #define WIFI_SSID "<ENTER WIFI SSID HERE>"
+// #define WIFI_PASSWORD "<ENTER WIFI PASSWORD HERE>"
+
+// const char* scopeId = "<ENTER SCOPE ID HERE>";
+// const char* deviceId = "<ENTER DEVICE ID HERE>";
+// const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
+```
+
+Create a `src/` folder and copy `../iotc` folder into it.
+
+Compile it! and deploy to your device.
+
+- Download Arduino-CLI from [this link](https://github.com/arduino/arduino-cli#download-the-latest-stable-release)
+
+Setup the environment; (under the project folder)
+```
+arduino-cli-0.3.3 core install esp8266:esp8266
+arduino-cli-0.3.3 board attach esp8266:esp8266:nodemcu
+```
+
+Compile!
+```
+arduino-cli-0.3.3 compile
+```
+
+Upload
+```
+arduino-cli-0.3.3 upload -p <PORT / DEV?? i.e. => /dev/cu.SLAB_USBtoUART >
+```
+
+Monitoring?
+
+```
+npm install -g nodemcu-tool
+```
+
+Assuming the port/dev for the board is `/dev/cu.SLAB_USBtoUART`
+```
+nodemcu-tool -p /dev/cu.SLAB_USBtoUART -b 9600 terminal
+```
