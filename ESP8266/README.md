@@ -4,7 +4,7 @@
 - Select `Sample Devkits`
 - Add a new `mxchip` device. (real device) (Under the `Device Explorer`)
 - Browse into device window and click/open `Connect` on the top-right of the device screen
-- Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `esp8266_arduino.ino`
+- Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `ESP8266.ino`
 
 ```
 // #define WIFI_SSID "<ENTER WIFI SSID HERE>"
