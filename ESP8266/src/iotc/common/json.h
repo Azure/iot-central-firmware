@@ -1,15 +1,10 @@
-// Copyright (c) Oguz Bastemur. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license.
 
-#ifndef AZURE_IOTC_API_JSON
-#define AZURE_IOTC_API_JSON
+#ifndef AZURE_IOT_COMMON_JSON_H
+#define AZURE_IOT_COMMON_JSON_H
 
-#if defined(__MBED__) || defined(ESP_PLATFORM) || defined(ARDUINO)
 #include "parson.h"
-#else
-#include <parson/parson.h>
-#endif
-
 #include "../iotc.h"
 
 namespace AzureIOT
@@ -120,4 +115,4 @@ namespace AzureIOT
     };
 } // namespace AzureIOT
 
-#endif // AZURE_IOTC_API_JSON
+#endif // AZURE_IOT_COMMON_JSON_H

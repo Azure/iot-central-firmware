@@ -129,7 +129,14 @@ bool StringBuffer::urlDecode() { // in-memory
     return true;
 }
 
-#ifdef __MBED__
+#ifdef TARGET_MXCHIP
+
+/* NOOP */
+bool StringBuffer::hash(const char *key, unsigned key_length) { abort(); }
+bool StringBuffer::base64Decode() { abort(); }
+bool StringBuffer::base64Encode() { abort(); }
+
+#elif defined(__MBED__)
 bool StringBuffer::hash(const char *key, unsigned key_length)
 {
     assert(data != NULL);

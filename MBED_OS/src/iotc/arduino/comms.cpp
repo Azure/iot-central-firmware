@@ -18,7 +18,7 @@ int mqtt_publish(IOTContextInternal *internal, const char* topic, unsigned long 
 }
 
 void IOTC_LOG(const __FlashStringHelper *format, ...) {
-    if (getLogLevel() > IOTC_LOGGING_DISABLED)
+    if (getLogLevel() > IOTC_LOGGING_DISABLED) {
         va_list ap;
         va_start(ap, format);
         AzureIOT::StringBuffer buffer(STRING_BUFFER_1024);
