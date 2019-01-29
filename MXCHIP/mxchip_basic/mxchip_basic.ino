@@ -23,10 +23,10 @@ static IOTContext context = NULL;
 
 // PRIMARY/SECONDARY KEY ?? (DPS)
 // Uncomment below to Use DPS Symm Key (primary/secondary key..)
-IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
-// const char* scopeId = ""; // leave empty
-// const char* deviceId = ""; // leave empty
-// const char* deviceKey = "<ENTER CONNECTION STRING HERE>";
+// IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
+// const char* scopeId = "<Enter ScopeID>";
+// const char* deviceId = "<Enter DeviceId>";
+// const char* deviceKey = "<Enter Primary or Secondary Device Key here>";
 
 static bool isConnected = false;
 
