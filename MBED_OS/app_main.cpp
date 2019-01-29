@@ -48,10 +48,10 @@ void loop()
             int pos = 0, errorCode = 0;
 
             prevMillis = ms;
-            if (loopId++ % 2 == 0) {
+            if (loopId++ % 2 == 0) { // send telemetry
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\": %d}", 10 + (rand() % 20));
                 errorCode = iotc_send_telemetry(context, msg, pos);
-            } else {
+            } else { // send property
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
                 errorCode = iotc_send_property(context, msg, pos);
             }
