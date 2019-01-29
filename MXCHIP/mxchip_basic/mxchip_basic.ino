@@ -3,14 +3,14 @@
 
 #define SERIAL_VERBOSE_LOGGING_ENABLED 1
 #include "src/iotc/iotc.h"
-#include <string.h>
+#include "src/iotc/common/string_buffer.h"
 #include <EEPROMInterface.h>
 #include "AZ3166WiFi.h"
 
 static IOTContext context = NULL;
 
-#define WIFI_SSID "<Enter WiFi SSID here>"
-#define WIFI_PASSWORD "<Enter WiFi Password here>"
+// #define WIFI_SSID "<Enter WiFi SSID here>"
+// #define WIFI_PASSWORD "<Enter WiFi Password here>"
 
 // CONNECTION STRING ??
 // Uncomment below to Use Connection String
@@ -23,10 +23,10 @@ static IOTContext context = NULL;
 
 // PRIMARY/SECONDARY KEY ?? (DPS)
 // Uncomment below to Use DPS Symm Key (primary/secondary key..)
-// IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
-// const char* scopeId = "<ENTER SCOPE ID HERE>";
-// const char* deviceId = "<ENTER DEVICE ID HERE>";
-// const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
+IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
+// const char* scopeId = ""; // leave empty
+// const char* deviceId = ""; // leave empty
+// const char* deviceKey = "<ENTER CONNECTION STRING HERE>";
 
 static bool isConnected = false;
 
@@ -35,9 +35,19 @@ void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
         LOG_VERBOSE("Is connected ? %s (%d)", callbackInfo->statusCode == IOTC_CONNECTION_OK ? "YES" : "NO", callbackInfo->statusCode);
         isConnected = callbackInfo->statusCode == IOTC_CONNECTION_OK;
     }
-    LOG_VERBOSE("- [%s] event was received. Payload => %s", callbackInfo->eventName, callbackInfo->payload != NULL ? callbackInfo->payload : "None");
+
+    AzureIOT::StringBuffer buffer;
+    if (callbackInfo->payloadLength > 0) {
+        buffer.initialize(callbackInfo->payload, callbackInfo->payloadLength);
+    }
+    LOG_VERBOSE("- [%s] event was received. Payload => %s", callbackInfo->eventName, buffer.getLength() ? *buffer : "EMPTY");
+
+    if (strcmp(callbackInfo->eventName, "Command") == 0) {
+        LOG_VERBOSE("- Command name was => %s\r\n", callbackInfo->tag);
+    }
 }
 
+static unsigned prevMillis = 0, loopId = 0;
 void setup()
 {
     Serial.begin(9600);
@@ -68,39 +78,47 @@ void setup()
 
     iotc_set_logging(IOTC_LOGGING_API_ONLY);
 
+    // for the simplicity of this sample, used same callback for all the events below
+    iotc_on(context, "MessageSent", onEvent, NULL);
+    iotc_on(context, "Command", onEvent, NULL);
+    iotc_on(context, "ConnectionStatus", onEvent, NULL);
+    iotc_on(context, "SettingsUpdated", onEvent, NULL);
+    iotc_on(context, "Error", onEvent, NULL);
+
     errorCode = iotc_connect(context, scopeId, deviceKey, deviceId, connectType);
     if (errorCode != 0) {
         LOG_ERROR("Error @ iotc_connect. Code %d", errorCode);
         return;
     }
+    LOG_VERBOSE("Done!");
 
-    // for the simplicity of this sample, used same callback for all the events below
-    iotc_on(context, "MessageSent", onEvent, NULL);
-    iotc_on(context, "MessageReceived", onEvent, NULL);
-    iotc_on(context, "Command", onEvent, NULL);
-    iotc_on(context, "ConnectionStatus", onEvent, NULL);
-    iotc_on(context, "SettingsUpdated", onEvent, NULL);
-    iotc_on(context, "Error", onEvent, NULL);
+    prevMillis = millis();
 }
 
-static unsigned counter = 0;
 void loop()
 {
-    if (!context) return;
+    if (isConnected) {
+        unsigned long ms = millis();
+        if (ms - prevMillis > 15000) { // send telemetry every 15 seconds
+            char msg[64] = {0};
+            int pos = 0, errorCode = 0;
 
-    if (counter++ % 5 == 0 && isConnected) { // send telemetry every 5 seconds
-        char msg[64] = {0};
-        int pos = snprintf(msg, sizeof(msg) - 1, "{\"temp\": %d}", 10 + (rand() % 20));
-        msg[pos] = 0;
-        int errorCode = iotc_send_telemetry(context, msg, pos, NULL);
-        Screen.print(0, "Sent..");
-        Screen.print(1, msg);
+            prevMillis = ms;
+            if (loopId++ % 2 == 0) { // send telemetry
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", 10 + (rand() % 20));
+                errorCode = iotc_send_telemetry(context, msg, pos);
+            } else { // send property
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
+                errorCode = iotc_send_property(context, msg, pos);
+            }
+            msg[pos] = 0;
 
-        if (errorCode != 0) {
-            LOG_ERROR("Sending message has failed with error code %d", errorCode);
+            if (errorCode != 0) {
+                LOG_ERROR("Sending message has failed with error code %d", errorCode);
+            }
         }
     }
 
-    delay(1000); // wait 1 sec
-    iotc_do_work(context); // do background work for iotc
+    if (context)
+        iotc_do_work(context); // do background work for iotc
 }

@@ -9,13 +9,14 @@
 // SINGLETON
 class ConfigController {
     ConfigController() { }
+
 public:
     static void clearAllConfig();
 
-    static void storeWiFi(AutoString &ssid, AutoString &password);
-    static void storeConnectionString(AutoString &connectionString);
-    static void storeIotCentralConfig(AutoString &iotCentralConfig);
-    static void storeKey(AutoString &auth, AutoString &scopeId, AutoString &regId, AutoString &key);
+    static void storeWiFi(StringBuffer &ssid, StringBuffer &password);
+    static void storeConnectionString(StringBuffer &connectionString);
+    static void storeIotCentralConfig(StringBuffer &iotCentralConfig);
+    static void storeKey(StringBuffer &auth, StringBuffer &scopeId, StringBuffer &regId, StringBuffer &key);
 
     static void readWiFi(char* ssid, int ssidLen, char *password, int passwordLen);
     static void readConnectionString(char * connectionString, uint32_t buffer_size);

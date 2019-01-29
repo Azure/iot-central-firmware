@@ -7,8 +7,6 @@
 #include "SystemWiFi.h"
 #include "NTPClient.h"
 
-char AutoString::buffer[STRING_BUFFER_512] = {0};
-bool AutoString::buffer_in_use = false;
 
 // As there is a problem of sprintf %f in Arduino, follow https://github.com/blynkkk/blynk-library/issues/14 to implement dtostrf
 char * dtostrf(double number, signed char width, unsigned char prec, char *s) {
@@ -74,7 +72,7 @@ unsigned char h2int(char c) {
     return(0);
 }
 
-unsigned urldecode(const char * url, unsigned length, AutoString * outURL) {
+unsigned urldecode(const char * url, unsigned length, StringBuffer * outURL) {
     assert(outURL != NULL);
     unsigned resultLength = 0;
 
