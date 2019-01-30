@@ -1,17 +1,18 @@
 // Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed under the MIT license.
 
 #ifndef AZURE_IOTC_API
 #define AZURE_IOTC_API
 
-#ifndef ESP_PLATFORM
-// MXCHIP
-#define TARGET_MXCHIP_AZ3166
-#endif
-
-#ifdef TARGET_MXCHIP_AZ3166
+#ifdef TARGET_MXCHIP
 #include <Arduino.h>
 #endif
+
+#define AZIOTC_MAJOR_VERSION 0
+#define AZIOTC_MINOR_VERSION 1
+#define AZIOTC_PATCH_VERSION 0
+#define AZIOTC_VERSION       \
+  TO_STRING(AZIOTC_MAJOR_VERSION) "." TO_STRING(AZIOTC_MINOR_VERSION) "." TO_STRING(AZIOTC_PATCH_VERSION)
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +31,7 @@ typedef struct IOTCallbackInfo_TAG {
   const char* eventName;
   const char* tag;
   const char* payload;
-  unsigned    payload_length;
+  unsigned    payloadLength;
 
   void *appContext;
 
@@ -63,6 +64,7 @@ typedef short IOTConnectType;
 #define IOTC_CONNECTION_NO_NETWORK           0x10
 #define IOTC_CONNECTION_COMMUNICATION_ERROR  0x20
 #define IOTC_CONNECTION_OK                   0x40
+#define IOTC_CONNECTION_DISCONNECTED         0x80
 typedef short IOTConnectionState;
 
 #define IOTC_MESSAGE_ACCEPTED   0x01
@@ -88,7 +90,7 @@ int iotc_free_context(IOTContext ctx);
 // Call this after `init_context`
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
-                                 const char* device_id, IOTConnectType type);
+                                 const char* deviceId, IOTConnectType type);
 
 // Disconnect
 // returns 0 if there is no error. Otherwise, error code will be returned.
@@ -99,11 +101,6 @@ int iotc_disconnect(IOTContext ctx);
 // Call this before `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_set_global_endpoint(IOTContext ctx, const char* endpoint_uri);
-
-// Set the connection protocol (MQTT is default)
-// Call this before `connect`
-// returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_set_protocol(IOTContext ctx, IOTProtocol protocol);
 
 // Set the custom certificates for custom endpoints
 // Call this before `connect`
@@ -118,28 +115,27 @@ int iotc_set_proxy(IOTContext ctx, IOTC_HTTP_PROXY_OPTIONS proxy);
 // Sends a telemetry payload (JSON)
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length, void *appContext);
+int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length);
 
 // Sends a state payload (JSON)
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_send_state    (IOTContext ctx, const char* payload, unsigned length, void *appContext);
+int iotc_send_state    (IOTContext ctx, const char* payload, unsigned length);
 
 // Sends an event payload (JSON)
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_send_event    (IOTContext ctx, const char* payload, unsigned length, void *appContext);
+int iotc_send_event    (IOTContext ctx, const char* payload, unsigned length);
 
 // Sends a property payload (JSON)
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_send_property (IOTContext ctx, const char* payload, unsigned length, void *appContext);
+int iotc_send_property (IOTContext ctx, const char* payload, unsigned length);
 
 /*
 eventName:
   ConnectionStatus
   MessageSent
-  MessageReceived
   Command
   SettingsUpdated
   Error
@@ -149,14 +145,17 @@ typedef void(*IOTCallback)(IOTContext, IOTCallbackInfo*);
 // Register to one of the events listed above
 // Call this after `init_context`
 // returns 0 if there is no error. Otherwise, error code will be returned.
-int iotc_on(IOTContext ctx, const char* eventName, IOTCallback callback, void *appContext);
+int iotc_on(IOTContext ctx, const char* eventName, IOTCallback callback, void* appContext);
 
 // Lets SDK to do background work
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_do_work(IOTContext ctx);
 
-#ifdef TARGET_MXCHIP_AZ3166
+// Provide platform dependent NetworkInterface
+int iotc_set_network_interface(void* networkInterface);
+
+#ifdef ARDUINO
     #define SERIAL_PRINT Serial.printf
 #else
     #define SERIAL_PRINT printf

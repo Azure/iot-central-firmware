@@ -1,4 +1,4 @@
-## Azure IoT Central Firmware
+## Azure IoT Central Device / Platform Sample projects
 
 Reference firmware / sample implementation repository for some of the supported devices / frameworks.
 
@@ -8,10 +8,16 @@ Create an issue on this repository and let us know.
 ### Contents
 
 - [Azure MXChip IoT DevKit (AZ3166)](./MXCHIP)
-- [ESP32/ESP8266 Espressif](./ESP32)
+- [ESP32 Espressif](./ESP32)
+- [ESP8266/ESP8285](./ESP8266)
+- [MBED OS](./MBED_OS)
 - [HTTP Only C#](./HttpOnly/CSharp)
 - [HTTP Only Bash/Node.js](./HttpOnly/Bash)
 - [Raspberry Pi - Python](./RaspberryPi)
+
+### External Links (samples)
+
+- [Arduino MKR1000/MKR1010](https://github.com/firedog1024/mkr1000-iotc)
 
 ### Reporting Security Issues
 

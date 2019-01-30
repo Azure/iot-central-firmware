@@ -1,10 +1,15 @@
-// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license.
+// Copyright (c) Oguz Bastemur. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #ifndef AZURE_IOTC_API
 #define AZURE_IOTC_API
 
-#ifdef TARGET_MXCHIP
+#if !defined(ESP_PLATFORM) && !defined(__MBED__)
+// MXCHIP
+#define TARGET_MXCHIP_AZ3166
+#endif
+
+#ifdef TARGET_MXCHIP_AZ3166
 #include <Arduino.h>
 #endif
 

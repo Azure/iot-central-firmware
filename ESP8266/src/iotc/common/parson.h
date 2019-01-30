@@ -24,7 +24,7 @@
 #ifndef parson_parson_h
 #define parson_parson_h
 
-#ifdef ESP_PLATFORM
+#if defined(__MBED__) || defined(ESP_PLATFORM) || defined(ARDUINO)
 
 #ifdef __cplusplus
 extern "C"
@@ -233,5 +233,5 @@ int             json_boolean(const JSON_Value *value);
 }
 #endif
 
-#endif
-#endif // ESP_PLATFORM
+#endif // defined(__MBED__) || defined(ESP_PLATFORM)
+#endif // parson_parson_h

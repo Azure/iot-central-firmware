@@ -25,9 +25,7 @@ void onMessageSent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     }
 
     if (callbackInfo->appContext != NULL) {
-        int *id = (int*)callbackInfo->appContext;
-        LOG_VERBOSE("Confirmation received for message tracking id = %d", *id);
-        delete id;
+        LOG_VERBOSE("Confirmation received.");
     } else {
         LOG_VERBOSE("deviceTwinConfirmationCallback was received");
     }
@@ -37,7 +35,7 @@ void onMessageReceived(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     LOG_VERBOSE("AzureIOTClient::receiveMessageCallback (%s)", callbackInfo->payload != NULL ? callbackInfo->payload : "None");
 
     const char *buffer = callbackInfo->payload;
-    unsigned size = callbackInfo->payload_length;
+    unsigned size = callbackInfo->payloadLength;
 
     // message format expected:
     // {
@@ -96,14 +94,14 @@ void onCommand(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
         methodName.toUpperCase();
         for(int i = 0; i < client->methodCallbackCount; i++) {
             if (methodName == client->methodCallbackList[i].name) {
-                AutoString payloadCopy((const char*)callbackInfo->payload, callbackInfo->payload_length); // payload may not be null ended
-                payloadCopy.makePersistent();
-                char *pcopy = *payloadCopy;
+                char *pcopy = (char*) malloc(callbackInfo->payloadLength + 1);
                 assert(pcopy);
+                memcpy(pcopy, (const char*)callbackInfo->payload, callbackInfo->payloadLength);
+                pcopy[callbackInfo->payloadLength] = 0;
                 char *mcopy = strdup(methodName.c_str());
                 assert(mcopy);
 
-                client->pushDirectMethod(mcopy, pcopy, callbackInfo->payload_length);
+                client->pushDirectMethod(mcopy, pcopy, callbackInfo->payloadLength);
                 break;
             }
         }
@@ -140,12 +138,12 @@ void onSettingsUpdated(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     AzureIOTClient *client = (AzureIOTClient*) callbackInfo->appContext;
     assert(client != NULL);
     int i = 0;
-    AutoString propName(callbackInfo->tag, strlen(callbackInfo->tag));
+    StringBuffer propName(callbackInfo->tag, strlen(callbackInfo->tag));
     strupr(*propName);
 
     for(; i < client->desiredCallbackCount; i++) {
         if (strcmp(*propName, client->desiredCallbackList[i].name) == 0) {
-            client->desiredCallbackList[i].callback(callbackInfo->payload, callbackInfo->payload_length);
+            client->desiredCallbackList[i].callback(callbackInfo->payload, callbackInfo->payloadLength);
             break;
         }
     }
@@ -213,18 +211,14 @@ void AzureIOTClient::init() {
 
 bool AzureIOTClient::sendTelemetry(const char *payload) {
     checkConnection();
-    static unsigned long trackingId = 0;
-    trackingId++;
 
-    int *id = new int;
-    *id = trackingId;
-    return iotc_send_telemetry(context, payload, strlen(payload), id) == 0;
+    return iotc_send_telemetry(context, payload, strlen(payload)) == 0;
 }
 
 bool AzureIOTClient::sendReportedProperty(const char *payload) {
     checkConnection();
 
-    return iotc_send_property(context, payload, strlen(payload), NULL) == 0;
+    return iotc_send_property(context, payload, strlen(payload)) == 0;
 }
 
 // register callbacks for direct and cloud to device messages

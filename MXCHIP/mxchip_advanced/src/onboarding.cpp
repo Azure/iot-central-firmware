@@ -166,7 +166,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
     char buff[dataLength] = {0};
     data.toCharArray(buff, dataLength);
     char *pch = strtok(buff, "&");
-    AutoString ssid, password, auth, scopeId, regId, sasKey;
+    StringBuffer ssid, password, auth, scopeId, regId, sasKey;
     uint8_t checkboxState = 0x00; // bit order - see globals.h
 
     while (pch != NULL)
@@ -273,7 +273,7 @@ void OnboardingController::processResultRequest(WiFiClient &client, String &requ
     assert(auth.getLength() != 0);
     ConfigController::storeKey(auth, scopeId, regId, sasKey);
 
-    AutoString configData(3);
+    StringBuffer configData(3);
     snprintf(*configData, 3, "%d", checkboxState);
     ConfigController::storeIotCentralConfig(configData);
 

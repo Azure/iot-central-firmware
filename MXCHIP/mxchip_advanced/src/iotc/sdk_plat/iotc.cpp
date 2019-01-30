@@ -1,15 +1,15 @@
-// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Oguz Bastemur. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include "../common/iotc_internal.h"
+#if !defined(USE_LIGHT_CLIENT)
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <stdint.h>
-#include <assert.h>
-#include "iotc.h"
-#include "json.h"
+#include "../common/json.h"
 
-#ifdef TARGET_MXCHIP_AZ3166
+#ifdef TARGET_MXCHIP
 #include "azure_prov_client/prov_device_ll_client.h"
 #include "azure_prov_client/prov_security_factory.h"
 #include "azure_prov_client/prov_transport_mqtt_client.h"
@@ -19,9 +19,19 @@ int prov_dev_set_symmetric_key_info(const char* registration_name, const char* s
     hsm_client_set_registration_name_and_key(registration_name, symmetric_key);
     return 0;
 }
-#endif // TARGET_MXCHIP_AZ3166
 
-#ifdef ESP_PLATFORM
+void IOTC_LOG(const __FlashStringHelper *format, ...) {
+    if (getLogLevel() > IOTC_LOGGING_DISABLED) {
+        va_list ap;
+        va_start(ap, format);
+        AzureIOT::StringBuffer buffer(STRING_BUFFER_1024);
+        buffer.setLength(vsnprintf(*buffer, STRING_BUFFER_1024, (const char *)format, ap));
+        Serial.println(*buffer);
+        va_end(ap);
+    }
+}
+
+#elif defined(ESP_PLATFORM)
 #include "iothub_client.h"
 #include "iothub_message.h"
 #include "azure_c_shared_utility/threadapi.h"
@@ -34,91 +44,10 @@ int prov_dev_set_symmetric_key_info(const char* registration_name, const char* s
 #include "azure_prov_client/prov_device_ll_client.h"
 #include "azure_prov_client/prov_security_factory.h"
 #include "azure_prov_client/prov_transport_mqtt_client.h"
-#endif
 
-#define AZ_IOT_HUB_MAX_LEN 1024
-#define DEFAULT_ENDPOINT "global.azure-devices-provisioning.net"
-#define TO_STR_(s) #s
-#define TO_STR(s) TO_STR_(s)
-#define IOTC_LOG(...) \
-    if (gLogLevel > IOTC_LOGGING_DISABLED) { \
-        printf("  - "); \
-        printf(__VA_ARGS__); \
-        printf("\r\n"); \
-    }
-
-typedef enum IOTCallbacks_TAG {
-    ConnectionStatus    = 0x01,
-    MessageSent,
-    Command,
-    MessageReceived,
-    Error,
-    SettingsUpdated
-} IOTCallbacks;
-
-typedef struct CallbackBase_TAG {
-  IOTCallback callback;
-  void *appContext;
-  CallbackBase_TAG() { callback = NULL; appContext = NULL; }
-} CallbackBase;
-
-typedef struct IOTContextInternal_TAG {
-    IOTHUB_CLIENT_LL_HANDLE clientHandle;
-    char *endpoint;
-    IOTProtocol protocol;
-    CallbackBase callbacks[8];
-} IOTContextInternal;
-IOTLogLevel gLogLevel = IOTC_LOGGING_DISABLED;
-
-unsigned strlen_s_(const char* str, int max_expected) {
-    int ret_val = 0;
-    while(*(str++) != 0) {
-        ret_val++;
-        if (ret_val >= max_expected) return max_expected;
-    }
-
-    return ret_val;
-}
-
-#define CHECK_NOT_NULL(x) if (x == NULL) { IOTC_LOG(TO_STR(x) "is NULL"); return 1; }
-
-#define GET_LENGTH_NOT_NULL_NOT_EMPTY(x, maxlen) \
-unsigned x ## _len = 0; \
-do { \
-    CHECK_NOT_NULL(x) \
-    x ## _len = strlen_s_(x, INT_MAX); \
-    if (x ## _len == 0 || x ## _len > maxlen) { \
-        IOTC_LOG("ERROR: " TO_STR(x) "has length %d", x ## _len); return 1; \
-    } \
-} while(0)
-
-#define GET_LENGTH_NOT_NULL(x, maxlen) \
-unsigned x ## _len = 0; \
-do { \
-    CHECK_NOT_NULL(x) \
-    x ## _len = strlen_s_(x, INT_MAX); \
-    if (x ## _len > maxlen) { \
-        IOTC_LOG("ERROR: " TO_STR(x) " has length %d", x ## _len); return 1; \
-    } \
-} while(0)
-
-#define MUST_CALL_BEFORE_INIT(x) \
-    if (x != NULL) {    \
-        IOTC_LOG("ERROR: Client was already initialized. ERR:0x0006"); \
-        return 6; \
-    }
-
-#define MUST_CALL_AFTER_INIT(x) \
-    if (x == NULL) {    \
-        IOTC_LOG("ERROR: Client was not initialized. ERR:0x0007"); \
-        return 7; \
-    }
-
-#define MUST_CALL_AFTER_CONNECT(x) \
-    if (x == NULL || x->clientHandle == NULL) {    \
-        IOTC_LOG("ERROR: Client was not connected. ERR:0x0010"); \
-        return 16; \
-    }
+#else
+#error "NOT IMPLEMENTED"
+#endif // TARGET_MXCHIP?
 
 typedef struct EVENT_INSTANCE_TAG {
     IOTHUB_MESSAGE_HANDLE messageHandle;
@@ -132,7 +61,7 @@ static EVENT_INSTANCE *createEventInstance(IOTContextInternal *internal,
 
     EVENT_INSTANCE *currentMessage = (EVENT_INSTANCE*) malloc(sizeof(EVENT_INSTANCE));
     if(currentMessage == NULL) {
-        IOTC_LOG("ERROR: (createEventInstance) currentMessage is NULL. ERROR:0x0001");
+        IOTC_LOG(F("ERROR: (createEventInstance) currentMessage is NULL."));
         *errorCode = 1;
         return NULL;
     }
@@ -142,7 +71,7 @@ static EVENT_INSTANCE *createEventInstance(IOTContextInternal *internal,
         IoTHubMessage_CreateFromByteArray((const unsigned char*)payload, length);
 
     if (currentMessage->messageHandle == NULL) {
-        IOTC_LOG("ERROR: (iotc_send_telemetry) IoTHubMessage_CreateFromByteArray has failed. ERROR:0x0009");
+        IOTC_LOG(F("ERROR: (iotc_send_telemetry) IoTHubMessage_CreateFromByteArray has failed."));
         free(currentMessage);
         *errorCode = 9;
         return NULL;
@@ -168,24 +97,24 @@ static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, v
     EVENT_INSTANCE *eventInstance = (EVENT_INSTANCE *)userContextCallback;
     assert(eventInstance != NULL);
     IOTContextInternal *internal = (IOTContextInternal*)eventInstance->internal;
+    const unsigned char* buffer = NULL;
+    size_t size = 0;
 
-    if (internal->callbacks[IOTCallbacks::MessageSent].callback) {
-        const unsigned char* buffer = NULL;
-        size_t size = 0;
+    if (internal->callbacks[/*IOTCallbacks::*/MessageSent].callback) {
         if (IOTHUB_CLIENT_RESULT::IOTHUB_CLIENT_OK !=
           IoTHubMessage_GetByteArray(eventInstance->messageHandle, &buffer, &size)) {
-            IOTC_LOG("ERROR: (sendConfirmationCallback) IoTHubMessage_GetByteArray has failed. ERR:0x000C");
+            IOTC_LOG(F("ERROR: (sendConfirmationCallback) IoTHubMessage_GetByteArray has failed."));
         }
 
         IOTCallbackInfo info;
         info.eventName = "MessageSent";
         info.tag = NULL;
         info.payload = (const char*) buffer;
-        info.payload_length = (unsigned) size;
-        info.appContext = eventInstance->appContext;
+        info.payloadLength = (unsigned) size;
+        info.appContext = internal->callbacks[/*IOTCallbacks::*/::MessageSent].appContext;
         info.statusCode = (int)result;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::MessageSent].callback(internal, &info);
+        internal->callbacks[/*IOTCallbacks::*/::MessageSent].callback(internal, &info);
     }
 
     freeEventInstance(eventInstance);
@@ -194,38 +123,6 @@ static void sendConfirmationCallback(IOTHUB_CLIENT_CONFIRMATION_RESULT result, v
 #define CONVERT_TO_IOTHUB_MESSAGE(x) \
   (x == IOTC_MESSAGE_ACCEPTED ? IOTHUBMESSAGE_ACCEPTED : \
   (x == IOTC_MESSAGE_REJECTED ? IOTHUBMESSAGE_REJECTED : IOTHUBMESSAGE_ABANDONED))
-
-/* MessageReceived */
-static IOTHUBMESSAGE_DISPOSITION_RESULT receiveMessageCallback
-    (IOTHUB_MESSAGE_HANDLE message, void *userContextCallback)
-{
-    IOTContextInternal *internal = (IOTContextInternal*)userContextCallback;
-    assert(internal != NULL);
-
-    if (internal->callbacks[IOTCallbacks::MessageReceived].callback) {
-        const unsigned char* buffer = NULL;
-        size_t size = 0;
-        if (IOTHUB_CLIENT_RESULT::IOTHUB_CLIENT_OK !=
-          IoTHubMessage_GetByteArray(message, &buffer, &size)) {
-            IOTC_LOG("ERROR: (receiveMessageCallback) IoTHubMessage_GetByteArray has failed. ERR:0x000C");
-        }
-
-        IOTCallbackInfo info;
-        info.eventName = "MessageReceived";
-        info.tag = NULL;
-        info.payload = (const char*) buffer;
-        info.payload_length = (unsigned) size;
-        info.appContext = internal->callbacks[IOTCallbacks::MessageReceived].appContext;
-        info.statusCode = 0;
-        info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::MessageReceived].callback(internal, &info);
-        if (info.statusCode != 0) {
-            return CONVERT_TO_IOTHUB_MESSAGE(info.statusCode);
-        }
-        return IOTHUBMESSAGE_ACCEPTED;
-    }
-    return IOTHUBMESSAGE_ABANDONED;
-}
 
 /* Command */
 static const char* emptyResponse = "{}";
@@ -238,16 +135,16 @@ static int onCommand(const char* method_name, const unsigned char* payload,
     IOTContextInternal *internal = (IOTContextInternal*)userContextCallback;
     assert(internal != NULL);
 
-    if (internal->callbacks[IOTCallbacks::Command].callback) {
+    if (internal->callbacks[/*IOTCallbacks::*/::Command].callback) {
         IOTCallbackInfo info;
         info.eventName = "Command";
         info.tag = method_name;
         info.payload = (const char*) payload;
-        info.payload_length = (unsigned) size;
-        info.appContext = internal->callbacks[IOTCallbacks::Command].appContext;
+        info.payloadLength = (unsigned) size;
+        info.appContext = internal->callbacks[/*IOTCallbacks::*/::Command].appContext;
         info.statusCode = 0;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::Command].callback(internal, &info);
+        internal->callbacks[/*IOTCallbacks::*/::Command].callback(internal, &info);
 
         if (info.callbackResponse != NULL) {
             *response = (unsigned char*) info.callbackResponse;
@@ -287,38 +184,37 @@ static void connectionStatusCallback(IOTHUB_CLIENT_CONNECTION_STATUS result,
 
     IOTContextInternal *internal = (IOTContextInternal*)userContextCallback;
     assert(internal != NULL);
-    if (internal->callbacks[IOTCallbacks::ConnectionStatus].callback) {
+    if (internal->callbacks[/*IOTCallbacks::*/::ConnectionStatus].callback) {
         IOTCallbackInfo info;
         info.eventName = "ConnectionStatus";
         info.tag = NULL;
         info.payload = NULL;
-        info.payload_length = 0;
-        info.appContext = internal->callbacks[IOTCallbacks::ConnectionStatus].appContext;
+        info.payloadLength = 0;
+        info.appContext = internal->callbacks[/*IOTCallbacks::*/::ConnectionStatus].appContext;
         info.statusCode = CONVERT_TO_IOTC_CONNECT_ENUM(reason);
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::ConnectionStatus].callback(internal, &info);
+        internal->callbacks[/*IOTCallbacks::*/::ConnectionStatus].callback(internal, &info);
     }
 }
 
-static const char* OOM_MESSAGE = "OutOfMemory while handling twin message echo.";
 void sendOnError(IOTContextInternal *internal, const char* message) {
-    if (internal->callbacks[IOTCallbacks::Error].callback) {
+    if (internal->callbacks[/*IOTCallbacks::*/::Error].callback) {
         IOTCallbackInfo info;
         info.eventName = "Error";
         info.tag = message; // message lifetime should be managed by us
         info.payload = NULL;
-        info.payload_length = 0;
-        info.appContext = internal->callbacks[IOTCallbacks::Error].appContext;
+        info.payloadLength = 0;
+        info.appContext = internal->callbacks[/*IOTCallbacks::*/::Error].appContext;
         info.statusCode = 1;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::Error].callback(internal, &info);
+        internal->callbacks[/*IOTCallbacks::*/::Error].callback(internal, &info);
     }
 }
 
 void echoDesired(IOTContextInternal *internal, const char *propertyName,
   const char *message, const char *status, int statusCode) {
-    AzureIOTC::JSObject rootObject(message);
-    AzureIOTC::JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
+    AzureIOT::JSObject rootObject(message);
+    AzureIOT::JSObject propertyNameObject, desiredObject, desiredObjectPropertyName;
 
     const char* methodName = rootObject.getStringByName("methodName");
     rootObject.getObjectByName(propertyName, &propertyNameObject);
@@ -338,38 +234,30 @@ void echoDesired(IOTContextInternal *internal, const char *propertyName,
 
     const char* echoTemplate = "{\"%s\":{\"value\":%d,\"statusCode\":%d,\
 \"status\":\"%s\",\"desiredVersion\":%d}}";
-    uint32_t buffer_size = snprintf(NULL, 0, echoTemplate, propertyName,
-        (int) value, // BAD HACK
-        statusCode, status, (int) desiredVersion);
+    uint32_t buffer_size = strlen(echoTemplate) + 23 /* x64 value */ + 3 /* statusCode */
+        + 32 /* status */ + 23 /* version max */;
+    buffer_size = iotc_min(buffer_size, 512);
+    AzureIOT::StringBuffer buffer(buffer_size);
 
-    char *buffer = new char[buffer_size + 1];
-    memset(buffer, 0, buffer_size + 1);
-    if (buffer == NULL) {
-        IOTC_LOG("Desired property %s failed to be echoed back as a reported \
-            property (OUT OF MEMORY)", propertyName);
-        sendOnError(internal, OOM_MESSAGE);
-        return;
-    }
+    size_t size = snprintf(*buffer, buffer_size, echoTemplate, propertyName,
+             (int) value, statusCode, status, (int) desiredVersion);
+    buffer.setLength(size);
 
-    snprintf(buffer, buffer_size + 1, echoTemplate, propertyName,
-             (int) value, statusCode,
-             status, (int) desiredVersion);
-
-    iotc_send_property(internal, buffer, buffer_size, NULL);
+    iotc_send_property(internal, *buffer, size);
 }
 
 void callDesiredCallback(IOTContextInternal *internal, const char *propertyName, const char *payLoad, size_t size) {
     const char* response = "completed";
-    if (internal->callbacks[IOTCallbacks::SettingsUpdated].callback) {
+    if (internal->callbacks[/*IOTCallbacks::*/::SettingsUpdated].callback) {
         IOTCallbackInfo info;
         info.eventName = "SettingsUpdated";
         info.tag = propertyName;
         info.payload = payLoad;
-        info.payload_length = size;
-        info.appContext = internal->callbacks[IOTCallbacks::SettingsUpdated].appContext;
+        info.payloadLength = size;
+        info.appContext = internal->callbacks[/*IOTCallbacks::*/::SettingsUpdated].appContext;
         info.statusCode = 200;
         info.callbackResponse = NULL;
-        internal->callbacks[IOTCallbacks::SettingsUpdated].callback(internal, &info);
+        internal->callbacks[/*IOTCallbacks::*/::SettingsUpdated].callback(internal, &info);
         if (info.callbackResponse) {
             response = (const char*)info.callbackResponse;
         }
@@ -384,19 +272,17 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
     assert(internal != NULL);
 
     ((char*)payLoad)[size] = 0x00;
-    AzureIOTC::JSObject payloadObject((const char *)payLoad);
+    AzureIOT::JSObject payloadObject((const char *)payLoad);
 
     if (update_state == DEVICE_TWIN_UPDATE_PARTIAL && payloadObject.getNameAt(0) != NULL) {
         callDesiredCallback(internal, payloadObject.getNameAt(0), reinterpret_cast<const char*>(payLoad), size);
     } else {
-        AzureIOTC::JSObject desired, reported;
+        AzureIOT::JSObject desired, reported;
 
         // loop through all the desired properties
         // look to see if the desired property has an associated reported property
         // if so look if the versions match, if they match do nothing
         // if they don't match then call the associated callback for the desired property
-
-        LOG_VERBOSE("Processing complete twin");
 
         payloadObject.getObjectByName("desired", &desired);
         payloadObject.getObjectByName("reported", &reported);
@@ -404,7 +290,7 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
         for (unsigned i = 0, count = desired.getCount(); i < count; i++) {
             const char * itemName = desired.getNameAt(i);
             if (itemName != NULL && itemName[0] != '$') {
-                AzureIOTC::JSObject keyObject;
+                AzureIOT::JSObject keyObject;
                 const char * version = NULL, * desiredVersion = NULL,
                            * value = NULL, * desiredValue = NULL;
                 bool containsKey = reported.getObjectByName(itemName, &keyObject);
@@ -417,14 +303,14 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
                 }
 
                 if (containsKey && strcmp(desiredVersion, version) == 0) {
-                    LOG_VERBOSE("key: %s found in reported and versions match", itemName);
+                    IOTC_LOG(F("key: %s found in reported and versions match"), itemName);
                 } else if (containsKey && strcmp(desiredValue, value) != 0){
-                    LOG_VERBOSE("key: %s either not found in reported or versions do not match\r\n", itemName);
-                    AzureIOTC::JSObject itemValue;
+                    IOTC_LOG(F("key: %s either not found in reported or versions do not match\r\n"), itemName);
+                    AzureIOT::JSObject itemValue;
                     if (desired.getObjectAt(i, &itemValue) && itemValue.toString() != NULL) {
-                        LOG_VERBOSE("itemValue: %s", itemValue.toString());
+                        IOTC_LOG(F("itemValue: %s"), itemValue.toString());
                     } else {
-                        LOG_ERROR("desired doesn't have value at index");
+                        IOTC_LOG(F("ERROR: desired doesn't have value at index"));
                     }
                     callDesiredCallback(internal, itemName, (const char*)payLoad, size);
                 } else {
@@ -433,16 +319,6 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
             }
         }
     }
-}
-
-/* extern */
-int iotc_set_logging(IOTLogLevel level) {
-    if (level < IOTC_LOGGING_DISABLED || level > IOTC_LOGGING_ALL) {
-        IOTC_LOG("ERROR: (iotc_set_logging) invalid argument. ERROR:0x0001");
-        return 1;
-    }
-    gLogLevel = level;
-    return 0;
 }
 
 /* extern */
@@ -486,30 +362,30 @@ static void registation_status_callback(PROV_DEVICE_REG_STATUS reg_status, void*
 {
     if (user_context == NULL)
     {
-        IOTC_LOG("ERROR: (registation_status_callback) user_context is NULL");
+        IOTC_LOG(F("ERROR: (registation_status_callback) user_context is NULL"));
     }
     else
     {
         if (reg_status == PROV_DEVICE_REG_STATUS_CONNECTED)
         {
-            IOTC_LOG("- IOTC: Registration status: CONNECTED");
+            IOTC_LOG(F("IOTC: Registration status: CONNECTED"));
         }
         else if (reg_status == PROV_DEVICE_REG_STATUS_REGISTERING)
         {
-            IOTC_LOG("- IOTC: Registration status: REGISTERING");
+            IOTC_LOG(F("IOTC: Registration status: REGISTERING"));
         }
         else if (reg_status == PROV_DEVICE_REG_STATUS_ASSIGNING)
         {
-            IOTC_LOG("- IOTC: Registration status: ASSIGNING");
+            IOTC_LOG(F("IOTC: Registration status: ASSIGNING"));
         }
     }
 }
 
-static void register_device_callback(PROV_DEVICE_RESULT register_result, const char* iothub_uri, const char* device_id, void* user_context)
+static void register_device_callback(PROV_DEVICE_RESULT register_result, const char* iothub_uri, const char* deviceId, void* user_context)
 {
     if (user_context == NULL)
     {
-        IOTC_LOG("ERROR: (register_device_callback) user_context is NULL");
+        IOTC_LOG(F("ERROR: (register_device_callback) user_context is NULL"));
     }
     else
     {
@@ -521,7 +397,7 @@ static void register_device_callback(PROV_DEVICE_RESULT register_result, const c
         }
         else
         {
-            IOTC_LOG("ERROR: (register_device_callback) Failure encountered on registration!");
+            IOTC_LOG(F("ERROR: (register_device_callback) Failure encountered on registration!"));
             user_ctx->registration_complete = 2;
         }
     }
@@ -529,12 +405,12 @@ static void register_device_callback(PROV_DEVICE_RESULT register_result, const c
 
 /* extern */
 int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
-  const char* device_id, IOTConnectType type) {
+  const char* deviceId, IOTConnectType type) {
 
     CHECK_NOT_NULL(ctx)
     GET_LENGTH_NOT_NULL(scope, 256);
     GET_LENGTH_NOT_NULL(keyORcert, 512);
-    GET_LENGTH_NOT_NULL(device_id, 256);
+    GET_LENGTH_NOT_NULL(deviceId, 256);
 
     IOTContextInternal *internal = (IOTContextInternal*)ctx;
     MUST_CALL_AFTER_INIT(internal);
@@ -542,14 +418,14 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     char stringBuffer[AZ_IOT_HUB_MAX_LEN] = {0};
     int errorCode = 0;
     size_t pos = 0;
-    bool traceOn = gLogLevel > IOTC_LOGGING_API_ONLY;
+    bool traceOn = getLogLevel() > IOTC_LOGGING_API_ONLY;
 
     if (type == IOTC_CONNECT_CONNECTION_STRING) {
         strcpy(stringBuffer, keyORcert);
         pos = strlen(stringBuffer);
     } else {
         if (type == IOTC_CONNECT_SYMM_KEY) {
-            prov_dev_set_symmetric_key_info(device_id, keyORcert);
+            prov_dev_set_symmetric_key_info(deviceId, keyORcert);
             prov_dev_security_init(SECURE_DEVICE_TYPE_SYMMETRIC_KEY);
         } else {
             prov_dev_security_init(SECURE_DEVICE_TYPE_X509);
@@ -558,7 +434,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
         if ((handle = Prov_Device_LL_Create(internal->endpoint == NULL ?
             DEFAULT_ENDPOINT : internal->endpoint, scope, Prov_Device_MQTT_Protocol)) == NULL)
         {
-            IOTC_LOG("ERROR: (iotc_connect) device registration step has failed.");
+            IOTC_LOG(F("ERROR: (iotc_connect) device registration step has failed."));
             errorCode = 1;
             goto fnc_exit;
         }
@@ -569,14 +445,14 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 #if defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
         if (Prov_Device_LL_SetOption(handle, "TrustedCerts", certificates) != PROV_DEVICE_RESULT_OK)
         {
-            IOTC_LOG("ERROR: (iotc_connect) Failed to set option \"TrustedCerts\".");
+            IOTC_LOG(F("ERROR: (iotc_connect) Failed to set option \"TrustedCerts\"."));
             errorCode = 1;
             goto fnc_exit;
         } else
 #endif // defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
         if (Prov_Device_LL_Register_Device(handle, register_device_callback, &user_ctx, registation_status_callback, &user_ctx) != PROV_DEVICE_RESULT_OK)
         {
-            IOTC_LOG("ERROR: (iotc_connect) Failed calling Prov_Device_LL_Register_Device.");
+            IOTC_LOG(F("ERROR: (iotc_connect) Failed calling Prov_Device_LL_Register_Device."));
             errorCode = 1;
             goto fnc_exit;
         }
@@ -593,7 +469,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
         Prov_Device_LL_Destroy(handle);
 
         if (user_ctx.registration_complete == 2) {
-            IOTC_LOG("ERROR: (iotc_connect) device registration step has failed.");
+            IOTC_LOG(F("ERROR: (iotc_connect) device registration step has failed."));
             errorCode = 1;
             goto fnc_exit;
         }
@@ -602,19 +478,19 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
             pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
                 "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
                 user_ctx.iothub_uri,
-                device_id,
+                deviceId,
                 keyORcert);
         } else if (type == IOTC_CONNECT_X509_CERT) {
             pos = snprintf(stringBuffer, AZ_IOT_HUB_MAX_LEN,
                 "HostName=%s;DeviceId=%s;UseProvisioning=true",
                 user_ctx.iothub_uri,
-                device_id);
+                deviceId);
         }
     }
 
-    IOTC_LOG("ConnectionString: %s", stringBuffer);
+    IOTC_LOG(F("ConnectionString: %s"), stringBuffer);
     if (pos == 0 || pos >= AZ_IOT_HUB_MAX_LEN) {
-        IOTC_LOG("ERROR: (iotc_connect) connection information is out of buffer. ERR:0x000F");
+        IOTC_LOG(F("ERROR: (iotc_connect) connection information is out of buffer."));
         errorCode = 15;
         goto fnc_exit;
     }
@@ -622,7 +498,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     if ((internal->clientHandle = IoTHubClient_LL_CreateFromConnectionString(
         stringBuffer, MQTT_Protocol)) == NULL) {
 
-        IOTC_LOG("ERROR: (iotc_connect) Couldn't create hub from connection string. ERR:0x0004");
+        IOTC_LOG(F("ERROR: (iotc_connect) Couldn't create hub from connection string."));
         errorCode = 4;
         goto fnc_exit;
     }
@@ -632,26 +508,18 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 #if defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
     if (IoTHubClient_LL_SetOption(internal->clientHandle, "TrustedCerts",
         certificates /* src/cores/arduino/az_iot/azureiotcerts.h */) != IOTHUB_CLIENT_OK) {
-        IOTC_LOG("ERROR: Failed to set option \"TrustedCerts\" IoTHubClient_LL_SetOption failed. ERR:0x0005");
+        IOTC_LOG(F("ERROR: Failed to set option \"TrustedCerts\" IoTHubClient_LL_SetOption failed."));
         return 5;
     }
 #endif // defined(MBED_BUILD_TIMESTAMP) || defined(TARGET_MXCHIP_AZ3166)
 
-    traceOn = gLogLevel > IOTC_LOGGING_API_ONLY;
+    traceOn = getLogLevel() > IOTC_LOGGING_API_ONLY;
     IoTHubClient_LL_SetOption(internal->clientHandle, "logtrace", &traceOn);
-
-    if (IoTHubClient_LL_SetMessageCallback(internal->clientHandle, receiveMessageCallback,
-        internal) != IOTHUB_CLIENT_OK) {
-
-        IOTC_LOG("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed. ERR:0x0005");
-        errorCode = 5;
-        goto fnc_exit;
-    }
 
     if (IoTHubClient_LL_SetDeviceTwinCallback(internal->clientHandle, deviceTwinGetStateCallback,
         internal) != IOTHUB_CLIENT_OK) {
 
-        IOTC_LOG("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed. ERR:0x0005");
+        IOTC_LOG(F("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed."));
         errorCode = 5;
         goto fnc_exit;
     }
@@ -659,7 +527,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     if (IoTHubClient_LL_SetDeviceMethodCallback(internal->clientHandle, onCommand,
         internal) != IOTHUB_CLIENT_OK) {
 
-        IOTC_LOG("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed. ERR:0x0005");
+        IOTC_LOG(F("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed. ERR:0x0005"));
         errorCode = 5;
         goto fnc_exit;
     }
@@ -667,7 +535,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     if (IoTHubClient_LL_SetConnectionStatusCallback(internal->clientHandle,
         connectionStatusCallback, internal) != IOTHUB_CLIENT_OK) {
 
-        IOTC_LOG("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed. ERR:0x0005");
+        IOTC_LOG(F("ERROR: (iotc_connect) IoTHubClient_LL_SetXXXXCallback failed. ERR:0x0005"));
         errorCode = 5;
         goto fnc_exit;
     }
@@ -677,92 +545,27 @@ fnc_exit:
 }
 
 /* extern */
-int iotc_set_global_endpoint(IOTContext ctx, const char* endpoint_uri) {
-    CHECK_NOT_NULL(ctx)
-    GET_LENGTH_NOT_NULL_NOT_EMPTY(endpoint_uri, 1024);
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_INIT(internal);
-
-    // todo: do not fragment the memory
-    if (internal->endpoint != NULL) {
-        free(internal->endpoint);
-    }
-    internal->endpoint = (char*) malloc(endpoint_uri_len + 1);
-    CHECK_NOT_NULL(internal->endpoint);
-
-    strcpy(internal->endpoint, endpoint_uri);
-    *(internal->endpoint + endpoint_uri_len) = 0;
-    return 0;
-}
-
-/* extern */
-int iotc_set_protocol(IOTContext ctx, IOTProtocol protocol) {
-    CHECK_NOT_NULL(ctx)
-    if (protocol < IOTC_PROTOCOL_MQTT || protocol > IOTC_PROTOCOL_HTTP) {
-        IOTC_LOG("ERROR: (iotc_set_protocol) invalid argument. ERROR:0x0001");
-        return 1;
-    }
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_INIT(internal);
-
-    internal->protocol = protocol;
-
-    return 0;
-}
-
-/* extern */
-int iotc_set_trusted_certs(IOTContext ctx, const char* certs) {
-    CHECK_NOT_NULL(ctx)
-    GET_LENGTH_NOT_NULL_NOT_EMPTY(certs, 4096);
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_CONNECT(internal);
-
-    if (IoTHubClient_LL_SetOption(internal->clientHandle, "TrustedCerts",
-      certs) != IOTHUB_CLIENT_OK) {
-
-        IOTC_LOG("ERROR: (iotc_set_trusted_certs) IoTHubClient_LL_SetOption for Trusted certs has failed. ERROR:0x0011");
-        return 17;
-    }
-
-    return 0;
-}
-
-/* extern */
-int iotc_set_proxy(IOTContext ctx, IOTC_HTTP_PROXY_OPTIONS proxy) {
-    CHECK_NOT_NULL(ctx)
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_INIT(internal);
-
-    IOTC_LOG("ERROR: (iotc_set_proxy) Not implemented. ERR:0x0008");
-    return 8;
-}
-
-/* extern */
 int iotc_disconnect(IOTContext ctx) {
     CHECK_NOT_NULL(ctx)
 
     IOTContextInternal *internal = (IOTContextInternal*)ctx;
     MUST_CALL_AFTER_CONNECT(internal);
 
-    IOTC_LOG("ERROR: (iotc_disconnect) Not implemented. ERR:0x0008");
-    return 8;
+    IOTC_LOG(F("ERROR: (iotc_disconnect) Not implemented."));
+    return 1;
 }
 
 /* extern */
-int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length, void* appContext) {
+int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length) {
     CHECK_NOT_NULL(ctx)
     CHECK_NOT_NULL(payload)
 
     IOTContextInternal *internal = (IOTContextInternal*)ctx;
     MUST_CALL_AFTER_CONNECT(internal);
 
-    IOTHUB_CLIENT_RESULT hubResult = IOTHUB_CLIENT_RESULT::IOTHUB_CLIENT_OK;
     int errorCode = 0;
-    EVENT_INSTANCE *currentMessage = createEventInstance(internal, payload, length, appContext, &errorCode);
+    IOTHUB_CLIENT_RESULT hubResult = IOTHUB_CLIENT_RESULT::IOTHUB_CLIENT_OK;
+    EVENT_INSTANCE *currentMessage = createEventInstance(internal, payload, length, NULL, &errorCode);
     if (currentMessage == NULL) return errorCode;
 
     MAP_HANDLE propMap = IoTHubMessage_Properties(currentMessage->messageHandle);
@@ -774,9 +577,9 @@ int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length, vo
     timeBuffer[outputLength - 1] = char(0); // replace `\n` with `\0`
     if (Map_AddOrUpdate(propMap, "timestamp", timeBuffer) != MAP_OK)
     {
-        IOTC_LOG("ERROR: (iotc_send_telemetry) Map_AddOrUpdate has failed. ERROR:0x000A");
+        IOTC_LOG(F("ERROR: (iotc_send_telemetry) Map_AddOrUpdate has failed."));
         freeEventInstance(currentMessage);
-        return 10;
+        return 1;
     }
 
     // submit the message to the Azure IoT hub
@@ -784,40 +587,19 @@ int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length, vo
         currentMessage->messageHandle, sendConfirmationCallback, currentMessage);
 
     if (hubResult != IOTHUB_CLIENT_OK) {
-        IOTC_LOG("ERROR: (iotc_send_telemetry) IoTHubClient_LL_SendEventAsync has "
-          "failed => hubResult is (%d). ERROR:0x000B", hubResult);
+        IOTC_LOG(F("ERROR: (iotc_send_telemetry) IoTHubClient_LL_SendEventAsync has "
+          "failed => hubResult is (%d)."), hubResult);
         freeEventInstance(currentMessage);
-        return 11;
+        return 1;
     }
+
     iotc_do_work(ctx);
 
     return 0;
 }
 
 /* extern */
-int iotc_send_state    (IOTContext ctx, const char* payload, unsigned length, void* appContext) {
-    CHECK_NOT_NULL(ctx)
-    CHECK_NOT_NULL(payload)
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_CONNECT(internal);
-
-    return iotc_send_telemetry((IOTContext)internal, payload, length, appContext);
-}
-
-/* extern */
-int iotc_send_event    (IOTContext ctx, const char* payload, unsigned length, void* appContext) {
-    CHECK_NOT_NULL(ctx)
-    CHECK_NOT_NULL(payload)
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_CONNECT(internal);
-
-    return iotc_send_telemetry((IOTContext)internal, payload, length, appContext);
-}
-
-/* extern */
-int iotc_send_property (IOTContext ctx, const char* payload, unsigned length, void *appContext) {
+int iotc_send_property (IOTContext ctx, const char* payload, unsigned length) {
     CHECK_NOT_NULL(ctx)
     CHECK_NOT_NULL(payload)
 
@@ -825,49 +607,20 @@ int iotc_send_property (IOTContext ctx, const char* payload, unsigned length, vo
     MUST_CALL_AFTER_CONNECT(internal);
 
     int errorCode = 0;
-    EVENT_INSTANCE *currentMessage = createEventInstance(internal, payload, length, appContext, &errorCode);
+    EVENT_INSTANCE *currentMessage = createEventInstance(internal, payload, length, NULL, &errorCode);
     if (currentMessage == NULL) return errorCode;
 
     IOTHUB_CLIENT_RESULT hubResult = IoTHubClient_LL_SendReportedState(internal->clientHandle,
         (const unsigned char*)payload, length, deviceTwinConfirmationCallback, currentMessage);
 
     if (hubResult != IOTHUB_CLIENT_OK) {
-        IOTC_LOG("ERROR: (iotc_send_telemetry) IoTHubClient_LL_SendReportedState has "
-          "failed => hubResult is (%d). ERROR:0x000B", hubResult);
+        IOTC_LOG(F("ERROR: (iotc_send_telemetry) IoTHubClient_LL_SendReportedState has "
+          "failed => hubResult is (%d). ERROR:0x000B"), hubResult);
         freeEventInstance(currentMessage);
         return 11;
     }
     iotc_do_work(ctx);
 
-    return 0;
-}
-
-/* extern */
-int iotc_on(IOTContext ctx, const char* eventName, IOTCallback callback, void* appContext) {
-    CHECK_NOT_NULL(ctx)
-    GET_LENGTH_NOT_NULL_NOT_EMPTY(eventName, 64);
-
-    IOTContextInternal *internal = (IOTContextInternal*)ctx;
-    MUST_CALL_AFTER_INIT(internal);
-
-#define SETCB_(x, a, b) x.callback=a;x.appContext=b;
-    if (strcmp(eventName, "ConnectionStatus") == 0) {
-        SETCB_(internal->callbacks[IOTCallbacks::ConnectionStatus], callback, appContext);
-    } else if (strcmp(eventName, "MessageSent") == 0) {
-        SETCB_(internal->callbacks[IOTCallbacks::MessageSent], callback, appContext);
-    } else if (strcmp(eventName, "MessageReceived") == 0) {
-        SETCB_(internal->callbacks[IOTCallbacks::MessageReceived], callback, appContext);
-    } else if (strcmp(eventName, "Error") == 0) {
-        SETCB_(internal->callbacks[IOTCallbacks::Error], callback, appContext);
-    } else if (strcmp(eventName, "SettingsUpdated") == 0) {
-        SETCB_(internal->callbacks[IOTCallbacks::SettingsUpdated], callback, appContext);
-    } else if (strcmp(eventName, "Command") == 0) {
-        SETCB_(internal->callbacks[IOTCallbacks::Command], callback, appContext);
-    } else {
-        IOTC_LOG("ERROR: (iotc_on) Unknown event definition. ERROR:0x000E");
-        return 14;
-    }
-#undef SETCB_
     return 0;
 }
 
@@ -881,3 +634,11 @@ int iotc_do_work(IOTContext ctx) {
     IoTHubClient_LL_DoWork(internal->clientHandle);
     return 0;
 }
+
+/* extern */
+int iotc_set_network_interface(void* networkInterface) {
+    IOTC_LOG(F("ERROR: (iotc_set_network_interface) is not needed for this platform."));
+    return 1;
+}
+
+#endif // defined(TARGET_MXCHIP_AZ3166) || defined(ESP_PLATFORM)

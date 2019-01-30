@@ -179,7 +179,7 @@ void TelemetryController::loop() {
 
         AnimationController::rollDieAnimation(die);
 
-        AutoString shakeString(shakeProperty.c_str(), shakeProperty.length());
+        StringBuffer shakeString(shakeProperty.c_str(), shakeProperty.length());
         if (iotClient->sendReportedProperty(*shakeString)) {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
             StatsController::incrementReportedCount();

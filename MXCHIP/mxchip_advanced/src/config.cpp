@@ -12,7 +12,7 @@ void ConfigController::clearAllConfig() {
     ConfigController::clearIotCentralEEPROM();
 }
 
-void ConfigController::storeWiFi(AutoString &ssid, AutoString &password) {
+void ConfigController::storeWiFi(StringBuffer &ssid, StringBuffer &password) {
     EEPROMInterface eeprom;
 
     eeprom.write((uint8_t*) *ssid, ssid.getLength(), WIFI_SSID_ZONE_IDX);
@@ -23,12 +23,12 @@ void ConfigController::storeWiFi(AutoString &ssid, AutoString &password) {
     }
 }
 
-void ConfigController::storeConnectionString(AutoString &connectionString) {
+void ConfigController::storeConnectionString(StringBuffer &connectionString) {
     EEPROMInterface eeprom;
     eeprom.write((uint8_t*) *connectionString, connectionString.getLength(), AZ_IOT_HUB_ZONE_IDX);
 }
 
-void ConfigController::storeIotCentralConfig(AutoString &iotCentralConfig) {
+void ConfigController::storeIotCentralConfig(StringBuffer &iotCentralConfig) {
     EEPROMInterface eeprom;
     eeprom.write((uint8_t*) *iotCentralConfig, iotCentralConfig.getLength(), IOT_CENTRAL_ZONE_IDX);
 }
@@ -65,7 +65,7 @@ void ConfigController::readConnectionString(char* connectionString, uint32_t buf
 #endif // !defined(IOT_CENTRAL_CONNECTION_STRING)
 }
 
-void ConfigController::storeKey(AutoString &auth, AutoString &scopeId, AutoString &regId, AutoString &key) {
+void ConfigController::storeKey(StringBuffer &auth, StringBuffer &scopeId, StringBuffer &regId, StringBuffer &key) {
     char buffer[AZ_IOT_HUB_MAX_LEN] = {0};
     memcpy(buffer, *scopeId, scopeId.getLength());
     memcpy(buffer + SAS_SCOPE_ID_ENDS, *regId, regId.getLength());
@@ -166,7 +166,7 @@ void ConfigController::clearWiFiEEPROM() {
     EEPROMInterface eeprom;
 
     uint32_t max_mem = max(WIFI_SSID_MAX_LEN, WIFI_PWD_MAX_LEN);
-    AutoString cleanBuffer(max_mem);
+    StringBuffer cleanBuffer(max_mem);
     eeprom.write((uint8_t*)*cleanBuffer, WIFI_SSID_MAX_LEN, WIFI_SSID_ZONE_IDX);
     eeprom.write((uint8_t*)*cleanBuffer, WIFI_PWD_MAX_LEN, WIFI_PWD_ZONE_IDX);
 }

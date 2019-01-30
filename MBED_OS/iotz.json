@@ -1,0 +1,49 @@
+{
+  "toolchain": "mbed",
+  "target": "nucleo_l476rg",
+  "deps":
+    [
+      {
+        "name": "MQTT",
+        "url" : "https://mbed.org/teams/mqtt/code/MQTT/#9cff7b6bbd01"
+      },
+      {
+        "name": "TLSSocket",
+        "url" : "https://github.com/coisme/TLSSocket/#dd86c396c58a12f049b2bc0d62f4bd97aa2cd5d6"
+      },
+      {
+        "name": "easy-connect",
+        "url" : "https://github.com/ARMmbed/easy-connect/#48fe1f874292fd843a40984f064a7eed5bbf985c"
+      },
+      {
+        "name": "ntp-client",
+        "url" : "https://github.com/ARMmbed/ntp-client/#a0805e2d30c4e92e48365f8e9647bb1ac8650793"
+      },
+      {
+        "name": "mbed-os",
+        "url" : "https://github.com/ARMmbed/mbed-os/#fd6f3cd4a4d879aeb2c45563f66605062a091091"
+      },
+      {
+        "name": "mbed-http",
+        "url": "https://developer.mbed.org/teams/sandbox/code/mbed-http/#6daf67a96a91"
+      }
+    ],
+  "mbed_app.json":
+  {
+    "macros": [
+        "MBEDTLS_SHA1_C"
+    ],
+    "config": {
+      "network-interface":{
+          "help": "options are ETHERNET, WIFI_ESP8266, WIFI_IDW0XX1, WIFI_ODIN, WIFI_RTW, WIFI_WIZFI310, WIFI_ISM43362, MESH_LOWPAN_ND, MESH_THREAD, CELLULAR_ONBOARD",
+          "value": "WIFI_IDW0XX1"
+      },
+      "wifi-ssid": {
+          "value": "\"\""
+      },
+      "wifi-password": {
+          "value": "\"\""
+      }
+    }
+  }
+}
