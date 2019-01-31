@@ -31,57 +31,6 @@ void onMessageSent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     }
 }
 
-void onMessageReceived(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
-    LOG_VERBOSE("AzureIOTClient::receiveMessageCallback (%s)", callbackInfo->payload != NULL ? callbackInfo->payload : "None");
-
-    const char *buffer = callbackInfo->payload;
-    unsigned size = callbackInfo->payloadLength;
-
-    // message format expected:
-    // {
-    //     "methodName" : "<method name>",
-    //     "payload" : {
-    //         "input1": "someInput",
-    //         "input2": "anotherInput"
-    //         ...
-    //     }
-    // }
-
-    JSObject json(buffer);
-    String methodName = json.getStringByName("methodName");
-    if (methodName.length() == 0) {
-        LOG_ERROR("Object doesn't have a member 'methodName'");
-        callbackInfo->statusCode = IOTC_MESSAGE_REJECTED;
-        return;
-    }
-    methodName.toUpperCase();
-
-    AzureIOTClient *client = (AzureIOTClient*) callbackInfo->appContext;
-
-    if (client != NULL) {
-        // lookup if the method has been registered to a function
-        for(int i = 0; i < client->methodCallbackCount; i++) {
-            if (methodName == client->methodCallbackList[i].name) {
-                const char* payload = json.getStringByName("payload");
-                if (payload == NULL) {
-                    LOG_ERROR("Object doesn't have a member 'payload'");
-                    return;
-                }
-
-                char *pcopy = strdup((const char*)payload);
-                assert(pcopy);
-                char *mcopy = strdup(methodName.c_str());
-                assert(mcopy);
-
-                client->pushDirectMethod(mcopy, pcopy, size);
-                break;
-            }
-        }
-    }
-
-    return;
-}
-
 void onCommand(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     LOG_VERBOSE("AzureIOTClient::onCommand (methodName:%s)", callbackInfo->tag != NULL ? callbackInfo->tag : "None");
     WatchdogController::reset();
@@ -90,20 +39,19 @@ void onCommand(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
 
     if (client != NULL) {
         // lookup if the method has been registered to a function
-        String methodName = callbackInfo->tag;
-        methodName.toUpperCase();
-        for(int i = 0; i < client->methodCallbackCount; i++) {
-            if (methodName == client->methodCallbackList[i].name) {
-                char *pcopy = (char*) malloc(callbackInfo->payloadLength + 1);
-                assert(pcopy);
-                memcpy(pcopy, (const char*)callbackInfo->payload, callbackInfo->payloadLength);
-                pcopy[callbackInfo->payloadLength] = 0;
-                char *mcopy = strdup(methodName.c_str());
-                assert(mcopy);
+        string methodName = callbackInfo->tag;
+        for (auto & ch: methodName) ch = toupper(ch);
 
-                client->pushDirectMethod(mcopy, pcopy, callbackInfo->payloadLength);
-                break;
-            }
+        auto it = client->methodCallbacks.find(methodName);
+        if (it != client->methodCallbacks.end()) {
+            char *pcopy = (char*) malloc(callbackInfo->payloadLength + 1);
+            assert(pcopy);
+            memcpy(pcopy, (const char*)callbackInfo->payload, callbackInfo->payloadLength);
+            pcopy[callbackInfo->payloadLength] = 0;
+            char *mcopy = strdup(methodName.c_str());
+            assert(mcopy);
+
+            client->pushDirectMethod(mcopy, pcopy, callbackInfo->payloadLength);
         }
     }
 }
@@ -139,16 +87,13 @@ void onSettingsUpdated(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     assert(client != NULL);
     int i = 0;
     StringBuffer propName(callbackInfo->tag, strlen(callbackInfo->tag));
-    strupr(*propName);
+    string propNameStr = *propName;
+    for (auto & ch: propNameStr) ch = toupper(ch);
 
-    for(; i < client->desiredCallbackCount; i++) {
-        if (strcmp(*propName, client->desiredCallbackList[i].name) == 0) {
-            client->desiredCallbackList[i].callback(callbackInfo->payload, callbackInfo->payloadLength);
-            break;
-        }
-    }
-
-    if (i == client->desiredCallbackCount) {
+    auto it = client->methodCallbacks.find(propNameStr);
+    if (it != client->methodCallbacks.end()) {
+        it->second(callbackInfo->payload, callbackInfo->payloadLength);
+    } else {
         callbackInfo->callbackResponse = strdup("TargetNotFound"); // iotc will free the memory
         LOG_ERROR("Property Name '%s' is not found @callDesiredCallback", *propName);
     }
@@ -199,7 +144,6 @@ void AzureIOTClient::init() {
     assert(errorCode == 0);
 
     iotc_on(context, "MessageSent", onMessageSent, this);
-    iotc_on(context, "MessageReceived", onMessageReceived, this);
     iotc_on(context, "Command", onCommand, this);
     iotc_on(context, "ConnectionStatus", onConnectionStatus, this);
     iotc_on(context, "SettingsUpdated", onSettingsUpdated, this);
@@ -222,35 +166,11 @@ bool AzureIOTClient::sendReportedProperty(const char *payload) {
 }
 
 // register callbacks for direct and cloud to device messages
-bool AzureIOTClient::registerMethod(const char *methodName, hubMethodCallback callback) {
-    if (methodCallbackCount < MAX_CALLBACK_COUNT) {
-        const uint32_t methodNameLength = strlen(methodName);
-        methodCallbackList[methodCallbackCount].name = (char*) malloc(methodNameLength + 1);
-        strncpy(methodCallbackList[methodCallbackCount].name, methodName, methodNameLength);
-        methodCallbackList[methodCallbackCount].name[methodNameLength] = char(0);
-        strupr(methodCallbackList[methodCallbackCount].name);
-        methodCallbackList[methodCallbackCount].callback = callback;
-        methodCallbackCount++;
-        return true;
-    }
-
-    return false;
-}
-
-// register callbacks for desired properties
-bool AzureIOTClient::registerDesiredProperty(const char *propertyName, hubMethodCallback callback) {
-    if (desiredCallbackCount < MAX_CALLBACK_COUNT) {
-        const uint32_t propertyNameLength = strlen(propertyName);
-        desiredCallbackList[desiredCallbackCount].name = (char*) malloc(propertyNameLength + 1);
-        strncpy(desiredCallbackList[desiredCallbackCount].name, (char*)propertyName, propertyNameLength);
-        desiredCallbackList[desiredCallbackCount].name[propertyNameLength] = char(0);
-        strupr(desiredCallbackList[desiredCallbackCount].name);
-        desiredCallbackList[desiredCallbackCount].callback = callback;
-        desiredCallbackCount++;
-        return true;
-    }
-
-    return false;
+bool AzureIOTClient::registerCallback(const char *methodName, hubMethodCallback callback) {
+    string strName = methodName;
+    for (auto & ch: strName) ch = toupper(ch);
+    methodCallbacks[strName] = callback;
+    return true;
 }
 
 void AzureIOTClient::close()

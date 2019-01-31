@@ -6,6 +6,8 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <string>
+#include <map>
 #include <Arduino.h>
 #include <limits.h>
 
@@ -65,9 +67,6 @@ struct Globals
     static double                   locationData[MAP_DATA_SIZE];
 };
 
-// IOT HUB
-#define MAX_CALLBACK_COUNT 32
-
 // DEVICE SPECIFIC
 #define AZ3166_DISPLAY_MAX_COLUMN 16
 
@@ -76,14 +75,13 @@ struct Globals
 #define IOT_CENTRAL_MAX_LEN       STRING_BUFFER_128
 #define AZIOTC_FW_MAJOR_VERSION 2
 #define AZIOTC_FW_MINOR_VERSION 1
-#define AZIOTC_FW_PATCH_VERSION 0
+#define AZIOTC_FW_PATCH_VERSION 1
 #define AZIOTC_FW_VERSION         TO_STRING(AZIOTC_FW_MAJOR_VERSION AZIOTC_FW_MINOR_VERSION AZIOTC_FW_PATCH_VERSION) "-MSIOTC"
 
 #include "definitions.h"
 
 // LOGS
 
-#define SERIAL_VERBOSE_LOGGING_ENABLED true
 #define IOTHUB_TRACE_LOG_ENABLED       false
 
 // To enable Fan Sound experiment, comment out the line below

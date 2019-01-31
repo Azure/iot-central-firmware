@@ -47,14 +47,14 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     WatchdogController::reset();
 
     // Register callbacks for direct messages
-    iotClient->registerMethod("echo", dmEcho);
-    iotClient->registerMethod("countdown", dmCountdown);
+    iotClient->registerCallback("echo", dmEcho);
+    iotClient->registerCallback("countdown", dmCountdown);
 
     // register callbacks for desired properties expected
-    iotClient->registerDesiredProperty("fanSpeed", fanSpeedDesiredChange);
-    iotClient->registerDesiredProperty("setVoltage", voltageDesiredChange);
-    iotClient->registerDesiredProperty("setCurrent", currentDesiredChange);
-    iotClient->registerDesiredProperty("activateIR", irOnDesiredChange);
+    iotClient->registerCallback("fanSpeed", fanSpeedDesiredChange);
+    iotClient->registerCallback("setVoltage", voltageDesiredChange);
+    iotClient->registerCallback("setCurrent", currentDesiredChange);
+    iotClient->registerCallback("activateIR", irOnDesiredChange);
 
     // show the state of the device on the RGB LED
     DeviceControl::showState();
@@ -157,14 +157,14 @@ void TelemetryController::loop() {
 
     DirectMethodNode * task = iotClient->popDirectMethod();
     if (task) {
-        for(int i = 0; i < iotClient->methodCallbackCount; i++) {
-            if (strcmp(task->methodName, iotClient->methodCallbackList[i].name) == 0) {
-                iotClient->methodCallbackList[i].callback(
-                        task->payload, task->length);
-                iotClient->freeDirectMethod(task);
-                break;
-            }
+        string methodNameStr = task->methodName;
+        auto it = iotClient->methodCallbacks.find(methodNameStr);
+        if (it != iotClient->methodCallbacks.end()) {
+            it->second(task->payload, task->length);
+        } else {
+            LOG_ERROR("task method name wasn't registered: (%s)", task->methodName);
         }
+        iotClient->freeDirectMethod(task);
     }
 
 #ifndef DISABLE_SHAKE
