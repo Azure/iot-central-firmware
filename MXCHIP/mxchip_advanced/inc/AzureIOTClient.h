@@ -9,11 +9,6 @@ typedef int (*hubMethodCallback)(const char *, size_t);
 #include <AzureIotHub.h>
 #include "../src/iotc/iotc.h"
 
-typedef struct CALLBACK_LOOKUP_TAG_M {
-    char* name;
-    hubMethodCallback callback;
-} CALLBACK_LOOKUP_M;
-
 typedef struct EVENT_INSTANCE_TAG {
     IOTHUB_MESSAGE_HANDLE messageHandle;
     int messageTrackingId; // For tracking the messages within the user callback.
@@ -48,8 +43,7 @@ class AzureIOTClient
 
 public:
     AzureIOTClient(): context(NULL), hasError(false), displayCharPos(0),
-                    rootNode(NULL), lastNode(NULL), methodCallbackCount(0),
-                    desiredCallbackCount(0), needsReconnect(false)
+                    rootNode(NULL), lastNode(NULL), needsReconnect(false)
     {
         init();
     }
@@ -128,15 +122,13 @@ public:
     bool sendTelemetry(const char *payload);
     bool sendReportedProperty(const char *payload);
 
-    bool registerMethod(const char *methodName, hubMethodCallback callback);
-    bool registerDesiredProperty(const char *propertyName, hubMethodCallback callback);
+    bool registerCallback(const char *methodName, hubMethodCallback callback);
 
     void displayDeviceInfo(); // TODO: should this go under device?
 
-    int methodCallbackCount;
-    int desiredCallbackCount;
-    CALLBACK_LOOKUP_M methodCallbackList[MAX_CALLBACK_COUNT];
-    CALLBACK_LOOKUP_M desiredCallbackList[MAX_CALLBACK_COUNT];
+    // no reason for ordered map here yet toolchain has a messed up references to `ceil`.
+    // which is required by unordered_map
+    std::map<string, hubMethodCallback> methodCallbacks;
     bool needsReconnect;
 };
 
