@@ -9,15 +9,13 @@
 
 static IOTContext context = NULL;
 
-// #define WIFI_SSID "<Enter WiFi SSID here>"
-// #define WIFI_PASSWORD "<Enter WiFi Password here>"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
 
-// CONNECTION STRING ??
-// Uncomment below to Use Connection String
-// IOTConnectType connectType = IOTC_CONNECT_CONNECTION_STRING;
-// const char* scopeId = ""; // leave empty
-// const char* deviceId = ""; // leave empty
-// const char* deviceKey = "<ENTER CONNECTION STRING HERE>";
+IOTConnectType connectType = IOTC_CONNECT_CONNECTION_STRING;
+const char *scopeId = "0ne00035CE2";
+const char *deviceId = "mxchip-f30344dc-d2e7-4e9f-85f5-fd716f74a4e3";
+const char *deviceKey = "1HTMHHMTr/qQoX3pTYvFRM+kKjwMDrfWS/jDjMInhRA=";
 
 // OR
 
@@ -114,7 +112,7 @@ void loop()
             msg[pos] = 0;
 
             if (errorCode != 0) {
-                LOG_ERROR("Sending message has failed with error code %d", errorCode);
+                LOG_to ERROR("Sending message has failed with error code %d", errorCode);
             }
         }
     }
