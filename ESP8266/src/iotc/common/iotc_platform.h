@@ -50,7 +50,7 @@
 #define F(x) x
 
 #elif defined (ARDUINO)
-#include <arduino.h>
+#include <Arduino.h>
 #include <avr/pgmspace.h>
 #include "WiFiUdp.h"
 #include "base64.h"
