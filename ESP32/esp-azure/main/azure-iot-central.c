@@ -47,7 +47,7 @@ void loop()
             char msg[64] = {0};
             int pos = snprintf(msg, sizeof(msg) - 1, "{\"temp\": %d}", 10 + (esp_random() % 20));
             msg[pos] = 0;
-            int errorCode = iotc_send_telemetry(context, msg, pos, NULL);
+            int errorCode = iotc_send_telemetry(context, msg, pos);
 
             if (errorCode != 0) {
                LOG_ERROR("Sending message has failed with error code %d", errorCode);

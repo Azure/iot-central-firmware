@@ -12,13 +12,17 @@ iotc
 
 COMPONENT_OBJS = \
 iotc/iotc.o \
-iotc/parson.o \
+iotc/common/parson.o \
+iotc/common/iotc_common.o \
+iotc/common/iotc_internal.o \
+iotc/common/string_buffer.o \
 azure_main.o \
 azure-iot-central.o
 
 COMPONENT_SRCDIRS := \
 . \
-iotc
+iotc \
+iotc/common
 
 # COMPONENT_EMBED_TXTFILES := certs/leaf_private_key.pem certs/leaf_certificate.pem
 

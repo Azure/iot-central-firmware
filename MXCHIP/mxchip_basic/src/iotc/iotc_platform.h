@@ -49,7 +49,6 @@
 #define WAITMS wait_ms
 #define SERIAL_PRINT printf
 
-#define F(x) x
 
 #elif defined (ARDUINO)
 #include <Arduino.h>
@@ -64,8 +63,8 @@
 #define F(x) x
 #endif // defined(__MBED__)
 
-typedef enum IOTHUBMESSAGE_DISPOSITION_RESULT_TAG {
-    IOTHUBMESSAGE_ACCEPTED = 0x01,
+/*typedef enum IOTHUBMESSAGE_DISPOSITION_RESULT_TAG {
+   IOTHUBMESSAGE_ACCEPTED = 0x01,
     IOTHUBMESSAGE_ABANDONED
 } IOTHUBMESSAGE_DISPOSITION_RESULT;
 
@@ -73,7 +72,7 @@ typedef enum DEVICE_TWIN_UPDATE_STATE_TAG {
     DEVICE_TWIN_UPDATE_PARTIAL = 0,
     DEVICE_TWIN_UPDATE_ALL = 1
 } DEVICE_TWIN_UPDATE_STATE;
-
+*/
 #else // TARGET_MXCHIP
 
 #include <Arduino.h>
