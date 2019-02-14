@@ -18,9 +18,16 @@
 Compile it! and deploy to your device. (see below)
 
 - Download Arduino-CLI from [this link](https://github.com/arduino/arduino-cli#download-the-latest-stable-release)
+- Add additional url to board manager in .cli-config.yml (this is usually located in the same folder of CLI executable)
 
+```
+board_manager:
+  additional_urls:
+  - http://arduino.esp8266.com/stable/package_esp8266com_index.json
+```
 Setup the environment; (under the project folder)
 ```
+arduino-cli-0.3.3 core update-index
 arduino-cli-0.3.3 core install esp8266:esp8266
 arduino-cli-0.3.3 board attach esp8266:esp8266:nodemcu
 ```
