@@ -61,7 +61,7 @@
 #define WAITMS delay
 #define SERIAL_PRINT Serial.print
 #else
-#define F(x) x
+#error "NOT SUPPORTED"
 #endif // defined(__MBED__)
 
 typedef enum IOTHUBMESSAGE_DISPOSITION_RESULT_TAG {
