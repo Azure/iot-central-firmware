@@ -77,6 +77,9 @@ typedef enum DEVICE_TWIN_UPDATE_STATE_TAG {
 #else // TARGET_MXCHIP
 
 #include <Arduino.h>
+#ifndef ARDUINO
+#define ARDUINO
+#endif
 #include "azure_prov_client/prov_device_ll_client.h"
 #include <AzureIotHub.h>
 #define WAITMS delay

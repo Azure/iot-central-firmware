@@ -77,7 +77,7 @@ int dmCountdown(const char *payload, size_t size) {
         }
 
         if (hubClient != NULL) {
-            int n = snprintf(counterString, STRING_BUFFER_128 - 1, "{\"countdown\":{\"value\": %d}}", iter);
+            int n = snprintf(counterString, STRING_BUFFER_128 - 1, "{\"countdown\":{\"value\": %ld}}", iter);
             counterString[n] = 0;
             hubClient->sendReportedProperty(counterString);
         }
@@ -136,18 +136,21 @@ int fanSpeedDesiredChange(const char *message, size_t size) {
     }
 
     StatsController::incrementDesiredCount();
+    return 0;
 }
 
 void animateCircular(char ** source, unsigned length) {
-    unsigned char buffer[length * OLED_SINGLE_FRAME_BUFFER] = {0};
+    unsigned char *buffer = new unsigned char[length * OLED_SINGLE_FRAME_BUFFER];
+    memset(buffer, 0, length * OLED_SINGLE_FRAME_BUFFER);
     Screen.clean();
-    for (int i = 0; i < length; i++) {
+    for (unsigned i = 0; i < length; i++) {
         AnimationController::renderFrameToBuffer(buffer + (i * OLED_SINGLE_FRAME_BUFFER), source[i]);
     }
 
-    for(int i = 0; i < 10; i++) {
+    for(unsigned i = 0; i < 10; i++) {
         AnimationController::renderFrameToScreen(buffer, length, true, 20);
     }
+    delete buffer;
 }
 
 int voltageDesiredChange(const char *message, size_t size) {
@@ -187,6 +190,7 @@ int voltageDesiredChange(const char *message, size_t size) {
     animateCircular(voltage, 4);
 
     StatsController::incrementDesiredCount();
+    return 0;
 }
 
 int currentDesiredChange(const char *message, size_t size) {
@@ -226,6 +230,7 @@ int currentDesiredChange(const char *message, size_t size) {
     animateCircular(current, 4);
 
     StatsController::incrementDesiredCount();
+    return 0;
 }
 
 int irOnDesiredChange(const char *message, size_t size) {
@@ -237,4 +242,5 @@ int irOnDesiredChange(const char *message, size_t size) {
     Globals::sensorController.transmitIR();
 
     StatsController::incrementDesiredCount();
+    return 0;
 }

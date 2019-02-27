@@ -18,6 +18,7 @@ Create an issue on this repository and let us know.
 ### External Links (samples)
 
 - [Arduino MKR1000/MKR1010](https://github.com/firedog1024/mkr1000-iotc)
+- [Arduino UNO](https://github.com/firedog1024/arduino-uno-wifi-iotc)
 
 ### Reporting Security Issues
 
