@@ -2,8 +2,9 @@
 
 - Visit [AzureIoTCentral](https://apps.azureiotcentral.com) and create a `new application`.
 - Select `Sample Devkits`
-- Add a new `mxchip` device. (real device) (Under the `Device Explorer`)
-- Browse into device window and click/open `Connect` on the top-right of the device screen
+- Add a new `mxchip` device. (a real device) (under `Device Explorer`)
+- Browse into device UI (by clicking to name of the device under `Device explorer`)
+- Click/open `Connect` at top-right of the device UI
 - Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `ESP8266.ino`
 
 ```
