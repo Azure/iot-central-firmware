@@ -148,14 +148,14 @@ int mqtt_publish(IOTContextInternal *internal, const char* topic, unsigned long 
     const char* msg, unsigned long msg_length);
 
 #ifdef ARDUINO
-void IOTC_LOG(const __FlashStringHelper *format, ...);
-#else
 #define IOTC_LOG(...) \
     if (getLogLevel() > IOTC_LOGGING_DISABLED) { \
-        printf("  - "); \
-        printf(__VA_ARGS__); \
-        printf("\r\n"); \
+        Serial.printf("  - "); \
+        Serial.printf(__VA_ARGS__); \
+        Serial.printf("\r\n"); \
     }
+#undef F
+#define F(x) x
 #endif
 
 #ifdef __cplusplus
