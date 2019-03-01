@@ -78,9 +78,15 @@ int _getOperationId(const char* dpsEndpoint, const char* scopeId, const char* de
     const char* authHeader, char *operationId, char *hostName) {
     ARDUINO_WIFI_SSL_CLIENT client;
     int exitCode = 0;
+
 #ifndef USES_WIFI101
+#ifndef AXTLS_DEPRECATED
     client.setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
-#endif
+#else // AXTLS_DEPRECATED
+    uint8_t tlsFingerprint[] = {0x95,0xB4,0x61,0xDF,0x90,0xD9,0xD7,0x1D,0x15,0x22,0xD8,0xDB,0x2E,0xF1,0x7D,0xBC,0xF4,0xBB,0x41,0xD2};
+    client.setFingerprint(tlsFingerprint);
+#endif // AXTLS_DEPRECATED
+#endif // USES_WIFI101
 
     int retry = 0;
     while (retry < 5 && !client.connect(dpsEndpoint, AZURE_HTTPS_SERVER_PORT)) retry++;
@@ -254,9 +260,15 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     }
 
     internal->tlsClient = new ARDUINO_WIFI_SSL_CLIENT();
+
 #ifndef USES_WIFI101
+#ifndef AXTLS_DEPRECATED
     internal->tlsClient->setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
-#endif
+#else // AXTLS_DEPRECATED
+    uint8_t tlsFingerprint[] = {0x95,0xB4,0x61,0xDF,0x90,0xD9,0xD7,0x1D,0x15,0x22,0xD8,0xDB,0x2E,0xF1,0x7D,0xBC,0xF4,0xBB,0x41,0xD2};
+    internal->tlsClient->setFingerprint(tlsFingerprint);
+#endif // AXTLS_DEPRECATED
+#endif // USES_WIFI101
 
     internal->mqttClient = new PubSubClient(*hostName, AZURE_MQTT_SERVER_PORT, internal->tlsClient);
     internal->mqttClient->setCallback(messageArrived);
