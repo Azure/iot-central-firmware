@@ -284,6 +284,14 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 
     internal->mqttClient->setDefaultMessageHandler(messageArrived);
     connectionStatusCallback(IOTC_CONNECTION_OK, (IOTContextInternal*)ctx);
+
+    iotc_do_work(internal);
+    const char* twin_topic = "$iothub/twin/GET/?$rid=0";
+    internal->messageId++; // next rid=1
+    if (mqtt_publish(internal, twin_topic, strlen(twin_topic), " ", 1) != 0) {
+        IOTC_LOG(F("ERROR: Couldn't send the TWIN update request message"));
+    }
+    iotc_do_work(internal);
     return 0;
 }
 

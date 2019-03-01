@@ -298,10 +298,19 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     errorCode += internal->mqttClient->subscribe("$iothub/twin/res/#"); // twin properties response
     errorCode += internal->mqttClient->subscribe("$iothub/methods/POST/#");
 
-    if (errorCode < 3)
+    if (errorCode < 3) {
         IOTC_LOG(F("ERROR: mqttClient couldn't subscribe to twin/methods etc. error code sum => %d"), errorCode);
+    }
 
     connectionStatusCallback(IOTC_CONNECTION_OK, (IOTContextInternal*)ctx);
+
+    iotc_do_work(internal);
+    const char* twin_topic = "$iothub/twin/GET/?$rid=0";
+    internal->messageId++; // next rid=1
+    if (mqtt_publish(internal, twin_topic, strlen(twin_topic), " ", 1) != 0) {
+        IOTC_LOG(F("ERROR: Couldn't send the TWIN update request message"));
+    }
+    iotc_do_work(internal);
     return 0;
 }
 
