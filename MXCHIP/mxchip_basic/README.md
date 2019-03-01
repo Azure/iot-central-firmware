@@ -13,7 +13,7 @@
 // const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
 ```
 
-Compile it! and deploy to your device. No, make sure you have the [iot c sdk on your machine first](https://github.com/Azure/azure-iot-sdk-c), you must [setup your development environment on your machine](https://github.com/Azure/azure-iot-sdk-c/blob/master/doc/devbox_setup.md#macos);
+Compile it! and deploy to your device. No, make sure you have the [iot c sdk on your machine first](https://github.com/Azure/azure-iot-sdk-c), you must [setup your development environment on your machine](https://github.com/Azure/azure-iot-sdk-c/blob/master/doc/devbox_setup.md#macos).
 
 You can use [Azure IoT Workbench](https://microsoft.github.io/azure-iot-developer-kit/docs/get-started/#install-development-environment)
 or [iotz](https://github.com/Azure/iotz) to compile this sample

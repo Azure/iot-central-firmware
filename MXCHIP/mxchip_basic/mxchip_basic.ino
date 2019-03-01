@@ -4,7 +4,9 @@
 #define SERIAL_VERBOSE_LOGGING_ENABLED 1
 #include "src/iotc/iotc.h"
 #include "src/iotc/common/string_buffer.h"
-#include <EEPROMInterface.h>
+#include "Sensor.h"
+#include "EEPROMInterface.h"
+#include "IoT_DevKit_HW.h"
 #include "AZ3166WiFi.h"
 
 static IOTContext context = NULL;
@@ -12,23 +14,26 @@ static IOTContext context = NULL;
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
 
-IOTConnectType connectType = IOTC_CONNECT_CONNECTION_STRING;
-const char *scopeId = "0ne00035CE2";
-const char *deviceId = "mxchip-f30344dc-d2e7-4e9f-85f5-fd716f74a4e3";
-const char *deviceKey = "1HTMHHMTr/qQoX3pTYvFRM+kKjwMDrfWS/jDjMInhRA=";
+// CONNECTION STRING ??
+// Uncomment below to Use Connection String
+// IOTConnectType connectType = IOTC_CONNECT_CONNECTION_STRING;
+// const char* scopeId = ""; // leave empty
+// const char* deviceId = ""; // leave empty
+// const char* deviceKey = "<ENTER CONNECTION STRING HERE>";
 
 // OR
 
 // PRIMARY/SECONDARY KEY ?? (DPS)
 // Uncomment below to Use DPS Symm Key (primary/secondary key..)
-// IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
-// const char* scopeId = "<Enter ScopeID>";
-// const char* deviceId = "<Enter DeviceId>";
-// const char* deviceKey = "<Enter Primary or Secondary Device Key here>";
+IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
+const char *scopeId = "0ne00048F2E";
+const char *deviceId = "b86b0bd7-fb5d-4d82-a2e0-3f8a134df5b9";
+const char *deviceKey = "UaRwfAK9QclgL0XpIfDdtl1kMToQRUZxKEd4bKa0Fzo=";
 
 static bool isConnected = false;
 
-void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
+void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo)
+{
     if (strcmp(callbackInfo->eventName, "ConnectionStatus") == 0) {
         LOG_VERBOSE("Is connected ? %s (%d)", callbackInfo->statusCode == IOTC_CONNECTION_OK ? "YES" : "NO", callbackInfo->statusCode);
         isConnected = callbackInfo->statusCode == IOTC_CONNECTION_OK;
@@ -93,30 +98,53 @@ void setup()
     prevMillis = millis();
 }
 
+static LSM6DSLSensor *accelerometerGyroscopeSensor;
+static HTS221Sensor *humidityTemperatureSensor;
+static LIS2MDLSensor *magnetometerSensor;
+static LPS22HBSensor *pressureSensor;
+
 void loop()
 {
     if (isConnected) {
         unsigned long ms = millis();
         if (ms - prevMillis > 15000) { // send telemetry every 15 seconds
             char msg[64] = {0};
-            int pos = 0, errorCode = 0;
+
+            int errorCode = 0;
+
+            int accelerometerX = 0;
+            int accelerometerY = 0;
+            int accelerometerZ = 0;
+            int gyroscopX = 0;
+            int gyroscopY = 0;
+            int gyroscopZ = 0;
+            int magnetometeX = 0;
+            int magnetometeY = 0;
+            int magnetometerZ = 0;
+            int temperature = 0;
+            int humidity = 0;
+            int pressure = 0;
 
             prevMillis = ms;
             if (loopId++ % 2 == 0) { // send telemetry
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", 10 + (rand() % 20));
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", DATA_HERE);
                 errorCode = iotc_send_telemetry(context, msg, pos);
+                posT = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerY\":%d}", DATA_HERE);
+                errorCode = iotc_send_telemetry(context, msg, posT);
             } else { // send property
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
                 errorCode = iotc_send_property(context, msg, pos);
             }
-            msg[pos] = 0;
+            // msg[pos] = 0;
 
             if (errorCode != 0) {
-                LOG_to ERROR("Sending message has failed with error code %d", errorCode);
+                 LOG_ERROR("Sending message has failed with error code %d", errorCode);
             }
         }
     }
 
-    if (context)
+    if (context) {
         iotc_do_work(context); // do background work for iotc
+    }
+
 }
