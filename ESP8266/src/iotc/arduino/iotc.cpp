@@ -83,8 +83,7 @@ int _getOperationId(const char* dpsEndpoint, const char* scopeId, const char* de
 #ifndef AXTLS_DEPRECATED
     client.setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
 #else // AXTLS_DEPRECATED
-    uint8_t tlsFingerprint[] = {0x95,0xB4,0x61,0xDF,0x90,0xD9,0xD7,0x1D,0x15,0x22,0xD8,0xDB,0x2E,0xF1,0x7D,0xBC,0xF4,0xBB,0x41,0xD2};
-    client.setFingerprint(tlsFingerprint);
+    #error "This sample requires esp8266 API version 2.4.2. You can select this version from Arduino IDE / Board manager"
 #endif // AXTLS_DEPRECATED
 #endif // USES_WIFI101
 
@@ -265,8 +264,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 #ifndef AXTLS_DEPRECATED
     internal->tlsClient->setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
 #else // AXTLS_DEPRECATED
-    uint8_t tlsFingerprint[] = {0x95,0xB4,0x61,0xDF,0x90,0xD9,0xD7,0x1D,0x15,0x22,0xD8,0xDB,0x2E,0xF1,0x7D,0xBC,0xF4,0xBB,0x41,0xD2};
-    internal->tlsClient->setFingerprint(tlsFingerprint);
+    #error "This sample requires esp8266 API version 2.4.2. You can select this version from Arduino IDE / Board manager"
 #endif // AXTLS_DEPRECATED
 #endif // USES_WIFI101
 
