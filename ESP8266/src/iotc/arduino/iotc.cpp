@@ -80,12 +80,13 @@ int _getOperationId(const char* dpsEndpoint, const char* scopeId, const char* de
     int exitCode = 0;
 
 #ifndef USES_WIFI101
-#ifndef AXTLS_DEPRECATED
     client.setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
-#else // AXTLS_DEPRECATED
-    #error "This sample requires esp8266 API version 2.4.2. You can select this version from Arduino IDE / Board manager"
-#endif // AXTLS_DEPRECATED
-#endif // USES_WIFI101
+#endif
+#ifdef ESP8266
+    BearSSL::X509List certList(SSL_CA_PEM_DEF);
+    client.setX509Time(g_udpTime);
+    client.setTrustAnchors(&certList);
+#endif
 
     int retry = 0;
     while (retry < 5 && !client.connect(dpsEndpoint, AZURE_HTTPS_SERVER_PORT)) retry++;
@@ -261,12 +262,13 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     internal->tlsClient = new ARDUINO_WIFI_SSL_CLIENT();
 
 #ifndef USES_WIFI101
-#ifndef AXTLS_DEPRECATED
     internal->tlsClient->setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
-#else // AXTLS_DEPRECATED
-    #error "This sample requires esp8266 API version 2.4.2. You can select this version from Arduino IDE / Board manager"
-#endif // AXTLS_DEPRECATED
 #endif // USES_WIFI101
+#ifdef ESP8266
+    BearSSL::X509List certList(SSL_CA_PEM_DEF);
+    internal->tlsClient->setX509Time(g_udpTime);
+    internal->tlsClient->setTrustAnchors(&certList);
+#endif
 
     internal->mqttClient = new PubSubClient(*hostName, AZURE_MQTT_SERVER_PORT, internal->tlsClient);
     internal->mqttClient->setCallback(messageArrived);
