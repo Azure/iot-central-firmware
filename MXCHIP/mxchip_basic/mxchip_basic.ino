@@ -4,7 +4,10 @@
 #define SERIAL_VERBOSE_LOGGING_ENABLED 1
 #include "src/iotc/iotc.h"
 #include "src/iotc/common/string_buffer.h"
-#include "Sensor.h"
+#include "LSM6DSLSensor.h"
+#include "LIS2MDLSensor.h"
+#include "HTS221Sensor.h"
+#include "LPS22HBSensor.h"
 #include "EEPROMInterface.h"
 #include "IoT_DevKit_HW.h"
 #include "AZ3166WiFi.h"
@@ -26,9 +29,9 @@ static IOTContext context = NULL;
 // PRIMARY/SECONDARY KEY ?? (DPS)
 // Uncomment below to Use DPS Symm Key (primary/secondary key..)
 IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
-const char *scopeId = "0ne00048F2E";
-const char *deviceId = "b86b0bd7-fb5d-4d82-a2e0-3f8a134df5b9";
-const char *deviceKey = "UaRwfAK9QclgL0XpIfDdtl1kMToQRUZxKEd4bKa0Fzo=";
+const char *scopeId = "";
+const char *deviceId = "";
+const char *deviceKey = "=";
 
 static bool isConnected = false;
 
@@ -51,6 +54,13 @@ void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo)
 }
 
 static unsigned prevMillis = 0, loopId = 0;
+
+static DevI2C *i2c;
+static LSM6DSLSensor *accelerometerGyroscopeSensor;
+static HTS221Sensor *humidityTemperatureSensor;
+static LIS2MDLSensor *magnetometerSensor;
+static LPS22HBSensor *pressureSensor;
+
 void setup()
 {
     Serial.begin(9600);
@@ -64,9 +74,27 @@ void setup()
     eeprom.write((uint8_t*) WIFI_PASSWORD, strlen(WIFI_PASSWORD), WIFI_PWD_ZONE_IDX);
 
     if(WiFi.begin() == WL_CONNECTED) {
+
         LOG_VERBOSE("WiFi WL_CONNECTED");
         digitalWrite(LED_WIFI, 1);
         Screen.print(2, "Connected");
+
+        i2c = new DevI2C(D14, D15);
+
+        accelerometerGyroscopeSensor = new LSM6DSLSensor(*i2c, D4, D5);
+        accelerometerGyroscopeSensor->init(NULL);
+        accelerometerGyroscopeSensor->enableAccelerator();
+        accelerometerGyroscopeSensor->enableGyroscope();
+
+        magnetometerSensor = new LIS2MDLSensor(*i2c);
+        magnetometerSensor->init(NULL);
+
+        humidityTemperatureSensor = new HTS221Sensor(*i2c);
+        humidityTemperatureSensor->init(NULL);
+
+        pressureSensor = new LPS22HBSensor(*i2c);
+        pressureSensor->init(NULL);
+
     } else {
         Screen.print("WiFi\r\nNot Connected\r\nWIFI_SSID?\r\n");
         return;
@@ -98,11 +126,6 @@ void setup()
     prevMillis = millis();
 }
 
-static LSM6DSLSensor *accelerometerGyroscopeSensor;
-static HTS221Sensor *humidityTemperatureSensor;
-static LIS2MDLSensor *magnetometerSensor;
-static LPS22HBSensor *pressureSensor;
-
 void loop()
 {
     if (isConnected) {
@@ -110,27 +133,36 @@ void loop()
         if (ms - prevMillis > 15000) { // send telemetry every 15 seconds
             char msg[64] = {0};
 
-            int errorCode = 0;
+            int pos = 0, errorCode = 0;
 
-            int accelerometerX = 0;
-            int accelerometerY = 0;
-            int accelerometerZ = 0;
-            int gyroscopX = 0;
-            int gyroscopY = 0;
-            int gyroscopZ = 0;
-            int magnetometeX = 0;
-            int magnetometeY = 0;
-            int magnetometerZ = 0;
-            int temperature = 0;
-            int humidity = 0;
-            int pressure = 0;
+            int accelerometerAxes[3]; // accelerometerX accelerometerY and accelerometerZ
+            int gyroscopAxes[3]; // gyroscopX gyroscopY and gyroscopZ
+            float magnetometeX = 0;
+            float magnetometeY = 0;
+            float magnetometerZ = 0;
+            float temperature = 0;
+            float humidity = 0;
+            float pressure = 0;
+
+            accelerometerGyroscopeSensor->getXAxes(accelerometerAxes);
+            humidityTemperatureSensor->getTemperature(&temperature);
+            humidityTemperatureSensor->getHumidity(&humidity);
+            pressureSensor->getPressure(&pressure);
 
             prevMillis = ms;
             if (loopId++ % 2 == 0) { // send telemetry
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", DATA_HERE);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", accelerometerAxes[0]);
                 errorCode = iotc_send_telemetry(context, msg, pos);
-                posT = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerY\":%d}", DATA_HERE);
-                errorCode = iotc_send_telemetry(context, msg, posT);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerY\":%d}", accelerometerAxes[1]);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerZ\":%d}", accelerometerAxes[2]);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\":%d}", temperature);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"humidity\":%d}", humidity);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"pressure\":%d}", pressure);
+                errorCode = iotc_send_telemetry(context, msg, pos);
             } else { // send property
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
                 errorCode = iotc_send_property(context, msg, pos);
@@ -140,6 +172,8 @@ void loop()
             if (errorCode != 0) {
                  LOG_ERROR("Sending message has failed with error code %d", errorCode);
             }
+
+            humidityTemperatureSensor->reset();
         }
     }
 
