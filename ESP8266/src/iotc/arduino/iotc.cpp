@@ -83,7 +83,9 @@ int _getOperationId(const char* dpsEndpoint, const char* scopeId, const char* de
 #ifndef AXTLS_DEPRECATED
     client.setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
 #else // AXTLS_DEPRECATED
-    #error "This sample requires esp8266 API version 2.4.2. You can select this version from Arduino IDE / Board manager"
+    BearSSL::X509List certList(SSL_CA_PEM_DEF);
+    client.setX509Time(g_udpTime);
+    client.setTrustAnchors(&certList);
 #endif // AXTLS_DEPRECATED
 #endif // USES_WIFI101
 
@@ -264,7 +266,9 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 #ifndef AXTLS_DEPRECATED
     internal->tlsClient->setCACert((const uint8_t*)SSL_CA_PEM_DEF, strlen((const char*)SSL_CA_PEM_DEF));
 #else // AXTLS_DEPRECATED
-    #error "This sample requires esp8266 API version 2.4.2. You can select this version from Arduino IDE / Board manager"
+    BearSSL::X509List certList(SSL_CA_PEM_DEF);
+    internal->tlsClient->setX509Time(g_udpTime);
+    internal->tlsClient->setTrustAnchors(&certList);
 #endif // AXTLS_DEPRECATED
 #endif // USES_WIFI101
 
