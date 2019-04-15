@@ -15,7 +15,7 @@ for your own firmware for Azure IoT Central.
 - Browse into device window and click/open `Connect` on the top-right of the device screen
 - Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `app.py`
 
-Install `iotc` python client
+Install [azure iot central python client](https://pypi.org/project/iotc/) `iotc`
 ```
 pip install iotc
 ```
