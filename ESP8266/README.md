@@ -19,7 +19,9 @@
 Compile it! and deploy to your device. (see below)
 
 - Download Arduino-CLI from [this link](https://github.com/arduino/arduino-cli#download-the-latest-stable-release)
-- Add additional url to board manager in .cli-config.yml (this is usually located in the same folder of CLI executable)
+- FOR WINDOWS, use version 0.3.3 => [download](https://github.com/arduino/arduino-cli/releases/download/0.3.3-alpha.preview/arduino-cli-0.3.3-alpha.preview-windows.zip)
+- FOR WINDOWS, you will need a [driver for USB to UART](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers)
+- Add additional url to board manager in arduino-cli.yml (this is usually located in the same folder of CLI executable)
 
 ```
 board_manager:
@@ -28,19 +30,19 @@ board_manager:
 ```
 Setup the environment; (under the project folder)
 ```
-arduino-cli-0.3.6 core update-index
-arduino-cli-0.3.6 core install esp8266:esp8266
-arduino-cli-0.3.6 board attach esp8266:esp8266:nodemcu
+arduino-cli-0.3.... core update-index
+arduino-cli-0.3.... core install esp8266:esp8266
+arduino-cli-0.3.... board attach esp8266:esp8266:nodemcu
 ```
 
 Compile!
 ```
-arduino-cli-0.3.6 compile
+arduino-cli-0.3.... compile
 ```
 
 Upload
 ```
-arduino-cli-0.3.6 upload -p <PORT / DEV?? i.e. => /dev/cu.SLAB_USBtoUART >
+arduino-cli-0.3.... upload -p <PORT / DEV?? i.e. => /dev/cu.SLAB_USBtoUART >
 ```
 
 Monitoring?
