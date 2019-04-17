@@ -7,6 +7,8 @@ Create an issue on this repository and let us know.
 
 ### Contents
 
+- [Arduino MKR1000/MKR1010](https://github.com/firedog1024/mkr1000-iotc)
+- [Arduino UNO](https://github.com/firedog1024/arduino-uno-wifi-iotc)
 - [Azure MXChip IoT DevKit (AZ3166)](./MXCHIP)
 - [ESP32 Espressif](./ESP32)
 - [ESP8266/ESP8285](./ESP8266)
@@ -14,18 +16,16 @@ Create an issue on this repository and let us know.
 - [MBED OS](./MBED_OS)
 - [HTTP Only C#](./HttpOnly/CSharp)
 - [HTTP Only Bash/Node.js](./HttpOnly/Bash)
+- [Python Client x509 Connectivity](https://github.com/Azure/dps-certgen/tree/py_sample/samples/python)
 - [Raspberry Pi - Python](./RaspberryPi)
 - [MicroPython 1.9 / Python 2.7+ / Python 3.4+](https://pypi.org/project/iotc/)
 
-### External Links (samples)
-
-- [Arduino MKR1000/MKR1010](https://github.com/firedog1024/mkr1000-iotc)
-- [Arduino UNO](https://github.com/firedog1024/arduino-uno-wifi-iotc)
 
 ### Device Provisioning Helper Tools
 
 - [x509 Helper Tool](https://github.com/Azure/dps-certgen)
 - [Symmetric Key Helper Tool](https://github.com/Azure/dps-keygen)
+
 
 ### Reporting Security Issues
 
