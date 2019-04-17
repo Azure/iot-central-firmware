@@ -28,19 +28,19 @@ board_manager:
 ```
 Setup the environment; (under the project folder)
 ```
-arduino-cli-0.3.3 core update-index
-arduino-cli-0.3.3 core install esp8266:esp8266
-arduino-cli-0.3.3 board attach esp8266:esp8266:nodemcu
+arduino-cli-0.3.6 core update-index
+arduino-cli-0.3.6 core install esp8266:esp8266
+arduino-cli-0.3.6 board attach esp8266:esp8266:nodemcu
 ```
 
 Compile!
 ```
-arduino-cli-0.3.3 compile
+arduino-cli-0.3.6 compile
 ```
 
 Upload
 ```
-arduino-cli-0.3.3 upload -p <PORT / DEV?? i.e. => /dev/cu.SLAB_USBtoUART >
+arduino-cli-0.3.6 upload -p <PORT / DEV?? i.e. => /dev/cu.SLAB_USBtoUART >
 ```
 
 Monitoring?
