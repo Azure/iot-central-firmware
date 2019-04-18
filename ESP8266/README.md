@@ -8,12 +8,12 @@
 - Grab `scopeId`, `device Id` and `primary key` and fill the necessary parts under `ESP8266.ino`
 
 ```
-// #define WIFI_SSID "<ENTER WIFI SSID HERE>"
-// #define WIFI_PASSWORD "<ENTER WIFI PASSWORD HERE>"
+#define WIFI_SSID "<ENTER WIFI SSID HERE>"
+#define WIFI_PASSWORD "<ENTER WIFI PASSWORD HERE>"
 
-// const char* scopeId = "<ENTER SCOPE ID HERE>";
-// const char* deviceId = "<ENTER DEVICE ID HERE>";
-// const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
+const char* SCOPE_ID = "<ENTER SCOPE ID HERE>";
+const char* DEVICE_ID = "<ENTER DEVICE ID HERE>";
+const char* DEVICE_KEY = "<ENTER DEVICE primary/secondary KEY HERE>";
 ```
 
 Compile it! and deploy to your device. (see below)
