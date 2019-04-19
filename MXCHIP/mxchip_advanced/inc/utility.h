@@ -6,11 +6,11 @@
 
 #include "globals.h"
 
-#include "../src/iotc/common/string_buffer.h"
 #include "../src/iotc/common/json.h"
+#include "../src/iotc/common/string_buffer.h"
 using namespace AzureIOT;
 
-unsigned urldecode(const char * url, unsigned length, StringBuffer * outURL);
+unsigned urldecode(const char* url, unsigned length, StringBuffer* outURL);
 bool SyncTimeToNTP();
 
 #endif /* INC_UTILITY_H */

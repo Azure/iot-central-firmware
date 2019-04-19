@@ -6,10 +6,11 @@
 
 // SINGLETON
 class ApplicationController {
-    ApplicationController() { }
-public:
-    static bool initialize();
-    static bool loop();
+  ApplicationController() {}
+
+ public:
+  static bool initialize();
+  static bool loop();
 };
 
-#endif // APPLICATION_CONTROLLER
+#endif  // APPLICATION_CONTROLLER

@@ -4,29 +4,29 @@
 #ifndef WIFI_H
 #define WIFI_H
 
-class WiFiController
-{
-    char apName[STRING_BUFFER_16];
-    char macAddress[STRING_BUFFER_16];
-    char password[4];
+class WiFiController {
+  char apName[STRING_BUFFER_16];
+  char macAddress[STRING_BUFFER_16];
+  char password[4];
 
-    bool isConnected;
-public:
-    WiFiController():isConnected(false) { }
+  bool isConnected;
 
-    bool initApWiFi();
-    bool initWiFi();
+ public:
+  WiFiController() : isConnected(false) {}
 
-    void shutdownWiFi();
-    void shutdownApWiFi();
+  bool initApWiFi();
+  bool initWiFi();
 
-    String * getWifiNetworks(int &count);
-    void displayNetworkInfo();
+  void shutdownWiFi();
+  void shutdownApWiFi();
 
-    bool getIsConnected();
+  String *getWifiNetworks(int &count);
+  void displayNetworkInfo();
 
-    const char * getAPName() { return apName; }
-    const char * getPassword() { return password; }
+  bool getIsConnected();
+
+  const char *getAPName() { return apName; }
+  const char *getPassword() { return password; }
 };
 
 #endif /* WIFI_H */

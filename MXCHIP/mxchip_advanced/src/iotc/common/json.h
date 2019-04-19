@@ -4,115 +4,126 @@
 #ifndef AZURE_IOT_COMMON_JSON_H
 #define AZURE_IOT_COMMON_JSON_H
 
-#include "parson.h"
 #include "../iotc.h"
+#include "parson.h"
 
-namespace AzureIOT
-{
-    class JSObject
-    {
-    private:
-        JSON_Value* value;
-        JSON_Object* object;
-        bool isSubObject;
+namespace AzureIOT {
+class JSObject {
+ private:
+  JSON_Value* value;
+  JSON_Object* object;
+  bool isSubObject;
 
-        JSON_Object* toObject() {
-            object = json_value_get_object(value);
-            if (object == NULL) {
-                LOG_ERROR("JSON value is not an object");
-                return NULL;
-            }
-            return object;
-        }
-    public:
-        JSObject(): value(NULL), object(NULL), isSubObject(false) { }
+  JSON_Object* toObject() {
+    object = json_value_get_object(value);
+    if (object == NULL) {
+      LOG_ERROR("JSON value is not an object");
+      return NULL;
+    }
+    return object;
+  }
 
-        JSObject(const char * json_string) : isSubObject(false) {
-            value = json_parse_string(json_string);
-            if (value == NULL) {
-                LOG_ERROR("parsing JSON failed");
-            }
+ public:
+  JSObject() : value(NULL), object(NULL), isSubObject(false) {}
 
-            object = toObject();
-            if (object == NULL) {
-                LOG_ERROR("json data: %s", json_string);
-            }
-        }
+  JSObject(const char* json_string) : isSubObject(false) {
+    value = json_parse_string(json_string);
+    if (value == NULL) {
+      LOG_ERROR("parsing JSON failed");
+    }
 
-        const char * getNameAt(unsigned index) {
-            if (object == NULL) { LOG_ERROR("(getNameAt) object == NULL!"); return NULL; }
+    object = toObject();
+    if (object == NULL) {
+      LOG_ERROR("json data: %s", json_string);
+    }
+  }
 
-            return json_object_get_name(object, index);
-        }
+  const char* getNameAt(unsigned index) {
+    if (object == NULL) {
+      LOG_ERROR("(getNameAt) object == NULL!");
+      return NULL;
+    }
 
-        unsigned getCount() {
-            return object ? (unsigned)json_object_get_count(object) : 0;
-        }
+    return json_object_get_name(object, index);
+  }
 
-        bool hasProperty(const char * name) {
-            return object ? json_object_has_value(object, name) == 1 : false;
-        }
+  unsigned getCount() {
+    return object ? (unsigned)json_object_get_count(object) : 0;
+  }
 
-        const char * toString() {
-            if (object == NULL) { LOG_ERROR("(toString) object == NULL!"); return NULL; }
+  bool hasProperty(const char* name) {
+    return object ? json_object_has_value(object, name) == 1 : false;
+  }
 
-            JSON_Value * val = json_object_get_wrapping_value(object);
-            if (val == NULL) return NULL;
-            return json_value_get_string(val);
-        }
+  const char* toString() {
+    if (object == NULL) {
+      LOG_ERROR("(toString) object == NULL!");
+      return NULL;
+    }
 
-        ~JSObject() {
-            if (value != NULL && isSubObject == false) {
-                json_value_free(value);
-                value = NULL;
-            }
-        }
+    JSON_Value* val = json_object_get_wrapping_value(object);
+    if (val == NULL) return NULL;
+    return json_value_get_string(val);
+  }
 
-        bool getObjectAt(unsigned index, JSObject * outJSObject) {
-            if (index >= getCount()) return false;
+  ~JSObject() {
+    if (value != NULL && isSubObject == false) {
+      json_value_free(value);
+      value = NULL;
+    }
+  }
 
-            JSON_Value * subValue =  json_object_get_value_at(object, index);
-            if (subValue == NULL) return false;
+  bool getObjectAt(unsigned index, JSObject* outJSObject) {
+    if (index >= getCount()) return false;
 
-            outJSObject->isSubObject = true;
-            outJSObject->value = subValue;
-            outJSObject->toObject();
-            if (outJSObject->object == NULL) return false;
+    JSON_Value* subValue = json_object_get_value_at(object, index);
+    if (subValue == NULL) return false;
 
-            return true;
-        }
+    outJSObject->isSubObject = true;
+    outJSObject->value = subValue;
+    outJSObject->toObject();
+    if (outJSObject->object == NULL) return false;
 
-        bool getObjectByName(const char * name, JSObject * outJSObject) {
-            JSON_Object* subObject = json_object_get_object(object, name);
-            if (subObject == NULL) {
-                // outJSObject->value memory freed by it's own de-constructor.
-                return false; // let consumer file the log
-            }
+    return true;
+  }
 
-            outJSObject->value = json_object_get_wrapping_value(object);
-            outJSObject->object = subObject;
-            outJSObject->isSubObject = true;
-            return true;
-        }
+  bool getObjectByName(const char* name, JSObject* outJSObject) {
+    JSON_Object* subObject = json_object_get_object(object, name);
+    if (subObject == NULL) {
+      // outJSObject->value memory freed by it's own de-constructor.
+      return false;  // let consumer file the log
+    }
 
-        const char * getStringByName(const char * name) {
-            if (object == NULL) { LOG_ERROR("(getStringByName) object == NULL!"); return NULL; }
+    outJSObject->value = json_object_get_wrapping_value(object);
+    outJSObject->object = subObject;
+    outJSObject->isSubObject = true;
+    return true;
+  }
 
-            const char * text = json_object_get_string(object, name);
-            if (text == NULL) {
-                return NULL; // let consumer file the log
-            }
+  const char* getStringByName(const char* name) {
+    if (object == NULL) {
+      LOG_ERROR("(getStringByName) object == NULL!");
+      return NULL;
+    }
 
-            return text;
-        }
+    const char* text = json_object_get_string(object, name);
+    if (text == NULL) {
+      return NULL;  // let consumer file the log
+    }
 
-        double getNumberByName(const char * name) {
-            if (object == NULL) { LOG_ERROR("(getNumberByName) object == NULL!"); return 0; }
-            // API returns 0.0 on fail hence it doesn't actually have a good
-            // fail discovery strategy
-            return json_object_get_number(object, name);
-        }
-    };
-} // namespace AzureIOT
+    return text;
+  }
 
-#endif // AZURE_IOT_COMMON_JSON_H
+  double getNumberByName(const char* name) {
+    if (object == NULL) {
+      LOG_ERROR("(getNumberByName) object == NULL!");
+      return 0;
+    }
+    // API returns 0.0 on fail hence it doesn't actually have a good
+    // fail discovery strategy
+    return json_object_get_number(object, name);
+  }
+};
+}  // namespace AzureIOT
+
+#endif  // AZURE_IOT_COMMON_JSON_H

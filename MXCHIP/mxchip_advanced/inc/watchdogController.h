@@ -7,13 +7,12 @@
 class Watchdog;
 
 // SINGLETON
-class WatchdogController
-{
-    static Watchdog watchdog;
+class WatchdogController {
+  static Watchdog watchdog;
 
-public:
-    static void initialize(int timer = 32767);
-    static void reset(bool setState = false);
+ public:
+  static void initialize(int timer = 32767);
+  static void reset(bool setState = false);
 };
 
-#endif // WATCHDOG_CONTROLLER
+#endif  // WATCHDOG_CONTROLLER
