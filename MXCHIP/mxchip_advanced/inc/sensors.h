@@ -13,45 +13,49 @@ class IRDASensor;
 
 #include "RGB_LED.h"
 
-class SensorController
-{
-    DevI2C *i2c;
-    LSM6DSLSensor *accelGyro;
-    LIS2MDLSensor *magnetometer;
-    HTS221Sensor *tempHumidity;
-    LPS22HBSensor *pressure;
-    RGB_LED rgbLed;
-    IRDASensor *irdaSensor;
-public:
-    SensorController(): i2c(NULL), accelGyro(NULL),
-                        magnetometer(NULL), tempHumidity(NULL), pressure(NULL),
-                        irdaSensor(NULL) { }
+class SensorController {
+  DevI2C *i2c;
+  LSM6DSLSensor *accelGyro;
+  LIS2MDLSensor *magnetometer;
+  HTS221Sensor *tempHumidity;
+  LPS22HBSensor *pressure;
+  RGB_LED rgbLed;
+  IRDASensor *irdaSensor;
 
-    ~SensorController();
+ public:
+  SensorController()
+      : i2c(NULL),
+        accelGyro(NULL),
+        magnetometer(NULL),
+        tempHumidity(NULL),
+        pressure(NULL),
+        irdaSensor(NULL) {}
 
-    void initSensors();
+  ~SensorController();
 
-    // HTS221
-    float readHumidity();
-    float readTemperature();
+  void initSensors();
 
-    // LPS22HB
-    float readPressure();
+  // HTS221
+  float readHumidity();
+  float readTemperature();
 
-    // LIS2MDL
-    void readMagnetometer(int *axes);
+  // LPS22HB
+  float readPressure();
 
-    // LSM6DSL
-    void readAccelerometer(int *axes);
-    void readGyroscope(int *axes);
-    bool checkForShake();
+  // LIS2MDL
+  void readMagnetometer(int *axes);
 
-    // RGB LED
-    void setLedColor(uint8_t red, uint8_t green, uint8_t blue);
-    void turnLedOff();
+  // LSM6DSL
+  void readAccelerometer(int *axes);
+  void readGyroscope(int *axes);
+  bool checkForShake();
 
-    // IrDA
-    void transmitIR();
+  // RGB LED
+  void setLedColor(uint8_t red, uint8_t green, uint8_t blue);
+  void turnLedOff();
+
+  // IrDA
+  void transmitIR();
 };
 
 #endif /* SENSORS_H */

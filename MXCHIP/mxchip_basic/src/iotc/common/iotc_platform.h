@@ -25,69 +25,69 @@
 #define ARDUINO_WIFI_SSL_CLIENT WiFiSSLClient
 #define USES_WIFI101
 
-#endif // ARDUINO_SAMD_FEATHER_M0
+#endif  // ARDUINO_SAMD_FEATHER_M0
 
 #if defined(ARDUINO_WIFI_SSL_CLIENT)
 #define USE_LIGHT_CLIENT 1
-#endif // ARDUINO_WIFI_SSL_CLIENT
+#endif  // ARDUINO_WIFI_SSL_CLIENT
 
 #if defined(__MBED__)
 
 #if defined(ARDUINO)
 #error "Both __MBED__ and ARDUINO were defined"
-#endif // defined(ARDUINO)
+#endif  // defined(ARDUINO)
 
 #define USE_LIGHT_CLIENT 1
 
 #include <mbed.h>
-#include "MQTTmbed.h"
-#include "MQTTClient.h"
+#include <mbedtls/base64.h>
 #include <mbedtls/md.h>
 #include <mbedtls/sha256.h>
-#include <mbedtls/base64.h>
 #include "../mbed_os/mbed_tls_client.h"
+#include "MQTTClient.h"
+#include "MQTTmbed.h"
 #define WAITMS wait_ms
 #define SERIAL_PRINT printf
 
 #define F(x) x
 
-#elif defined (ARDUINO)
+#elif defined(ARDUINO)
 #include <Arduino.h>
 #include <avr/pgmspace.h>
+#include "../arduino/PubSubClient.h"
 #include "WiFiUdp.h"
 #include "base64.h"
 #include "sha256.h"
-#include "../arduino/PubSubClient.h"
 #define WAITMS delay
 #define SERIAL_PRINT Serial.print
 #else
 #error "NOT SUPPORTED"
-#endif // defined(__MBED__)
+#endif  // defined(__MBED__)
 
 typedef enum IOTHUBMESSAGE_DISPOSITION_RESULT_TAG {
-    IOTHUBMESSAGE_ACCEPTED = 0x01,
-    IOTHUBMESSAGE_ABANDONED
+  IOTHUBMESSAGE_ACCEPTED = 0x01,
+  IOTHUBMESSAGE_ABANDONED
 } IOTHUBMESSAGE_DISPOSITION_RESULT;
 
 typedef enum DEVICE_TWIN_UPDATE_STATE_TAG {
-    DEVICE_TWIN_UPDATE_PARTIAL = 0,
-    DEVICE_TWIN_UPDATE_ALL = 1
+  DEVICE_TWIN_UPDATE_PARTIAL = 0,
+  DEVICE_TWIN_UPDATE_ALL = 1
 } DEVICE_TWIN_UPDATE_STATE;
 
-#else // TARGET_MXCHIP
+#else  // TARGET_MXCHIP
 
 #include <Arduino.h>
 #ifndef ARDUINO
 #define ARDUINO
 #endif
-#include "azure_prov_client/prov_device_ll_client.h"
 #include <AzureIotHub.h>
+#include "azure_prov_client/prov_device_ll_client.h"
 #define WAITMS delay
 #define SERIAL_PRINT Serial.print
-#endif // TARGET_MXCHIP
+#endif  // TARGET_MXCHIP
 
 #ifndef PROGMEM
 #define PROGMEM
-#endif // PROGMEM
+#endif  // PROGMEM
 
-#endif // IOTC_COMMON_PLATFORM_H
+#endif  // IOTC_COMMON_PLATFORM_H

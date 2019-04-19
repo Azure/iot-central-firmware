@@ -7,17 +7,16 @@
 #include "globals.h"
 
 // SINGLETON
-class DeviceControl
-{
-    static DeviceState deviceState;
-    DeviceControl() { }
+class DeviceControl {
+  static DeviceState deviceState;
+  DeviceControl() {}
 
-public:
-    static bool IsButtonClicked(unsigned char ulPin);
-    static void incrementDeviceState();
-    static DeviceState getDeviceState();
-    static void showState();
-    static void setState(DeviceState state);
+ public:
+  static bool IsButtonClicked(unsigned char ulPin);
+  static void incrementDeviceState();
+  static DeviceState getDeviceState();
+  static void showState();
+  static void setState(DeviceState state);
 };
 
 #endif /* DEVICE_H */

@@ -9,36 +9,30 @@
 class WiFiClient;
 class AzWebServer;
 
-class OnboardingController: public LoopController {
-    bool setupCompleted;
-    bool pincodePasses;
-    AzWebServer * webServer;
+class OnboardingController : public LoopController {
+  bool setupCompleted;
+  bool pincodePasses;
+  AzWebServer *webServer;
 
-    void initializeConfigurationSetup();
-    void processStartRequest(WiFiClient &client);
-    void processResultRequest(WiFiClient &client, String &request);
+  void initializeConfigurationSetup();
+  void processStartRequest(WiFiClient &client);
+  void processResultRequest(WiFiClient &client, String &request);
 
-    OnboardingController(): setupCompleted(false), pincodePasses(false),
-                            webServer(NULL)
-    {
-        initializeConfigurationSetup();
-    }
+  OnboardingController()
+      : setupCompleted(false), pincodePasses(false), webServer(NULL) {
+    initializeConfigurationSetup();
+  }
 
-    void cleanup();
+  void cleanup();
 
-public:
+ public:
+  static OnboardingController *New() { return new OnboardingController(); }
 
-    static OnboardingController * New() {
-        return new OnboardingController();
-    }
+  bool withTelemetry() override { return false; }
 
-    bool withTelemetry() override { return false; }
+  void loop() override;
 
-    void loop() override;
-
-    ~OnboardingController() {
-        cleanup();
-    }
+  ~OnboardingController() { cleanup(); }
 };
 
-#endif // ONBOARDING_CONTROLLER
+#endif  // ONBOARDING_CONTROLLER

@@ -3,14 +3,8 @@
 
 #include "../inc/loop.h"
 
-LoopController::LoopController() {
-    initializeCompleted = false;
-}
+LoopController::LoopController() { initializeCompleted = false; }
 
-bool LoopController::wasInitializeCompleted() {
-    return initializeCompleted;
-}
+bool LoopController::wasInitializeCompleted() { return initializeCompleted; }
 
-LoopController::~LoopController() {
-    initializeCompleted = false;
-}
+LoopController::~LoopController() { initializeCompleted = false; }
