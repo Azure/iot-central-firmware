@@ -17,10 +17,9 @@ extern const char b64_alphabet[];
  * 		Description:
  * 			Encode a string of characters as base64
  * 		Parameters:
- * 			output: the output buffer for the encoding, stores the encoded string
- * 			input: the input buffer for the encoding, stores the binary to be encoded
- * 			inputLen: the length of the input buffer, in bytes
- * 		Return value:
+ * 			output: the output buffer for the encoding, stores the encoded
+ * string input: the input buffer for the encoding, stores the binary to be
+ * encoded inputLen: the length of the input buffer, in bytes Return value:
  * 			Returns the length of the encoded string
  * 		Requirements:
  * 			1. output must not be null or empty
@@ -49,15 +48,10 @@ int base64_decode(char *output, char *input, int inputLen);
 
 /* base64_enc_len:
  * 		Description:
- * 			Returns the length of a base64 encoded string whose decoded
- * 			form is inputLen bytes long
- * 		Parameters:
- * 			inputLen: the length of the decoded string
- * 		Return value:
- * 			The length of a base64 encoded string whose decoded form
- * 			is inputLen bytes long
- * 		Requirements:
- * 			None
+ * 			Returns the length of a base64 encoded string whose
+ * decoded form is inputLen bytes long Parameters: inputLen: the length of the
+ * decoded string Return value: The length of a base64 encoded string whose
+ * decoded form is inputLen bytes long Requirements: None
  */
 int base64_enc_len(int inputLen);
 
@@ -77,5 +71,5 @@ int base64_enc_len(int inputLen);
  */
 int base64_dec_len(char *input, int inputLen);
 
-#endif // _BASE64_H
+#endif  // _BASE64_H
 #endif

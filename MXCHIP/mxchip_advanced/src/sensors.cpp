@@ -132,9 +132,9 @@ void SensorController::readAccelerometer(int *axes) {
     LOG_VERBOSE("SensorController::readAccelerometer");
     bool hasFailed = false;
 
-    assert(magnetometer != NULL);
-    if (magnetometer == NULL) {
-        LOG_ERROR("Trying to do readMagnetometer while the sensor wasn't initialized.");
+    assert(accelGyro != NULL);
+    if (accelGyro == NULL) {
+        LOG_ERROR("Trying to do readAccelerometer while the sensor wasn't initialized.");
         hasFailed = true;
     }
 
