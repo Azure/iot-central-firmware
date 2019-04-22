@@ -1,11 +1,10 @@
-## Azure IoT Central Reference Firmware for Raspberry Pi 2/3
+## Azure IoT reference application for Raspberry Pi 2/3 (using python)
 
 ### Description
 
-An example of writing a firmware solution to send data to Azure IoT Central and
-to receive events back from Azure IoT Central to be processed by the device.
-You are free to take this code and the concepts used, and use them as a basis
-for your own firmware for Azure IoT Central.
+An example python app to..
+- send data to Azure IoT Central
+- receive events back from Azure IoT Central to be processed by the device.
 
 ### How to run
 
@@ -20,12 +19,11 @@ Install [azure iot central python client](https://pypi.org/project/iotc/) `iotc`
 pip install iotc
 ```
 
-Go create an application
 Fill the information below (under app.py).
 ```
 deviceId = "DEVICE_ID"
 scopeId = "SCOPE_ID"
-mkey = "DEVICE_KEY"
+deviceKey = "DEVICE_KEY"
 ```
 
 Run!
@@ -35,3 +33,8 @@ python app.py
 ```
 
 Python 2/3 and micropython(*) are supported.
+
+
+#### Using master key for producing deviceKey on runtime
+
+Take a look at the `appMasterKey.py` sample
