@@ -135,20 +135,16 @@ void loop()
 
             int pos = 0, errorCode = 0;
 
+            int accelerometerAxes[3]; // accelerometerX accelerometerY accelerometerZ
+            int gyroscopAxes[3]; // gyroscopX gyroscopY gyroscopZ
+            float temperature = 0.0, humidity = 0.0, pressure = 0.0;
+
             accelerometerGyroscopeSensor->resetStepCounter();
-            humidityTemperatureSensor->reset();
-
-            int accelerometerAxes[3]; // accelerometerX accelerometerY and accelerometerZ
-            int gyroscopAxes[3]; // gyroscopX gyroscopY and gyroscopZ
-            float magnetometeX = 0;
-            float magnetometeY = 0;
-            float magnetometerZ = 0;
-            float temperature = 0;
-            float humidity = 0;
-            float pressure = 0;
-
             accelerometerGyroscopeSensor->getXAxes(accelerometerAxes);
+            accelerometerGyroscopeSensor->getGAxes(gyroscopAxes);
+            humidityTemperatureSensor->reset();
             humidityTemperatureSensor->getTemperature(&temperature);
+            humidityTemperatureSensor->reset();
             humidityTemperatureSensor->getHumidity(&humidity);
             pressureSensor->getPressure(&pressure);
 
@@ -157,7 +153,7 @@ void loop()
                 Screen.clean();
                 char buffer[10];
                 sprintf(buffer, "%d", loopId);
-                Screen.print(0, "Loop id: ");
+                Screen.print(0, "Messages Sent: ");
                 Screen.print(1, buffer);
 
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", accelerometerAxes[0]);
@@ -166,28 +162,29 @@ void loop()
                 errorCode = iotc_send_telemetry(context, msg, pos);
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerZ\":%d}", accelerometerAxes[2]);
                 errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\":%d}", temperature);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscopeX\":%d}", gyroscopAxes[0]);
                 errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"humidity\":%d}", humidity);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscopeY\":%d}", gyroscopAxes[1]);
                 errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"pressure\":%d}", pressure);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscopeZ\":%d}", gyroscopAxes[2]);
                 errorCode = iotc_send_telemetry(context, msg, pos);
-
-                Serial.print("イkス");
-                Serial.print(loopId);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\":%f}", temperature);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"humidity\":%f}", humidity);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"pressure\":%f}", pressure);
+                errorCode = iotc_send_telemetry(context, msg, pos);
 
             } else { // send property
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
                 errorCode = iotc_send_property(context, msg, pos);
             }
-            // msg[pos] = 0;
+            msg[pos] = 0;
 
             if (errorCode != 0) {
                  LOG_ERROR("Sending message has failed with error code %d", errorCode);
             }
         }
-
-        delay(100);
     }
 
     if (context) {
