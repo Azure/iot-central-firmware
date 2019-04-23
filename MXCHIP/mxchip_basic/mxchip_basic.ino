@@ -14,7 +14,7 @@
 
 static IOTContext context = NULL;
 
-#define WIFI_SSID ""
+#define WIFI_SSID "Lorule"
 #define WIFI_PASSWORD ""
 
 // CONNECTION STRING ??
@@ -31,7 +31,7 @@ static IOTContext context = NULL;
 IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
 const char *scopeId = "";
 const char *deviceId = "";
-const char *deviceKey = "=";
+const char *deviceKey = "";
 
 static bool isConnected = false;
 
@@ -135,6 +135,9 @@ void loop()
 
             int pos = 0, errorCode = 0;
 
+            accelerometerGyroscopeSensor->resetStepCounter();
+            humidityTemperatureSensor->reset();
+
             int accelerometerAxes[3]; // accelerometerX accelerometerY and accelerometerZ
             int gyroscopAxes[3]; // gyroscopX gyroscopY and gyroscopZ
             float magnetometeX = 0;
@@ -151,6 +154,12 @@ void loop()
 
             prevMillis = ms;
             if (loopId++ % 2 == 0) { // send telemetry
+                Screen.clean();
+                char buffer[10];
+                sprintf(buffer, "%d", loopId);
+                Screen.print(0, "Loop id: ");
+                Screen.print(1, buffer);
+
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", accelerometerAxes[0]);
                 errorCode = iotc_send_telemetry(context, msg, pos);
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerY\":%d}", accelerometerAxes[1]);
@@ -163,6 +172,10 @@ void loop()
                 errorCode = iotc_send_telemetry(context, msg, pos);
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"pressure\":%d}", pressure);
                 errorCode = iotc_send_telemetry(context, msg, pos);
+
+                Serial.print("イkス");
+                Serial.print(loopId);
+
             } else { // send property
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
                 errorCode = iotc_send_property(context, msg, pos);
@@ -172,9 +185,9 @@ void loop()
             if (errorCode != 0) {
                  LOG_ERROR("Sending message has failed with error code %d", errorCode);
             }
-
-            humidityTemperatureSensor->reset();
         }
+
+        delay(100);
     }
 
     if (context) {
