@@ -19,6 +19,8 @@ Create an issue on this repository and let us know.
 - [Python Client x509 Connectivity](https://github.com/Azure/dps-certgen/tree/py_sample/samples/python)
 - [Raspberry Pi - Python](./RaspberryPi)
 - [MicroPython 1.9 / Python 2.7+ / Python 3.4+](https://pypi.org/project/iotc/)
+- [Java 8+ with samples](https://github.com/lucadruda/iotc-java-device-client)
+- [Node.JS with samples](https://github.com/lucadruda/iotc-nodejs-device-client)
 
 
 ### Device Provisioning Helper Tools
