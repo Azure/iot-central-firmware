@@ -12,7 +12,7 @@ Create an issue on this repository and let us know.
 - [Azure MXChip IoT DevKit (AZ3166)](./MXCHIP)
 - [ESP32 Espressif](./ESP32)
 - [ESP8266/ESP8285](./ESP8266)
-- [FreeRTOS/B-L475E-IOT01A1 with bg96 cellular](https://github.com/obastemur/azure_iot_free_rtos_verizon_kit)
+- [FreeRTOS/B-L475E-IOT01A1 with bg96 cellular](freeRTOS/b-l475e-iot01a1-bg96-verizon/)
 - [MBED OS](./MBED_OS)
 - [HTTP Only C#](./HttpOnly/CSharp)
 - [HTTP Only Bash/Node.js](./HttpOnly/Bash)
