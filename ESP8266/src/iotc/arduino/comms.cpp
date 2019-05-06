@@ -5,7 +5,7 @@
 #include <stdarg.h>
 #include "../common/iotc_internal.h"
 #include "../common/iotc_platform.h"
-#include "../common/json.h"
+#include "../common/iotc_json.h"
 
 int mqtt_publish(IOTContextInternal* internal, const char* topic,
                  unsigned long topic_length, const char* msg,

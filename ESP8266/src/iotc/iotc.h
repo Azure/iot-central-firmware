@@ -79,6 +79,11 @@ int iotc_init_context(IOTContext* ctx);
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_free_context(IOTContext ctx);
 
+// Request all device settings
+// Call this after `connect`
+// returns 0 if there is no error. Otherwise, error code will be returned.
+int iotc_get_device_settings(IOTContext ctx);
+
 // Connect to Azure IoT Central
 // Call this after `init_context`
 // returns 0 if there is no error. Otherwise, error code will be returned.
@@ -109,6 +114,20 @@ int iotc_set_proxy(IOTContext ctx, IOTC_HTTP_PROXY_OPTIONS proxy);
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_send_telemetry(IOTContext ctx, const char* payload, unsigned length);
 
+// Sends a telemetry payload (JSON) with iothub system properties
+// see
+// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-construct
+// Call this after `connect`
+// i.e. => iotc_send_telemetry_with_system_properties(
+//                          ctx, "{\"temp\":22}", 11,
+//                          "iothub-creation-time-utc=1534434323&message-id=abc123", 53);
+// returns 0 if there is no error. Otherwise, error code will be returned.
+int iotc_send_telemetry_with_system_properties(IOTContext ctx,
+                                               const char* payload,
+                                               unsigned length,
+                                               const char* sysPropPayload,
+                                               unsigned sysPropPayloadLength);
+
 // Sends a state payload (JSON)
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
@@ -123,6 +142,19 @@ int iotc_send_event(IOTContext ctx, const char* payload, unsigned length);
 // Call this after `connect`
 // returns 0 if there is no error. Otherwise, error code will be returned.
 int iotc_send_property(IOTContext ctx, const char* payload, unsigned length);
+
+// Sets the device model data (if any)
+// i.e. => iotc_set_model_data(ctx, "{\"iotcModelId\":\"PUT_MODEL_ID_HERE\"}",
+// lengthModelData);
+//
+// modelData is expected to be a string with null ending.
+// returns 0 if there is no error. Otherwise, error code will be returned.
+int iotc_set_model_data(IOTContext ctx, const char* modelData);
+
+// Sets the auth token expiration globally
+// Call this before `connect` to take effect
+// returns 0 if there is no error. Otherwise, error code will be returned.
+int iotc_set_token_expiration(IOTContext ctx, unsigned timeout);
 
 /*
 eventName:

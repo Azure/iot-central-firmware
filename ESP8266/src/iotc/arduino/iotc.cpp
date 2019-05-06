@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../common/iotc_internal.h"
-#include "../common/json.h"
+#include "../common/iotc_json.h"
 
 unsigned long _getNow() {
   int retryCount = 0;
@@ -73,9 +73,9 @@ unsigned long getNow() {
   return g_udpTime + ((ms - g_lastRead) / 1000);
 }
 
-int _getOperationId(const char* dpsEndpoint, const char* scopeId,
-                    const char* deviceId, const char* authHeader,
-                    char* operationId, char* hostName) {
+int _getOperationId(IOTContextInternal* internal, const char* dpsEndpoint,
+                    const char* scopeId, const char* deviceId,
+                    const char* authHeader, char* operationId, char* hostName) {
   ARDUINO_WIFI_SSL_CLIENT client;
   int exitCode = 0;
 
@@ -106,9 +106,15 @@ int _getOperationId(const char* dpsEndpoint, const char* scopeId,
   size_t size = 0;
   if (hostName == NULL) {
     size = strlen("{\"registrationId\":\"%s\"}") + strlen(deviceId) - 2;
+    size += internal->modelData == NULL
+                ? 0
+                : strlen(internal->modelData) + 8;  // ,\"data\":
+    const char* preModalData = internal->modelData == NULL ? "" : ",\"data\":";
+    const char* apiDate =
+        internal->modelData == NULL ? "2018-11-01" : "2019-01-15";
     size = snprintf(*tmpBuffer, STRING_BUFFER_1024,
                     "\
-PUT /%s/registrations/%s/register?api-version=2018-11-01 HTTP/1.1\r\n\
+PUT /%s/registrations/%s/register?api-version=%s HTTP/1.1\r\n\
 Host: %s\r\n\
 content-type: application/json; charset=utf-8\r\n\
 %s\r\n\
@@ -117,11 +123,12 @@ content-length: %d\r\n\
 %s\r\n\
 connection: close\r\n\
 \r\n\
-{\"registrationId\":\"%s\"}\r\n\
+{\"registrationId\":\"%s\"%s%s}\r\n\
     ",
-                    scopeId, *deviceIdEncoded, dpsEndpoint,
+                    scopeId, *deviceIdEncoded, apiDate, dpsEndpoint,
                     AZURE_IOT_CENTRAL_CLIENT_SIGNATURE, size, authHeader,
-                    deviceId);
+                    deviceId, preModalData,
+                    internal->modelData == NULL ? "" : internal->modelData);
   } else {
     size = snprintf(*tmpBuffer, STRING_BUFFER_1024,
                     "\
@@ -189,8 +196,9 @@ exit_operationId:
   return exitCode;
 }
 
-int getHubHostName(const char* dpsEndpoint, const char* scopeId,
-                   const char* deviceId, const char* key, char* hostName) {
+int getHubHostName(IOTContextInternal* internal, const char* dpsEndpoint,
+                   const char* scopeId, const char* deviceId, const char* key,
+                   char* hostName) {
   AzureIOT::StringBuffer authHeader(STRING_BUFFER_256);
   size_t size = 0;
 
@@ -203,13 +211,13 @@ int getHubHostName(const char* dpsEndpoint, const char* scopeId,
   IOTC_LOG(F("- iotc.dps : getting operation id..."));
   AzureIOT::StringBuffer operationId(STRING_BUFFER_64);
   int retval = 0;
-  if ((retval = _getOperationId(dpsEndpoint, scopeId, deviceId, *authHeader,
-                                *operationId, NULL)) == 0) {
-    WAITMS(4000);
+  if ((retval = _getOperationId(internal, dpsEndpoint, scopeId, deviceId,
+                                *authHeader, *operationId, NULL)) == 0) {
+    WAITMS(5000);
     IOTC_LOG(F("- iotc.dps : getting host name..."));
     for (int i = 0; i < 5; i++) {
-      retval = _getOperationId(dpsEndpoint, scopeId, deviceId, *authHeader,
-                               *operationId, hostName);
+      retval = _getOperationId(internal, dpsEndpoint, scopeId, deviceId,
+                               *authHeader, *operationId, hostName);
       if (retval == 0) break;
       WAITMS(3000);
     }
@@ -228,12 +236,17 @@ int iotc_free_context(IOTContext ctx) {
 
   IOTContextInternal* internal = (IOTContextInternal*)ctx;
   if (internal->endpoint != NULL) {
-    free(internal->endpoint);
+    IOTC_FREE(internal->endpoint);
+  }
+
+  if (internal->modelData != NULL) {
+    IOTC_FREE(internal->modelData);
+    internal->modelData = NULL;
   }
 
   iotc_disconnect(ctx);
 
-  free(internal);
+  IOTC_FREE(internal);
   setSingletonContext(NULL);
 
   return 0;
@@ -257,6 +270,7 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     assert(scope != NULL && deviceId != NULL);
     AzureIOT::StringBuffer tmpHostname(STRING_BUFFER_128);
     if (getHubHostName(
+            internal,
             internal->endpoint == NULL ? DEFAULT_ENDPOINT : internal->endpoint,
             scope, deviceId, keyORcert, *tmpHostname)) {
       return 1;
@@ -319,30 +333,27 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
     return 1;
   }
 
-  AzureIOT::StringBuffer buffer(STRING_BUFFER_64);
-  buffer.setLength(snprintf(*buffer, 63, "devices/%s/messages/events/#",
-                            *internal->deviceId));
+  const unsigned bufferLength = internal->deviceId.getLength() + STRING_BUFFER_64;
+  AzureIOT::StringBuffer buffer(bufferLength);
 
   int errorCode = 0;
-  if ((errorCode = internal->mqttClient->subscribe(*buffer)) == 0)
-    IOTC_LOG(F("ERROR: mqttClient couldn't subscribe to %s. error code => %d"),
-             *buffer, errorCode);
-
-  buffer.setLength(snprintf(*buffer, 63, "devices/%s/messages/devicebound/#",
+  buffer.setLength(snprintf(*buffer, bufferLength, "devices/%s/messages/events/#",
                             *internal->deviceId));
+  errorCode = internal->mqttClient->subscribe(*buffer);
 
-  if ((errorCode = internal->mqttClient->subscribe(*buffer)) == 0)
-    IOTC_LOG(F("ERROR: mqttClient couldn't subscribe to %s. error code => %d"),
-             *buffer, errorCode);
+  buffer.setLength(snprintf(*buffer, bufferLength, "devices/%s/messages/devicebound/#",
+                            *internal->deviceId));
+  errorCode += internal->mqttClient->subscribe(*buffer);
 
-  errorCode = internal->mqttClient->subscribe(
+  errorCode += internal->mqttClient->subscribe(
       "$iothub/twin/PATCH/properties/desired/#");  // twin desired property
                                                    // changes
+
   errorCode += internal->mqttClient->subscribe(
       "$iothub/twin/res/#");  // twin properties response
   errorCode += internal->mqttClient->subscribe("$iothub/methods/POST/#");
 
-  if (errorCode < 3) {
+  if (errorCode < 5) {
     IOTC_LOG(F("ERROR: mqttClient couldn't subscribe to twin/methods etc. "
                "error code sum => %d"),
              errorCode);
@@ -351,12 +362,9 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
   connectionStatusCallback(IOTC_CONNECTION_OK, (IOTContextInternal*)ctx);
 
   iotc_do_work(internal);
-  const char* twin_topic = "$iothub/twin/GET/?$rid=0";
-  internal->messageId++;  // next rid=1
-  if (mqtt_publish(internal, twin_topic, strlen(twin_topic), " ", 1) != 0) {
-    IOTC_LOG(F("ERROR: Couldn't send the TWIN update request message"));
-  }
+  iotc_get_device_settings(ctx);  // ask for the latest device settings
   iotc_do_work(internal);
+
   return 0;
 }
 
@@ -396,8 +404,6 @@ int iotc_do_work(IOTContext ctx) {
     if (!internal->mqttClient->connected()) {
       connectionStatusCallback(IOTC_CONNECTION_DISCONNECTED,
                                (IOTContextInternal*)ctx);
-      delete internal->mqttClient;
-      internal->mqttClient = NULL;
     }
     return 1;
   }

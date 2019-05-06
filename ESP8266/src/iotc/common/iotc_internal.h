@@ -10,8 +10,9 @@
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>  // size_t etc.
-#include "../iotc.h"
 #include "string_buffer.h"
+
+#include "../iotc.h"
 
 #define AZ_IOT_HUB_MAX_LEN 1024
 #define DEFAULT_ENDPOINT "global.azure-devices-provisioning.net"
@@ -37,6 +38,7 @@ typedef struct CallbackBase_TAG {
 
 typedef struct IOTContextInternal_TAG {
   char *endpoint;
+  char *modelData;
   IOTProtocol protocol;
   CallbackBase callbacks[8];
 
@@ -100,25 +102,16 @@ typedef struct IOTContextInternal_TAG {
   }
 #endif  // USE_LIGHT_CLIENT
 
-// when the auth token expires
-#define EXPIRES 21600  // 6 hours
-
-typedef enum IOTHUBMESSAGE_DISPOSITION_RESULT_TAG {
-  IOTHUBMESSAGE_ACCEPTED = 0x01,
-  IOTHUBMESSAGE_ABANDONED
-} IOTHUBMESSAGE_DISPOSITION_RESULT;
-
-typedef enum DEVICE_TWIN_UPDATE_STATE_TAG {
-  DEVICE_TWIN_UPDATE_PARTIAL = 0,
-  DEVICE_TWIN_UPDATE_ALL = 1
-} DEVICE_TWIN_UPDATE_STATE;
-
 #define HOSTNAME_STRING "HostName="
 #define DEVICEID_STRING ";DeviceId="
 #define KEY_STRING ";SharedAccessKey="
 #define HOSTNAME_LENGTH (sizeof(HOSTNAME_STRING) - 1)
 #define DEVICEID_LENGTH (sizeof(DEVICEID_STRING) - 1)
 #define KEY_LENGTH (sizeof(KEY_STRING) - 1)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 unsigned strlen_s_(const char *str, int max_expected);
 int getUsernameAndPasswordFromConnectionString(
@@ -134,7 +127,7 @@ IOTLogLevel getLogLevel();
 
 void handlePayload(char *msg, unsigned long msg_length, char *topic,
                    unsigned long topic_length);
-int getHubHostName(const char *dpsEndpoint, const char *scopeId,
+int getHubHostName(IOTContextInternal* internal, const char *dpsEndpoint, const char *scopeId,
                    const char *deviceId, const char *key, char *hostName);
 void connectionStatusCallback(IOTConnectionState status,
                               IOTContextInternal *internal);
@@ -145,6 +138,10 @@ void sendConfirmationCallback(const char *buffer, size_t size);
 int mqtt_publish(IOTContextInternal *internal, const char *topic,
                  unsigned long topic_length, const char *msg,
                  unsigned long msg_length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef ARDUINO
 #define IOTC_LOG(...)                          \

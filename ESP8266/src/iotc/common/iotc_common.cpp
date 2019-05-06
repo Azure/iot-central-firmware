@@ -3,6 +3,8 @@
 
 #include "iotc_internal.h"
 
+void setEXPIRES(unsigned e);
+
 /* extern */
 int iotc_on(IOTContext ctx, const char* eventName, IOTCallback callback,
             void* appContext) {
@@ -70,9 +72,9 @@ int iotc_set_global_endpoint(IOTContext ctx, const char* endpoint_uri) {
 
   // todo: do not fragment the memory
   if (internal->endpoint != NULL) {
-    free(internal->endpoint);
+    IOTC_FREE(internal->endpoint);
   }
-  internal->endpoint = (char*)malloc(endpoint_uri_len + 1);
+  internal->endpoint = (char*)IOTC_MALLOC(endpoint_uri_len + 1);
   CHECK_NOT_NULL(internal->endpoint);
 
   strcpy(internal->endpoint, endpoint_uri);
@@ -111,5 +113,25 @@ int iotc_set_logging(IOTLogLevel level) {
     return 1;
   }
   setLogLevel(level);
+  return 0;
+}
+
+/* extern */
+int iotc_set_model_data(IOTContext ctx, const char* modelData) {
+  CHECK_NOT_NULL(ctx)
+  GET_LENGTH_NOT_NULL_NOT_EMPTY(modelData, 1024);
+
+  IOTContextInternal* internal = (IOTContextInternal*)ctx;
+  MUST_CALL_AFTER_INIT(internal);
+
+  if (internal->modelData != NULL) return 1;
+
+  internal->modelData = strdup(modelData);
+  return internal->modelData != NULL;
+}
+
+/* extern */
+int iotc_set_token_expiration(IOTContext ctx, unsigned timeout) {
+  setEXPIRES(timeout);
   return 0;
 }

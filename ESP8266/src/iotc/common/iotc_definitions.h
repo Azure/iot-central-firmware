@@ -4,6 +4,9 @@
 #ifndef AZURE_IOTC_LITE_DEFINITIONS_H
 #define AZURE_IOTC_LITE_DEFINITIONS_H
 
+#define IOTC_MALLOC malloc
+#define IOTC_FREE free
+
 #define AZURE_MQTT_SERVER_PORT 8883
 #define AZURE_HTTPS_SERVER_PORT 443
 
@@ -54,12 +57,12 @@
 #define NTP_SYNC_PERIOD (6 * 60 * 60 * 1000)
 
 #define AZIOTC_API_MAJOR_VERSION 0.
-#define AZIOTC_API_MINOR_VERSION 2.
+#define AZIOTC_API_MINOR_VERSION 3.
 #define AZIOTC_API_PATCH_VERSION 0
 #define AZIOTC_API_VERSION                                    \
   TO_STRING(AZIOTC_API_MAJOR_VERSION AZIOTC_API_MINOR_VERSION \
                 AZIOTC_API_PATCH_VERSION)                     \
-  "-msiotc"
+  "-esp8266iotc"
 
 #define AZURE_IOT_CENTRAL_CLIENT_SIGNATURE \
   "user-agent: iot-central-client/" AZIOTC_API_VERSION
