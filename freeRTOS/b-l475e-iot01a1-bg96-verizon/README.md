@@ -1,5 +1,7 @@
 ## Step by step - Azure IoT - Free RTOS verizon kit sample (b-l475e-iot01a1-bg96)
 
+### Setting up the dev environment and building the sample
+
 - Download `OpenSTM32 SystemWorkbench` from [this URL](http://www.openstm32.org/Downloading%2Bthe%2BSystem%2BWorkbench%2Bfor%2BSTM32%2Binstaller) You will need to register / login to access downloads.
 
 - Clone this repository -> `git clone https://github.com/azure/iot-central-firmware`
@@ -45,7 +47,16 @@ click to `Build Project`
 
 - Drag and drop the `azure_iotc_sample_debug.bin` file into board from the file explorer. You should see the board as an external usb drive.
 
-- See [IOTC.md](IOTC.md) for iotc thin client api
+### Api and pinpoints
+
+- This sample uses `iotc` thin client api. See [IOTC.md](IOTC.md) for more.
+- `src/iotc_sample.cpp` file contains the application logic and authentication to azure iot.
+- Find `void iotc_main(void* pvParameters)` under `iotc_sample.cpp` to see
+  - how to connect
+  - how to send telemetry and reported properties
+- `onConnectionStatus` / `onSettingsUpdated` / `onCommand` / `onEvent`.. are the callbacks for iotc client.
+
+### Device logs
 
 - in order to see the logs, you should look into serial terminal. i.e. `nodemcu` is a practical cross platform tool you may try. Install => `npm install -g nodemcu-tool`
 
