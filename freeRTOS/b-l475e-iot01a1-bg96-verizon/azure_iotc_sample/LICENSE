@@ -1,0 +1,24 @@
+Copyright Verizon 2018
+
+Portions of this SDK are Licensed under the Ultimate Liberty License.
+For the SDK files found in folder azure_iotc_sample/lib/third_party/bg96/ you may
+obtain a copy of the 2018 Ultimate Liberty license at http://www.st.com/SLA0044.
+
+For those files found at:
+
+azure_iotc_sample/lib/third_party/mcu_vendor/st/stm32l475_discovery;
+azure_iotc_sample/st/stm32l475_discovery/common/application_code/st_code;  or
+azure_iotc_sample/tests/st/stm32l475_discovery/common/application_code/st_code,
+the applicable STMicroelectronics license may be found within the respective files.
+
+Amazon FreeRTOS code is licensed under the MIT License found at https://opensource.org/licenses/MIT
+For all other files and directories the licenses and restrictions may be found within
+the respective files/directories.
+
+You may not use the SDK except in compliance with the respective licenses.
+See the respective licenses for the specific language governing permissions and
+limitations under the license.
+
+Unless required by applicable law or agreed to in writing, software distributed
+under these licenses is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied.

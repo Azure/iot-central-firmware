@@ -72,7 +72,7 @@ int32_t StringBuffer::indexOf(const char *look_for, size_t look_for_length,
 bool StringBuffer::urlEncode() {
   assert(data != NULL);
   size_t buffer_length = (length * 3) + 1;
-  char *buffer = (char *)malloc(buffer_length);
+  char *buffer = (char *)IOTC_MALLOC(buffer_length);
   if (buffer == NULL) {
     return false;
   }
@@ -126,72 +126,6 @@ bool StringBuffer::urlDecode() {  // in-memory
   return true;
 }
 
-#ifdef TARGET_MXCHIP
-
-/* NOOP */
-bool StringBuffer::hash(const char *key, unsigned key_length) { abort(); }
-bool StringBuffer::base64Decode() { abort(); }
-bool StringBuffer::base64Encode() { abort(); }
-
-#elif defined(__MBED__)
-bool StringBuffer::hash(const char *key, unsigned key_length) {
-  assert(data != NULL);
-  mbedtls_md_type_t md = MBEDTLS_MD_SHA256;
-  const mbedtls_md_info_t *md_info;
-  mbedtls_md_context_t ctx;
-
-  md_info = mbedtls_md_info_from_type(md);
-  unsigned hash_size = (unsigned)mbedtls_md_get_size(md_info);
-  unsigned char *hmac_hash = (unsigned char *)malloc(hash_size + 1);
-
-  mbedtls_md_init(&ctx);
-  mbedtls_md_setup(&ctx, md_info, 1);
-  mbedtls_md_hmac_starts(&ctx, (const unsigned char *)key, key_length);
-  mbedtls_md_hmac_update(&ctx, (const unsigned char *)data, length);
-  mbedtls_md_hmac_finish(&ctx, hmac_hash);
-
-  free(data);
-  data = (char *)hmac_hash;
-  setLength(hash_size);
-  mbedtls_md_free(&ctx);
-
-  return true;
-}
-
-bool StringBuffer::base64Decode() {
-  assert(data != NULL && length > 0);
-  char *decoded = (char *)malloc(length + 1);
-  assert(decoded != NULL);
-  size_t keyLength = 0;
-  mbedtls_base64_decode((unsigned char *)decoded, length, &keyLength,
-                        (const unsigned char *)data, getLength());
-  assert(keyLength > 0);
-  free(data);
-  data = (char *)malloc(keyLength + 1);
-  assert(data != NULL);
-  memcpy(data, decoded, keyLength);
-  setLength(keyLength);
-  free(decoded);
-  return true;
-}
-
-bool StringBuffer::base64Encode() {
-  assert(data != NULL && length > 0);
-  char *decoded = (char *)malloc(length * 3);
-  assert(decoded != NULL);
-  size_t keyLength = 0;
-  mbedtls_base64_encode((unsigned char *)decoded, length * 3, &keyLength,
-                        (const unsigned char *)data, getLength());
-  assert(keyLength > 0);
-  free(data);
-  data = (char *)malloc(keyLength + 1);
-  assert(data != NULL);
-  memcpy(data, decoded, keyLength);
-  setLength(keyLength);
-  free(decoded);
-  return true;
-}
-#elif defined(ARDUINO)
 bool StringBuffer::hash(const char *key, unsigned key_length) {
   assert(data != NULL);
 
@@ -200,8 +134,8 @@ bool StringBuffer::hash(const char *key, unsigned key_length) {
   sha256->print(data);
   char *sign = (char *)sha256->resultHmac();
   if (length < HASH_LENGTH) {
-    free(data);
-    data = (char *)malloc(HASH_LENGTH + 1);
+    IOTC_FREE(data);
+    data = (char *)IOTC_MALLOC(HASH_LENGTH + 1);
   }
   memcpy(data, sign, HASH_LENGTH);
   setLength(HASH_LENGTH);
@@ -211,34 +145,33 @@ bool StringBuffer::hash(const char *key, unsigned key_length) {
 
 bool StringBuffer::base64Decode() {
   assert(data != NULL && length > 0);
-  char *decoded = (char *)malloc(length + 1);
+  char *decoded = (char *)IOTC_MALLOC(length + 1);
   assert(decoded != NULL);
   size_t size = base64_decode(decoded, data, length);
   assert(size <= length + 1);
-  free(data);
-  data = (char *)malloc(size + 1);
+  IOTC_FREE(data);
+  data = (char *)IOTC_MALLOC(size + 1);
   assert(data != NULL);
   memcpy(data, decoded, size);
   setLength(size);
-  free(decoded);
+  IOTC_FREE(decoded);
   return true;
 }
 
 bool StringBuffer::base64Encode() {
   assert(data != NULL && length > 0);
-  char *decoded = (char *)malloc(length * 3);
+  char *decoded = (char *)IOTC_MALLOC(length * 3);
   assert(decoded != NULL);
   size_t size = base64_encode(decoded, data, length);
   assert(size < length * 3);
-  free(data);
-  data = (char *)malloc(size + 1);
+  IOTC_FREE(data);
+  data = (char *)IOTC_MALLOC(size + 1);
   assert(data != NULL);
   memcpy(data, decoded, size);
   setLength(size);
-  free(decoded);
+  IOTC_FREE(decoded);
   return true;
 }
-#endif  // __MBED__
 
 StringBuffer::StringBuffer(StringBuffer &buffer) : data(NULL), immutable(NULL) {
   length = 0;
@@ -283,7 +216,7 @@ void StringBuffer::initialize(const char *str, unsigned lengthStr) {
 void StringBuffer::alloc(unsigned lengthStr) {
   ASSERT_OR_FAIL_FAST(lengthStr != 0 && data == NULL && immutable == NULL);
 
-  data = (char *)malloc(lengthStr);
+  data = (char *)IOTC_MALLOC(lengthStr);
 
   ASSERT_OR_FAIL_FAST(data != NULL);
   memset(data, 0, lengthStr);
@@ -296,7 +229,7 @@ void StringBuffer::set(unsigned index, char c) {
 
 void StringBuffer::clear() {
   if (data != NULL) {
-    free(data);
+    IOTC_FREE(data);
     data = NULL;
   }
 }

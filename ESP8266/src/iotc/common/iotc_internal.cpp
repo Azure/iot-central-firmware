@@ -2,12 +2,15 @@
 // Licensed under the MIT license.
 
 #include "iotc_internal.h"
-#include "../common/json.h"
+#include "../common/iotc_json.h"
 
 IOTLogLevel gLogLevel = IOTC_LOGGING_DISABLED;
 
 void setLogLevel(IOTLogLevel l) { gLogLevel = l; }
 IOTLogLevel getLogLevel() { return gLogLevel; }
+
+static unsigned EXPIRES = 21600;
+void setEXPIRES(unsigned e) { EXPIRES = e; }
 
 unsigned strlen_s_(const char *str, int max_expected) {
   int ret_val = 0;
@@ -245,29 +248,37 @@ void sendOnError(IOTContextInternal *internal, const char *message) {
 void echoDesired(IOTContextInternal *internal, const char *propertyName,
                  AzureIOT::StringBuffer &message, const char *status,
                  int statusCode) {
-  AzureIOT::JSObject rootObject(*message);
-  AzureIOT::JSObject propertyNameObject;
+  jsobject_t rootObject;
+  jsobject_initialize(&rootObject, *message, message.getLength());
+  jsobject_t propertyNameObject;
 
-  rootObject.getObjectByName(propertyName, &propertyNameObject);
+  if (jsobject_get_object_by_name(&rootObject, propertyName,
+                                  &propertyNameObject) != 0) {
+    IOTC_LOG(
+        "ERROR: echoDesired has failed due to payload doesn't include the "
+        "property => %s",
+        *message);
+    jsobject_free(&rootObject);
+    return;
+  }
 
-  double value = 0, desiredVersion = 0;
-  propertyName = rootObject.getNameAt(0);
-
-  value = propertyNameObject.getNumberByName("value");
-  desiredVersion = rootObject.getNumberByName("$version");
+  char *value = jsobject_get_data_by_name(&propertyNameObject, "value");
+  double desiredVersion = jsobject_get_number_by_name(&rootObject, "$version");
 
   const char *echoTemplate =
-      "{\"%s\":{\"value\":%d,\"statusCode\":%d,\
+      "{\"%s\":{\"value\":%s,\"statusCode\":%d,\
 \"status\":\"%s\",\"desiredVersion\":%d}}";
-  uint32_t buffer_size = strlen(echoTemplate) + 23 /* x64 value */ +
+  uint32_t buffer_size = strlen(echoTemplate) + strlen(value) +
                          3 /* statusCode */
                          + 32 /* status */ + 23 /* version max */;
   buffer_size = iotc_min(buffer_size, 512);
   AzureIOT::StringBuffer buffer(buffer_size);
 
   size_t size = snprintf(*buffer, buffer_size, echoTemplate, propertyName,
-                         (int)value, statusCode, status, (int)desiredVersion);
+                         value, statusCode, status, (int)desiredVersion);
   buffer.setLength(size);
+
+  IOTC_FREE(value);
 
   const char *topicName = "$iothub/twin/PATCH/properties/reported/?$rid=%d";
   AzureIOT::StringBuffer topic(
@@ -280,9 +291,13 @@ void echoDesired(IOTContextInternal *internal, const char *propertyName,
     IOTC_LOG("ERROR: (echoDesired) MQTTClient publish has failed => %s",
              *buffer);
   }
+  jsobject_free(&propertyNameObject);
+  jsobject_free(&rootObject);
 }
 
-void callDesiredCallback(IOTContextInternal *internal, const char *propertyName,
+void callDesiredCallback(IOTContextInternal *internal,
+                         AzureIOT::StringBuffer &topicName,
+                         const char *propertyName,
                          AzureIOT::StringBuffer &payload) {
   const char *response = "completed";
   if (internal->callbacks[/*IOTCallbacks::*/ ::SettingsUpdated].callback) {
@@ -297,27 +312,41 @@ void callDesiredCallback(IOTContextInternal *internal, const char *propertyName,
     info.callbackResponse = NULL;
     internal->callbacks[/*IOTCallbacks::*/ ::SettingsUpdated].callback(internal,
                                                                        &info);
-    if (info.callbackResponse) {
-      response = (const char *)info.callbackResponse;
+
+    if (topicName.startsWith(
+            "$iothub/twin/PATCH/properties/desired/",
+            strlen("$iothub/twin/PATCH/properties/desired/"))) {
+      if (info.callbackResponse) {
+        response = (const char *)info.callbackResponse;
+      }
+      echoDesired(internal, propertyName, payload, response, info.statusCode);
     }
-    echoDesired(internal, propertyName, payload, response, info.statusCode);
   }
 }
 
-static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
+static void deviceTwinGetStateCallback(AzureIOT::StringBuffer &topicName,
                                        AzureIOT::StringBuffer &payload,
                                        void *userContextCallback) {
   IOTContextInternal *internal = (IOTContextInternal *)userContextCallback;
   assert(internal != NULL);
 
-  AzureIOT::JSObject desired(*payload);
-
-  for (unsigned i = 0, count = desired.getCount(); i < count; i++) {
-    const char *itemName = desired.getNameAt(i);
-    if (itemName != NULL && itemName[0] != '$') {
-      callDesiredCallback(internal, itemName, payload);
-    }
+  if (payload.getLength() == 0) {
+    return;
   }
+
+  jsobject_t desired;
+  jsobject_initialize(&desired, *payload, payload.getLength());
+
+  for (unsigned i = 0, count = jsobject_get_count(&desired); i < count;
+       i += 2) {
+    char *itemName = jsobject_get_name_at(&desired, i);
+    if (itemName != NULL && itemName[0] != '$') {
+      callDesiredCallback(internal, topicName, itemName, payload);
+    }
+    if (itemName) IOTC_FREE(itemName);
+  }
+
+  jsobject_free(&desired);
 }
 
 void handlePayload(char *msg, unsigned long msg_length, char *topic,
@@ -325,19 +354,13 @@ void handlePayload(char *msg, unsigned long msg_length, char *topic,
   if (topic_length) {
     assert(topic != NULL);
     AzureIOT::StringBuffer topicName(topic, topic_length);
-    if (topicName.startsWith("$iothub/twin/res", strlen("$iothub/twin/res")))
-      return;
-
     AzureIOT::StringBuffer payload;
     if (msg_length) {
       payload.initialize(msg, msg_length);
     }
 
-    if (topicName.startsWith(
-            "$iothub/twin/PATCH/properties/desired/",
-            strlen("$iothub/twin/PATCH/properties/desired/"))) {
-      deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_ALL, payload,
-                                 singletonContext);
+    if (topicName.startsWith("$iothub/twin", strlen("$iothub/twin"))) {
+      deviceTwinGetStateCallback(topicName, payload, singletonContext);
     } else if (topicName.startsWith("$iothub/methods",
                                     strlen("$iothub/methods"))) {
       int index = topicName.indexOf("$rid=", 5, 0);
@@ -383,7 +406,7 @@ void handlePayload(char *msg, unsigned long msg_length, char *topic,
             *respTopic, constResponse);
       }
       if (response != constResponse) {
-        free(response);
+        IOTC_FREE(response);
       }
     } else {
       IOTC_LOG(F("ERROR: unknown twin topic: %s, msg: %s"), topic,
@@ -394,16 +417,42 @@ void handlePayload(char *msg, unsigned long msg_length, char *topic,
 
 /* extern */
 int iotc_send_telemetry(IOTContext ctx, const char *payload, unsigned length) {
+  return iotc_send_telemetry_with_system_properties(ctx, payload, length, NULL,
+                                                    0);
+}
+
+int iotc_send_telemetry_with_system_properties(IOTContext ctx,
+                                               const char *payload,
+                                               unsigned length,
+                                               const char *sysPropPayload,
+                                               unsigned sysPropPayloadLength) {
   CHECK_NOT_NULL(ctx)
   CHECK_NOT_NULL(payload)
 
   IOTContextInternal *internal = (IOTContextInternal *)ctx;
   MUST_CALL_AFTER_CONNECT(internal);
 
+  if ((sysPropPayload == NULL && sysPropPayloadLength != 0) ||
+      (sysPropPayload != NULL && sysPropPayloadLength == 0)) {
+    IOTC_LOG(
+        "ERROR: (iotc_send_telemetry_with_system_properties) sysPropPayload "
+        "doesn't match with sysPropPayloadLength");
+    return 1;
+  }
+
   AzureIOT::StringBuffer topic(internal->deviceId.getLength() +
-                               strlen("devices/ /messages/events/"));
-  topic.setLength(snprintf(*topic, topic.getLength(),
-                           "devices/%s/messages/events/", *internal->deviceId));
+                               strlen("devices/ /messages/events/") +
+                               sysPropPayloadLength);
+  if (sysPropPayloadLength > 0) {
+    topic.setLength(
+        snprintf(*topic, topic.getLength(), "devices/%s/messages/events/%.*s",
+                 *internal->deviceId, sysPropPayloadLength, sysPropPayload));
+  } else {
+    topic.setLength(snprintf(*topic, topic.getLength(),
+                             "devices/%s/messages/events/",
+                             *internal->deviceId));
+  }
+
   if (mqtt_publish(internal, *topic, topic.getLength(), payload, length) != 0) {
     IOTC_LOG("ERROR: (iotc_send_telemetry) MQTTClient publish has failed => %s",
              payload);
@@ -411,6 +460,27 @@ int iotc_send_telemetry(IOTContext ctx, const char *payload, unsigned length) {
   }
 
   sendConfirmationCallback(payload, length);
+  return 0;
+}
+
+/* extern */
+int iotc_get_device_settings(IOTContext ctx) {
+  CHECK_NOT_NULL(ctx)
+
+  IOTContextInternal *internal = (IOTContextInternal *)ctx;
+  MUST_CALL_AFTER_CONNECT(internal);
+
+#define getDeviceSettingsTopic "$iothub/twin/GET/?$rid=0"
+
+  if (mqtt_publish(internal, getDeviceSettingsTopic,
+                   sizeof(getDeviceSettingsTopic), "", 0) != 0) {
+    IOTC_LOG(
+        "ERROR: (iotc_get_device_settings) MQTTClient publish has failed.");
+    return 1;
+  }
+
+#undef getDeviceSettingsTopic
+
   return 0;
 }
 
@@ -450,7 +520,7 @@ int iotc_init_context(IOTContext *ctx) {
 
   MUST_CALL_BEFORE_INIT((*ctx));
   IOTContextInternal *internal =
-      (IOTContextInternal *)malloc(sizeof(IOTContextInternal));
+      (IOTContextInternal *)IOTC_MALLOC(sizeof(IOTContextInternal));
   CHECK_NOT_NULL(internal);
   memset(internal, 0, sizeof(IOTContextInternal));
   *ctx = (void *)internal;
