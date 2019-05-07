@@ -4,18 +4,18 @@
 #define SERIAL_VERBOSE_LOGGING_ENABLED 1
 #include "src/iotc/iotc.h"
 #include "src/iotc/common/string_buffer.h"
+#include "<EEPROMInterface.h>"
+#include "AZ3166WiFi.h"
 #include "LSM6DSLSensor.h"
 #include "LIS2MDLSensor.h"
 #include "HTS221Sensor.h"
 #include "LPS22HBSensor.h"
-#include "EEPROMInterface.h"
 #include "IoT_DevKit_HW.h"
-#include "AZ3166WiFi.h"
 
 static IOTContext context = NULL;
 
-#define WIFI_SSID "Lorule"
-#define WIFI_PASSWORD ""
+// #define WIFI_SSID "<Enter WiFi SSID here>"
+// #define WIFI_PASSWORD "<Enter WiFi Password here>"
 
 // CONNECTION STRING ??
 // Uncomment below to Use Connection String
@@ -28,10 +28,10 @@ static IOTContext context = NULL;
 
 // PRIMARY/SECONDARY KEY ?? (DPS)
 // Uncomment below to Use DPS Symm Key (primary/secondary key..)
-IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
-const char *scopeId = "";
-const char *deviceId = "";
-const char *deviceKey = "";
+// IOTConnectType connectType = IOTC_CONNECT_SYMM_KEY;
+// const char* scopeId = "<Enter ScopeID>";
+// const char* deviceId = "<Enter DeviceId>";
+// const char* deviceKey = "<Enter Primary or Secondary Device Key here>";
 
 static bool isConnected = false;
 
@@ -135,8 +135,8 @@ void loop()
 
             int pos = 0, errorCode = 0;
 
-            int accelerometerAxes[3]; // accelerometerX accelerometerY accelerometerZ
-            int gyroscopAxes[3]; // gyroscopX gyroscopY gyroscopZ
+            int accelerometerAxes[3]; // [0]=X [1]=Y [2]=XZ
+            int gyroscopAxes[3]; // [0]=X [1]=Y [2]=Z
             float temperature = 0.0, humidity = 0.0, pressure = 0.0;
 
             accelerometerGyroscopeSensor->resetStepCounter();
@@ -156,18 +156,15 @@ void loop()
                 Screen.print(0, "Messages Sent: ");
                 Screen.print(1, buffer);
 
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", accelerometerAxes[0]);
-                errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerY\":%d}", accelerometerAxes[1]);
-                errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerZ\":%d}", accelerometerAxes[2]);
-                errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscopeX\":%d}", gyroscopAxes[0]);
-                errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscopeY\":%d}", gyroscopAxes[1]);
-                errorCode = iotc_send_telemetry(context, msg, pos);
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscopeZ\":%d}", gyroscopAxes[2]);
-                errorCode = iotc_send_telemetry(context, msg, pos);
+                char axes[3] = {'X', 'Y', 'Z'};
+                for (int i = 0; i < 3; i++) {
+                    pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometer%c\":%d}", axes[i], accelerometerAxes[i]);
+                    errorCode = iotc_send_telemetry(context, msg, pos);
+                }
+                for (int i = 0; i < 3; i++) {
+                    pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscope%c\":%d}", axes[i], accelerometerAxes[i]);
+                    errorCode = iotc_send_telemetry(context, msg, pos);
+                }
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\":%f}", temperature);
                 errorCode = iotc_send_telemetry(context, msg, pos);
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"humidity\":%f}", humidity);

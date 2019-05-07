@@ -20,3 +20,14 @@ Compile it! and deploy to your device.
 
 It's recomened you use [Visual Studio Code extension for Arduino](https://github.com/Microsoft/vscode-arduino), install it from [here](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino). You can also use [Azure IoT Workbench](https://microsoft.github.io/azure-iot-developer-kit/docs/get-started/#install-development-environment)
 or [iotz](https://github.com/Azure/iotz) to compile this sample.
+
+## Consider changing the IoT Central Ranges
+Consider changes the data ranges for your plots in IoT Central, this will vary depending on sensor input data and if you decide to use the onboard sensors or conenct other sensors to the board. For my device template I used these ranges.
+* `accelerometerX` Minimum Value: -50 Maximum Value: 50
+* `accelerometerY` Minimum Value: -50 Maximum Value: 50
+* `accelerometerZ` Minimum Value: -50 Maximum Value: 50
+* `gyroscopeX` Minimum Value: -2000 Maximum Value: 1000
+* `gyroscopeY` Minimum Value: -2000 Maximum Value: 1000
+* `gyroscopeZ` Minimum Value: -2000 Maximum Value: 1000
+* `temperature` Minimum Value: -40 Maximum Value: 120
+* `humidity` Minimum Value: 10 Maximum Value: 80
