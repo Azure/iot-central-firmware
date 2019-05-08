@@ -28,6 +28,7 @@ You will see the ESP-IDF configuration interface.
 
 - Go to `Azure IoT Central Configuration` and fill in the Azure IoT device credentials from earlier, as well as your Wi-Fi SSID and Password
 - Go to `Serial flasher config` to configure specify the serial port to which your device is connected
+  - *Note: If you are using the Linux subsystem on Windows, the serial port will be `/dev/ttySN`, where **N** is the number of the `COM` port. For example, if your device is connected to `COM5`, the serial port will be `/dev/tty/S5`.
 
 ### Building and flashing to the ESP device.
 
