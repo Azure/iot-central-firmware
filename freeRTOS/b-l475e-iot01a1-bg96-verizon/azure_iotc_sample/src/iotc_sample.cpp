@@ -118,7 +118,7 @@ static void iotc_main(void* pvParameters) {
     vTaskDelay(1000);
   }
 
-  logCellInfo("modem is online", 0);
+  LOG_VERBOSE("modem is online");
 
   // initialize iotc device context
   int errorCode = iotc_init_context(&context);
@@ -136,6 +136,7 @@ static void iotc_main(void* pvParameters) {
   iotc_on(context, "SettingsUpdated", onSettingsUpdated, NULL);
   iotc_on(context, "Error", onEvent, NULL);
 
+  LOG_VERBOSE("Connecting to Azure IoT");
   // connect to azure iot
   errorCode = iotc_connect(context, SCOPE_ID, DEVICE_KEY, DEVICE_ID,
                            IOTC_CONNECT_SYMM_KEY);

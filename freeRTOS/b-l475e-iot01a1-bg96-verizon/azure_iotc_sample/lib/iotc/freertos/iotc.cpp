@@ -188,6 +188,8 @@ int iotc_free_context(IOTContext ctx) {
 
 extern "C" void CRYPTO_ConfigureHeap(void);
 
+static char* hostNameCache = NULL;
+
 int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
                  const char* deviceId, IOTConnectType type) {
   CHECK_NOT_NULL(ctx)
@@ -199,9 +201,6 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
   StringBuffer username;
   StringBuffer password;
   IOTContextInternal* internal = (IOTContextInternal*)ctx;
-  // type = IOTC_CONNECT_CONNECTION_STRING;
-  // keyORcert =
-  // "HostName=iotc-4bfd0a4e-38a6-40c0-95c1-49748893efb2.azure-devices.net;DeviceId=dev1;SharedAccessKey=1B0cqf0PyjZ2WLipfLwFWwY7v9E/c+xm7IOoG57qidM=";
 
   if (type == IOTC_CONNECT_CONNECTION_STRING) {
     getUsernameAndPasswordFromConnectionString(keyORcert, strlen(keyORcert),
@@ -209,17 +208,20 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
                                                username, password);
   } else if (type == IOTC_CONNECT_SYMM_KEY) {
     assert(scope != NULL && deviceId != NULL);
-    StringBuffer tmpHostname(STRING_BUFFER_128);
-    if (getHubHostName(
-            internal,
-            internal->endpoint == NULL ? DEFAULT_ENDPOINT : internal->endpoint,
-            scope, deviceId, keyORcert, *tmpHostname)) {
-      return 1;
+    if (hostNameCache == NULL) {
+      hostNameCache = (char*) IOTC_MALLOC(STRING_BUFFER_128 + 1);
+      if (getHubHostName(
+              internal,
+              internal->endpoint == NULL ? DEFAULT_ENDPOINT : internal->endpoint,
+              scope, deviceId, keyORcert, hostNameCache)) {
+        return 1;
+      }
     }
+
     StringBuffer cstr(STRING_BUFFER_256);
     int rc = snprintf(*cstr, STRING_BUFFER_256,
                       F("HostName=%s;DeviceId=%s;SharedAccessKey=%s"),
-                      *tmpHostname, deviceId, keyORcert);
+                      hostNameCache, deviceId, keyORcert);
     assert(rc > 0 && rc < STRING_BUFFER_256);
     cstr.setLength(rc);
 
