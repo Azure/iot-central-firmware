@@ -14,11 +14,11 @@
 // const char* deviceKey = "<ENTER DEVICE primary/secondary KEY HERE>";
 ```
 
-Make sure have an Azure IoT SDK to compile successfully. Fro example I used an [Arduino](https://www.arduino.cc/en/main/software#download) development environment with the following Arduino Libraries: [AzureIoTUtility](https://github.com/Azure/azure-iot-arduino-utility), [AzureIoTProtocol_MQTT](https://github.com/Azure/azure-iot-arduino-protocol-mqtt), [AzureIoTProtocol_HTTP](https://github.com/Azure/azure-iot-arduino-protocol-http) all at version `1.0.45`.
+Make sure have an Azure IoT SDK to compile successfully. For example I used an [Arduino](https://www.arduino.cc/en/main/software#download) development environment with the following Arduino Libraries: [AzureIoTUtility](https://github.com/Azure/azure-iot-arduino-utility), [AzureIoTProtocol_MQTT](https://github.com/Azure/azure-iot-arduino-protocol-mqtt), [AzureIoTProtocol_HTTP](https://github.com/Azure/azure-iot-arduino-protocol-http) all at version `1.0.45`.
 
 Compile it! and deploy to your device.
 
-It's recomened you use [Visual Studio Code extension for Arduino](https://github.com/Microsoft/vscode-arduino), install it from [here](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino). You can also use [Azure IoT Workbench](https://microsoft.github.io/azure-iot-developer-kit/docs/get-started/#install-development-environment)
+It's recommended you use [Visual Studio Code extension for Arduino](https://github.com/Microsoft/vscode-arduino), install it from [here](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino). You can also use [Azure IoT Workbench](https://microsoft.github.io/azure-iot-developer-kit/docs/get-started/#install-development-environment)
 or [iotz](https://github.com/Azure/iotz) to compile this sample.
 
 ## Consider changing the IoT Central Ranges

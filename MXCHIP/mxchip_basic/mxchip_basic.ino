@@ -4,7 +4,7 @@
 #define SERIAL_VERBOSE_LOGGING_ENABLED 1
 #include "src/iotc/iotc.h"
 #include "src/iotc/common/string_buffer.h"
-#include "<EEPROMInterface.h>"
+#include <EEPROMInterface.h>
 #include "AZ3166WiFi.h"
 #include "LSM6DSLSensor.h"
 #include "LIS2MDLSensor.h"
@@ -35,8 +35,7 @@ static IOTContext context = NULL;
 
 static bool isConnected = false;
 
-void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo)
-{
+void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
     if (strcmp(callbackInfo->eventName, "ConnectionStatus") == 0) {
         LOG_VERBOSE("Is connected ? %s (%d)", callbackInfo->statusCode == IOTC_CONNECTION_OK ? "YES" : "NO", callbackInfo->statusCode);
         isConnected = callbackInfo->statusCode == IOTC_CONNECTION_OK;
@@ -179,7 +178,7 @@ void loop()
             msg[pos] = 0;
 
             if (errorCode != 0) {
-                 LOG_ERROR("Sending message has failed with error code %d", errorCode);
+                LOG_ERROR("Sending message has failed with error code %d", errorCode);
             }
         }
     }
