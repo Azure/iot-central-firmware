@@ -98,61 +98,54 @@ int is_BG96_online = 0; // down
 
 int isBG96Online() { return is_BG96_online; }
 
+void logCellInfo(const char* msg, int printModemActivation) {
+  dc_cellular_info_t info;
+  dc_com_read(&dc_com_db, DC_COM_CELLULAR_INFO, (void *)&info, sizeof(info));
+
+  if (info.cs_signal_level == 0) {
+    if (printModemActivation == 1) {
+      configPRINTF(("%s : Waiting for cellular modem activation\r\n", msg));
+    }
+  } else {
+    configPRINTF(("%s : signal level: %d level_db: %d\r\n", msg,
+        info.cs_signal_level, info.cs_signal_level_db));
+  }
+}
+
 static void BG96_net_up_cb ( dc_com_event_id_t dc_event_id, void* private_gui_data )
 {
-        dc_service_rt_state_t state = DC_SERVICE_FAIL;
-        bool unknownEvent = true;
+    dc_service_rt_state_t state = DC_SERVICE_FAIL;
+    bool unknownEvent = true;
     if( dc_event_id == DC_COM_NIFMAN_INFO)
     {
-      dc_nifman_info_t  info;
-      dc_com_read( &dc_com_db, DC_COM_NIFMAN_INFO, (void *)&info, sizeof(info));
-      state = info.rt_state;
-            unknownEvent = false;
+        dc_nifman_info_t  info;
+        dc_com_read( &dc_com_db, DC_COM_NIFMAN_INFO, (void *)&info, sizeof(info));
+        state = info.rt_state;
+        unknownEvent = false;
     } else if (dc_event_id == DC_COM_CELLULAR_INFO) {
-            // configPRINTF(("DC_COM_CELLULAR_INFO\r\n"));
-            // dc_cellular_info_t info;
-            // dc_com_read( &dc_com_db, DC_COM_CELLULAR_INFO, (void *)&info, sizeof(info));
-            // state = info.rt_state;
-            // unknownEvent = true;
-        } else if (dc_event_id == DC_COM_CELLULAR_DATA_INFO) {
-            configPRINTF(("DC_COM_CELLULAR_DATA_INFO\r\n"));
-            // dc_cellular_data_info_t info;
-            // dc_com_read( &dc_com_db, DC_COM_CELLULAR_DATA_INFO, (void *)&info, sizeof(info));
-            // state = info.rt_state;
-        } else if (dc_event_id == DC_COM_PPP_CLIENT_INFO) {
-            configPRINTF(("DC_COM_PPP_CLIENT_INFO\r\n"));
-            // dc_ppp_client_info_t info;
-            // dc_com_read( &dc_com_db, DC_COM_PPP_CLIENT_INFO, (void *)&info, sizeof(info));
-            // state = info.rt_state;
-        } else if (dc_event_id == DC_COM_RADIO_LTE_INFO) {
-            configPRINTF(("DC_COM_RADIO_LTE_INFO\r\n"));
-            // dc_radio_lte_info_t info;
-            // dc_com_read( &dc_com_db, DC_COM_RADIO_LTE_INFO, (void *)&info, sizeof(info));
-            // state = info.rt_state;
-        } else if (dc_event_id == DC_COM_NFMC_TEMPO_INFO) {
-            configPRINTF(("DC_COM_NFMC_TEMPO_INFO\r\n"));
-            // dc_nfmc_info_t info;
-            // dc_com_read( &dc_com_db, DC_COM_NFMC_TEMPO_INFO, (void *)&info, sizeof(info));
-            // state = info.rt_state;
-            // unknownEvent = true;
-        } else if (dc_event_id == DC_COM_SIM_INFO) {
-            configPRINTF(("DC_COM_SIM_INFO\r\n"));
-            // dc_sim_info_t info;
-            // dc_com_read( &dc_com_db, DC_COM_SIM_INFO, (void *)&info, sizeof(info));
-            // state = info.rt_state;
-        } else {
-            // configPRINTF(("UNKOWN EVENT ID => %d\r\n", dc_event_id));
-            unknownEvent = true;
-        }
+        logCellInfo("DC_COM_CELLULAR_INFO", 0);
+    } else if (dc_event_id == DC_COM_CELLULAR_DATA_INFO) {
+        logCellInfo("DC_COM_CELLULAR_DATA_INFO", 0);
+    } else if (dc_event_id == DC_COM_PPP_CLIENT_INFO) {
+        logCellInfo("DC_COM_PPP_CLIENT_INFO", 0);
+    } else if (dc_event_id == DC_COM_RADIO_LTE_INFO) {
+        logCellInfo("DC_COM_RADIO_LTE_INFO", 0);
+    } else if (dc_event_id == DC_COM_NFMC_TEMPO_INFO) {
+        logCellInfo("DC_COM_NFMC_TEMPO_INFO", 0);
+    } else if (dc_event_id == DC_COM_SIM_INFO) {
+        logCellInfo("DC_COM_SIM_INFO", 0);
+    } else {
+        unknownEvent = true;
+    }
 
-        if(state  ==  DC_SERVICE_ON)
-        {
-            is_BG96_online = 1; // online
-            configPRINTF(("\tNetwork is up\r\n"));
-        }
-        else if (!unknownEvent)
-        {
-            is_BG96_online = 0; // down
-            configPRINTF(("\tNetwork is down ? STATE => %d\r\n", state));
-        }
+    if(state  ==  DC_SERVICE_ON)
+    {
+        is_BG96_online = 1; // online
+        configPRINTF(("\tNetwork is up\r\n"));
+    } else if (!unknownEvent) {
+        dc_cellular_info_t info;
+        dc_com_read( &dc_com_db, DC_COM_CELLULAR_INFO, (void *)&info, sizeof(info));
+        // is_BG96_online = 0; // down
+        configPRINTF(("\tNetwork is down ? Signal level => %d\r\n", info.cs_signal_level));
+    }
 }

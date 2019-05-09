@@ -114,8 +114,11 @@ static void iotc_main(void* pvParameters) {
   }
 
   // wait for modem to come online
-  while (isBG96Online() == 0) vTaskDelay(100);
-  LOG_VERBOSE("modem is online");
+  while (isBG96Online() == 0) {
+    vTaskDelay(1000);
+  }
+
+  logCellInfo("modem is online", 0);
 
   // initialize iotc device context
   int errorCode = iotc_init_context(&context);
@@ -150,7 +153,7 @@ static void iotc_main(void* pvParameters) {
   // application lifecycle loop
   while (true) {
     while (isBG96Online() != 1) {
-      LOG_VERBOSE("modem is reconnecting..");
+      logCellInfo("modem is reconnecting..", 0);
       vTaskDelay(5000);  // 5 secs
       if (reconnectCounter++ > 12)
         break;  // reset the thread if modem wasn't able to connect up to a

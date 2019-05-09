@@ -7,6 +7,8 @@ extern "C" {
     void VL53L0X_PROXIMITY_Init(void);
     void iotc_create_task();
 
+    void logCellInfo(const char* msg, int printModemActivation);
+
     typedef enum
     {
     LED2 = 0,
