@@ -14,6 +14,7 @@ Create an issue on this repository and let us know.
 - [ESP8266/ESP8285](./ESP8266)
 - [FreeRTOS/B-L475E-IOT01A1 with bg96 cellular](freeRTOS/b-l475e-iot01a1-bg96-verizon/)
 - [MBED OS](./MBED_OS)
+- [Modbus](https://github.com/zhaodong2013062/Azure_IoT_Central_Modbus_Gateway/)
 - [HTTP Only C#](./HttpOnly/CSharp)
 - [HTTP Only Bash/Node.js](./HttpOnly/Bash)
 - [Python Client x509 Connectivity](https://github.com/Azure/dps-certgen/tree/py_sample/samples/python)
