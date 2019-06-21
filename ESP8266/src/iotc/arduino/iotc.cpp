@@ -213,13 +213,15 @@ int getHubHostName(IOTContextInternal* internal, const char* dpsEndpoint,
   int retval = 0;
   if ((retval = _getOperationId(internal, dpsEndpoint, scopeId, deviceId,
                                 *authHeader, *operationId, NULL)) == 0) {
-    WAITMS(5000);
+    WAITMS(2500);
     IOTC_LOG(F("- iotc.dps : getting host name..."));
+    WAITMS(2500);
     for (int i = 0; i < 5; i++) {
       retval = _getOperationId(internal, dpsEndpoint, scopeId, deviceId,
                                *authHeader, *operationId, hostName);
       if (retval == 0) break;
       WAITMS(3000);
+      IOTC_LOG(F("- iotc.dps : getting host name...")); // re-trigger WD
     }
   }
 

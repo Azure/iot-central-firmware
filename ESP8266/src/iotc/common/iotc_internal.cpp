@@ -334,19 +334,25 @@ static void deviceTwinGetStateCallback(AzureIOT::StringBuffer &topicName,
     return;
   }
 
-  jsobject_t desired;
+  jsobject_t desired, outDesired, outReported;
   jsobject_initialize(&desired, *payload, payload.getLength());
 
-  for (unsigned i = 0, count = jsobject_get_count(&desired); i < count;
-       i += 2) {
-    char *itemName = jsobject_get_name_at(&desired, i);
-    if (itemName != NULL && itemName[0] != '$') {
-      callDesiredCallback(internal, topicName, itemName, payload);
+  if (jsobject_get_object_by_name(&desired, "desired", &outDesired) != -1 &&
+      jsobject_get_object_by_name(&desired, "reported", &outReported) != -1) {
+    callDesiredCallback(internal, topicName, "twin", payload);
+  } else {
+    for (unsigned i = 0, count = jsobject_get_count(&desired); i < count;
+        i += 2) {
+      char *itemName = jsobject_get_name_at(&desired, i);
+      if (itemName != NULL && itemName[0] != '$') {
+        callDesiredCallback(internal, topicName, itemName, payload);
+      }
+      if (itemName) IOTC_FREE(itemName);
     }
-    if (itemName) IOTC_FREE(itemName);
   }
-
+  jsobject_free(&outReported);
   jsobject_free(&desired);
+  jsobject_free(&outDesired);
 }
 
 void handlePayload(char *msg, unsigned long msg_length, char *topic,
