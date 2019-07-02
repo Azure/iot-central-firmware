@@ -33,7 +33,7 @@ getAuth
 # use the Auth and make a PUT request to Azure IoT DPS service
 OUT=`curl \
   -H "authorization: ${AUTH}&skn=registration" \
-  -H 'content-type: application/json; charset=utf-8' -H 'content-length: 25' \
+  -H 'content-type: application/json; charset=utf-8' \
   -s \
   --request PUT --data "{\"registrationId\":\"$DEVICE_ID\"}" "https://global.azure-devices-provisioning.net/$SCOPEID/registrations/$DEVICE_ID/register?api-version=2018-11-01"`
 
