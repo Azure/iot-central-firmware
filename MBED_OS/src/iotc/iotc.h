@@ -173,7 +173,7 @@ int iotc_set_network_interface(void* networkInterface);
 #define LOG_VERBOSE(...)
 #else
 #define LOG_VERBOSE(...) \
-    do { \
+    ;do { \
         SERIAL_PRINT("  - "); \
         SERIAL_PRINT(__VA_ARGS__); \
         SERIAL_PRINT("\r\n"); \

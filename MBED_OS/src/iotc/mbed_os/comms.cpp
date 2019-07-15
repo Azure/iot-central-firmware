@@ -23,6 +23,7 @@ int mqtt_publish(IOTContextInternal *internal, const char *topic, unsigned long 
     int rc = internal->mqttClient->publish(topic, message);
     if (rc != MQTT::SUCCESS)
     {
+        LOG_VERBOSE("Publish %d", rc);
         return rc;
     }
     return iotc_do_work(internal);

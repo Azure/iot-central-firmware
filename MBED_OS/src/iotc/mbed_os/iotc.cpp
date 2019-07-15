@@ -266,7 +266,7 @@ int iotc_connect(IOTContext ctx, const char *scope, const char *keyORcert,
                           F("HostName=%s;DeviceId=%s;SharedAccessKey=%s"), *tmpHostname, deviceId, keyORcert);
         assert(rc > 0 && rc < STRING_BUFFER_256);
         cstr.setLength(rc);
-
+        IOTC_LOG(F("Connection string: %s"),*cstr)
         // TODO: move into iotc_dps and do not re-parse from connection string
         getUsernameAndPasswordFromConnectionString(*cstr, rc, hostName, internal->deviceId, username, password);
     }
