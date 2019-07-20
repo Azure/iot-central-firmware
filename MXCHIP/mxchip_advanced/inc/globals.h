@@ -22,6 +22,8 @@
 #define ACCEL_CHECKED 0x10
 #define GYRO_CHECKED 0x20
 
+#define PAIRING_TRIGGER_LENGTH 4
+
 #define STRING_BUFFER_16     16
 #define STRING_BUFFER_32     32
 #define STRING_BUFFER_128   128
@@ -39,6 +41,7 @@
 #define TELEMETRY_SWITCH_DEBOUNCE_TIME 250
 
 #define NTP_SYNC_PERIOD (24 * 60 * 60 * 1000)
+
 
 typedef enum { NORMAL, CAUTION, DANGER } DeviceState;
 
