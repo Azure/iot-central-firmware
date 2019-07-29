@@ -9,11 +9,12 @@
 #include "globals.h"
 #include "loop.h"
 
+class WiFiUDP;
 class PairingController : public LoopController
 {
     bool setupCompleted;
     char triggerMessage[PAIRING_TRIGGER_LENGTH];
-    WiFiUDP udpClient;
+    WiFiUDP *udpClient;
 
     void listen();
     void pair();
