@@ -87,11 +87,11 @@ bool ApplicationController::loop()
 #endif
     }
     else if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
-             !DeviceControl::IsButtonClicked(USER_BUTTON_B))
+             !DeviceControl::IsButtonClicked(USER_BUTTON_B)) // listen for A pressed for more than 5 seconds (quick pairing)
     {
         if (Globals::loopController != NULL && Globals::loopController->wasInitializeCompleted())
         {
-            return true;;
+            return true;
         }
         buttonState = digitalRead(USER_BUTTON_A); // read the button input
                                                   //Serial.printf("Button value %d\n",buttonState);

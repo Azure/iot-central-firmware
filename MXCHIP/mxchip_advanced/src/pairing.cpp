@@ -33,7 +33,6 @@ void PairingController::listen()
     {
         udpClient.begin(4000);
         initializeCompleted = true;
-        loop();
     }
     else
     {
@@ -75,14 +74,17 @@ void PairingController::loop()
             // set the LED with the ledState of the variable:
             digitalWrite(LED_WIFI, ledState);
         }
-        // LOG_VERBOSE("Opening socket");
-
+         LOG_VERBOSE("reading socket");
         if (udpClient.read(triggerMessage, PAIRING_TRIGGER_LENGTH) > 0)
         {
             LOG_VERBOSE("Pairing message received: %s", triggerMessage);
             pair();
         }
-        // LOG_VERBOSE("Socket closed");
+        else
+        {
+            LOG_VERBOSE("Socket empty");
+            delay(100);
+        }
     }
 }
 
