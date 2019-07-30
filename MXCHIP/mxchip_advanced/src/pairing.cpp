@@ -7,7 +7,6 @@
 
 #include "../inc/pairing.h"
 #include "../inc/wifi.h"
-#include "../inc/webServer.h"
 #include "../inc/config.h"
 #include "../inc/watchdogController.h"
 
@@ -82,6 +81,15 @@ void PairingController::loop()
             {
                 LOG_VERBOSE("Got pairing message");
                 pair();
+                if (setupCompleted)
+                {
+                    Screen.clean();
+                    Screen.print(0, "Completed!");
+                    Screen.print(2, "Press 'reset'");
+                    Screen.print(3, "         now :)");
+                    resetController.initialize(3000);
+                    resetController.reset();
+                }
             }
         }
         else
@@ -104,14 +112,14 @@ void PairingController::pair()
         if (length > 0)
         {
             LOG_VERBOSE("Got data: %s length:%d. Cleaning buffer", buff, length);
-            char data[length];
+            char data[length] = {0};
             memcpy(data, buff, length);
             char *pch = strtok(data, ";");
             StringBuffer ssid, password, auth, scopeId, regId, sasKey;
             while (pch != NULL)
             {
                 String pair = String(pch);
-                LOG_VERBOSE("Pair: %s", pair);
+                // LOG_VERBOSE("Pair: %s", pair);
                 pair.trim();
                 int idx = pair.indexOf("=");
                 LOG_VERBOSE("Indice %d", idx);
@@ -128,54 +136,49 @@ void PairingController::pair()
                 bool unknown = false;
 
                 if (idx == 4 && strncmp(key, "SSID", 4) == 0)
-                    memcpy(&ssid, value, valueLength);
+                    urldecode(value, valueLength, &ssid);
                 else if (idx == 4 && strncmp(key, "AUTH", 4) == 0)
-                    memcpy(&ssid, value, valueLength);
+                    urldecode(value, valueLength, &auth);
                 else if (idx == 4 && strncmp(key, "PASS", 4) == 0)
-                    memcpy(&password, value, valueLength);
+                    urldecode(value, valueLength, &password);
                 else if (idx == 6 && strncmp(key, "SASKEY", 6) == 0)
-                    memcpy(&sasKey, value, valueLength);
+                    urldecode(value, valueLength, &sasKey);
                 else if (idx == 7 && strncmp(key, "SCOPEID", 7) == 0)
-                    memcpy(&scopeId, value, valueLength);
+                    urldecode(value, valueLength, &scopeId);
                 else if (idx == 8 && strncmp(key, "DEVICEID", 8) == 0)
-                    memcpy(&regId, value, valueLength);
+                    urldecode(value, valueLength, &regId);
                 else
                 {
                     unknown = true;
                 }
 
-                //     if (unknown)
-                //     {
-                //         LOG_ERROR("Unkown key:'%s' idx:'%d'", key, idx);
-                //         LOG_ERROR("Unknown credentials parameter");
-                //         return;
-                //     }
+                if (unknown)
+                {
+                    LOG_ERROR("Unkown key:'%s' idx:'%d'", key, idx);
+                    LOG_ERROR("Unknown credentials parameter");
+                    return;
+                }
                 pch = strtok(NULL, ";");
-                LOG_VERBOSE("SSID: %s", ssid);
             }
 
-            // if (ssid.getLength() == 0)
-            // {
-            //     LOG_ERROR("Missing ssid or connStr");
-            //     return;
-            // }
-            // // else if (!pincodePasses)
-            // // {
-            // //     client.write((uint8_t *)HTTP_REDIRECT_WRONG_PINCODE, sizeof(HTTP_REDIRECT_WRONG_PINCODE) - 1);
-            // //     return;
-            // // }
+            if (ssid.getLength() == 0)
+            {
+                LOG_ERROR("Missing ssid or connStr");
+                return;
+            }
 
-            // // store the settings in EEPROM
-            // assert(ssid.getLength() != 0);
-            // ConfigController::storeWiFi(ssid, password);
-            // ConfigController::storeKey(auth, scopeId, regId, sasKey);
+            // store the settings in EEPROM
+            LOG_VERBOSE("Storing settings");
+            assert(ssid.getLength() != 0);
+            ConfigController::storeWiFi(ssid, password);
+            ConfigController::storeKey(auth, scopeId, regId, sasKey);
 
-            // StringBuffer configData(3);
-            // snprintf(*configData, 3, "%d", 7);
-            // ConfigController::storeIotCentralConfig(configData);
+            StringBuffer configData(3);
+            snprintf(*configData, 3, "%d", 7);
+            ConfigController::storeIotCentralConfig(configData);
 
-            // setupCompleted = true;
-            // LOG_VERBOSE("Successfully processed the configuration request.");
+            setupCompleted = true;
+            LOG_VERBOSE("Successfully processed the configuration request.");
         }
         else
         {
