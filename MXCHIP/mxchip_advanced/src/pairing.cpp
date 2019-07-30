@@ -71,7 +71,6 @@ void PairingController::loop()
             // set the LED with the ledState of the variable:
             digitalWrite(LED_WIFI, ledState);
         }
-        LOG_VERBOSE("reading socket");
         int readln;
         readln = udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
         if (readln > 0)
@@ -92,10 +91,6 @@ void PairingController::loop()
                 }
             }
         }
-        else
-        {
-            LOG_VERBOSE("Socket empty");
-        }
     }
 }
 
@@ -111,6 +106,11 @@ void PairingController::pair()
         length = udpClient->read(buff, STRING_BUFFER_1024);
         if (length > 0)
         {
+            if (strncmp(buff, "IOTC", length) == 0)
+            {
+                length = 0;
+                continue;
+            }
             LOG_VERBOSE("Got data: %s length:%d. Cleaning buffer", buff, length);
             char data[length] = {0};
             memcpy(data, buff, length);
