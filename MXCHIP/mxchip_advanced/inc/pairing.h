@@ -13,7 +13,6 @@ class WiFiUDP;
 class PairingController : public LoopController
 {
     bool setupCompleted;
-    char triggerMessage[PAIRING_TRIGGER_LENGTH];
     WiFiUDP *udpClient;
 
     void listen();
@@ -24,6 +23,12 @@ class PairingController : public LoopController
     {
         listen();
     }
+
+private:
+    bool startPairing();
+    bool receiveData();
+    bool storeConfig();
+    bool broadcastSuccess();
 
 public:
     static PairingController *New()

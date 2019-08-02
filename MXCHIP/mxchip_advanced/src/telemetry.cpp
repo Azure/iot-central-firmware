@@ -22,6 +22,10 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
 
     // connect to the WiFi in config
     Globals::wiFiController.initWiFi();
+
+    //broadcast ip address and Id
+    Globals::wiFiController.broadcastId();
+
     lastTimeSync = millis();
     // initialize the sensor array
     Globals::sensorController.initSensors();

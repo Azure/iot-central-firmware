@@ -93,6 +93,7 @@ bool ApplicationController::loop()
         {
             return true;
         }
+        WatchdogController::reset();
         buttonState = digitalRead(USER_BUTTON_A); // read the button input
                                                   //Serial.printf("Button value %d\n",buttonState);
         if (buttonState != lastButtonState)
@@ -107,7 +108,8 @@ bool ApplicationController::loop()
             {
                 Screen.clean();
                 Serial.println("Entering pairing mode");
-                Screen.print(0, "Pairing mode active", true);
+                Screen.print(0, "Pairing active", true);
+                Screen.print(1, "Quick mode", true);
                 ConfigController::clearAllConfig();
                 if (Globals::loopController != NULL)
                 {
