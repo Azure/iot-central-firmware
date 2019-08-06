@@ -42,7 +42,6 @@ void PairingController::listen()
 
 void PairingController::loop()
 {
-    LOG_VERBOSE("here");
     if (!initializeCompleted)
     {
         Screen.clean();
@@ -259,11 +258,12 @@ void PairingController::cleanup()
 bool PairingController::startPairing()
 {
     LOG_VERBOSE("Start pairing");
-    unsigned length = 0;
+    int length = 0;
 
-    char triggerMessage[PAIRING_TRIGGER_LENGTH];
+    char triggerMessage[PAIRING_TRIGGER_LENGTH] = {0};
     while (length == 0)
     {
+        LOG_VERBOSE("Reading");
         length = udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
         if (length > 0)
         {
@@ -302,6 +302,10 @@ bool PairingController::startPairing()
                 return false;
             }
         }
+        else{
+            LOG_VERBOSE("nothing");
+            LOG_VERBOSE("length: %d",length);
+        }
         delay(50);
     }
 }
@@ -309,7 +313,7 @@ bool PairingController::startPairing()
 bool PairingController::receiveData()
 {
     char buff[STRING_BUFFER_1024];
-    unsigned length = 0;
+    int length = 0;
     while (length == 0)
     {
         LOG_VERBOSE("Waiting for data");
@@ -460,7 +464,7 @@ bool PairingController::storeConfig()
 //         return false;
 //     }
 
-void errorAndReset()
+void PairingController::errorAndReset()
 {
     Screen.clean();
     Screen.print(0, "Error during pairing. Resetting", true);

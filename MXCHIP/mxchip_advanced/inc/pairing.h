@@ -29,6 +29,7 @@ private:
     bool receiveData();
     bool storeConfig();
     bool broadcastSuccess();
+    void errorAndReset();
 
 public:
     static PairingController *New()

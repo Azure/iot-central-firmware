@@ -154,6 +154,13 @@ char *WiFiController::getIPAddress()
     return ip.get_address();
 }
 
+char *WiFiController::getBroadcastIp()
+{
+    IPAddress broadcastIp;
+    broadcastIp = WiFi.localIP() | (~WiFi.subnetMask());
+    return broadcastIp.get_address();
+}
+
 void WiFiController::broadcastId()
 {
     byte mac[6] = {0};
@@ -170,7 +177,7 @@ void WiFiController::broadcastId()
     short tries = 0;
     while (tries < 5)
     {
-        udpClient->beginPacket(getBroadcastIp(), 9000);
+        udpClient->beginPacket(WiFiController::getBroadcastIp(), 9000);
         udpClient->write(buf, msgLength);
         udpClient->endPacket();
         tries++;
