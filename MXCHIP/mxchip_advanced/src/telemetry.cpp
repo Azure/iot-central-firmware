@@ -15,13 +15,15 @@
 #include "../inc/oledAnimation.h"
 #include "../inc/watchdogController.h"
 
-void TelemetryController::initializeTelemetryController(const char * iotCentralConfig) {
+void TelemetryController::initializeTelemetryController(const char *iotCentralConfig)
+{
     assert(initializeCompleted == false);
 
     randomSeed(analogRead(0));
 
     // connect to the WiFi in config
     Globals::wiFiController.initWiFi();
+    WatchdogController::reset();
 
     //broadcast ip address and Id
     Globals::wiFiController.broadcastId();
@@ -29,17 +31,19 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     lastTimeSync = millis();
     // initialize the sensor array
     Globals::sensorController.initSensors();
-    if (!Globals::wiFiController.getIsConnected()) {
+    if (!Globals::wiFiController.getIsConnected())
+    {
         LOG_ERROR("WiFi - NOT CONNECTED - return");
         return;
     }
-    WatchdogController::reset();
 
     // initialize the IoT Hub Client
     assert(iotClient == NULL);
     iotClient = new AzureIOTClient();
-    if (iotClient == NULL || !iotClient->wasInitialized()) {
-        if (iotClient != NULL) {
+    if (iotClient == NULL || !iotClient->wasInitialized())
+    {
+        if (iotClient != NULL)
+        {
             delete iotClient;
             iotClient = NULL;
         }
@@ -74,14 +78,17 @@ void TelemetryController::initializeTelemetryController(const char * iotCentralC
     initializeCompleted = true;
 }
 
-static int  locationDataOffset = 0;
+static int locationDataOffset = 0;
 static char locationString[STRING_BUFFER_128];
-static int  sendCount = -1;
+static int sendCount = -1;
 
-void TelemetryController::loop() {
+void TelemetryController::loop()
+{
     // if we are about to reset then stop sending/processing any telemetry
-    if (!initializeCompleted || !Globals::wiFiController.getIsConnected()) {
-        if (!Globals::wiFiController.getIsConnected()) {
+    if (!initializeCompleted || !Globals::wiFiController.getIsConnected())
+    {
+        if (!Globals::wiFiController.getIsConnected())
+        {
             Screen.print(0, "-NOT Connected- ");
             Screen.print(1, "                ");
             Screen.print(2, " Check WiFi ?   ");
@@ -94,9 +101,11 @@ void TelemetryController::loop() {
 
     const uint32_t currentMillis = millis(); // reduce number of times we call this
 
-    if ((currentMillis - lastTimeSync > NTP_SYNC_PERIOD)) {
+    if ((currentMillis - lastTimeSync > NTP_SYNC_PERIOD))
+    {
         // re-sync the time from ntp
-        if (SyncTimeToNTP()) {
+        if (SyncTimeToNTP())
+        {
             lastTimeSync = millis();
         }
     }
@@ -104,7 +113,8 @@ void TelemetryController::loop() {
     // look for button A pressed to signify state change
     // when the A button is pressed the device state rotates to the next value and a state telemetry message is sent
     if (DeviceControl::IsButtonClicked(USER_BUTTON_A) &&
-        (currentMillis - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
+        (currentMillis - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME))
+    {
 
         DeviceControl::incrementDeviceState();
         DeviceControl::showState();
@@ -114,39 +124,48 @@ void TelemetryController::loop() {
 
     // look for button B pressed to page through info screens
     if (DeviceControl::IsButtonClicked(USER_BUTTON_B) &&
-        (currentMillis - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME)) {
+        (currentMillis - lastSwitchPress > TELEMETRY_SWITCH_DEBOUNCE_TIME))
+    {
 
         currentInfoPage = (currentInfoPage + 1) % 3;
         lastSwitchPress = currentMillis;
 
         // SEND EVENT example
         // build the event payload
-        const char * eventString = "{\"ButtonBPressed\": \"occurred\"}";
-        if (iotClient->sendTelemetry(eventString)) {
+        const char *eventString = "{\"ButtonBPressed\": \"occurred\"}";
+        if (iotClient->sendTelemetry(eventString))
+        {
             LOG_VERBOSE("Event successfully sent");
             StatsController::incrementReportedCount();
-        } else {
+        }
+        else
+        {
             LOG_ERROR("Sending event has failed");
             StatsController::incrementErrorCount();
         }
     }
 
     // example of sending telemetry data
-    if (canSend() && currentMillis - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL) {
+    if (canSend() && currentMillis - lastTelemetrySend >= TELEMETRY_SEND_INTERVAL)
+    {
         setCanSend(false); // wait until the telemetry is sent
 
         // send location once on each fifth (aprox 30 secs)
-        if (++sendCount % 6 == 0) {
+        if (++sendCount % 6 == 0)
+        {
             int n = snprintf(locationString, STRING_BUFFER_128 - 1,
-                    "{\"location\":{\"lon\":%f,\"lat\":%f}}",
-                    Globals::locationData[locationDataOffset++],
-                    Globals::locationData[locationDataOffset++]);
+                             "{\"location\":{\"lon\":%f,\"lat\":%f}}",
+                             Globals::locationData[locationDataOffset++],
+                             Globals::locationData[locationDataOffset++]);
             locationString[n] = 0;
             locationDataOffset %= MAP_DATA_SIZE;
-            if (iotClient->sendReportedProperty(locationString)) {
+            if (iotClient->sendReportedProperty(locationString))
+            {
                 LOG_VERBOSE("Reported property location successfully sent %s", locationString);
                 StatsController::incrementReportedCount();
-            } else {
+            }
+            else
+            {
                 LOG_ERROR("Reported property location failed to during sending");
                 StatsController::incrementErrorCount();
             }
@@ -159,13 +178,17 @@ void TelemetryController::loop() {
         lastTelemetrySend = millis();
     }
 
-    DirectMethodNode * task = iotClient->popDirectMethod();
-    if (task) {
+    DirectMethodNode *task = iotClient->popDirectMethod();
+    if (task)
+    {
         string methodNameStr = task->methodName;
         auto it = iotClient->methodCallbacks.find(methodNameStr);
-        if (it != iotClient->methodCallbacks.end()) {
+        if (it != iotClient->methodCallbacks.end())
+        {
             it->second(task->payload, task->length);
-        } else {
+        }
+        else
+        {
             LOG_ERROR("task method name wasn't registered: (%s)", task->methodName);
         }
         iotClient->freeDirectMethod(task);
@@ -174,7 +197,8 @@ void TelemetryController::loop() {
 #ifndef DISABLE_SHAKE
     // example of sending a device twin reported property when the accelerometer detects a double tap
     if ((currentMillis - lastShakeTime > TELEMETRY_REPORTED_SEND_INTERVAL) &&
-        Globals::sensorController.checkForShake()) {
+        Globals::sensorController.checkForShake())
+    {
 
         String shakeProperty = F("{\"dieNumber\":{{die}}}");
         randomSeed(analogRead(0));
@@ -184,10 +208,13 @@ void TelemetryController::loop() {
         AnimationController::rollDieAnimation(die);
 
         StringBuffer shakeString(shakeProperty.c_str(), shakeProperty.length());
-        if (iotClient->sendReportedProperty(*shakeString)) {
+        if (iotClient->sendReportedProperty(*shakeString))
+        {
             LOG_VERBOSE("Reported property dieNumber successfully sent");
             StatsController::incrementReportedCount();
-        } else {
+        }
+        else
+        {
             LOG_ERROR("Reported property dieNumber failed to during sending");
             StatsController::incrementErrorCount();
         }
@@ -196,42 +223,46 @@ void TelemetryController::loop() {
 #endif // DISABLE_SHAKE
 
     // update the current display page
-    if (currentInfoPage != lastInfoPage) {
+    if (currentInfoPage != lastInfoPage)
+    {
         Screen.clean();
         lastInfoPage = currentInfoPage;
     }
 
-    switch (currentInfoPage) {
-        case 0: // message counts - page 1
-        {
-            char buff[STRING_BUFFER_128] = {0};
-            snprintf(buff, STRING_BUFFER_128 - 1,
-                    "%s\r\nsent: %d\r\nfail: %d\r\ntwin: %d/%d",
-                    "-- Connected --",
-                    StatsController::getTelemetryCount(),
-                    StatsController::getErrorCount(),
-                    StatsController::getDesiredCount(),
-                    StatsController::getReportedCount());
+    switch (currentInfoPage)
+    {
+    case 0: // message counts - page 1
+    {
+        char buff[STRING_BUFFER_128] = {0};
+        snprintf(buff, STRING_BUFFER_128 - 1,
+                 "%s\r\nsent: %d\r\nfail: %d\r\ntwin: %d/%d",
+                 "-- Connected --",
+                 StatsController::getTelemetryCount(),
+                 StatsController::getErrorCount(),
+                 StatsController::getDesiredCount(),
+                 StatsController::getReportedCount());
 
-            Screen.print(0, buff);
-        }
-            break;
-        case 1: // Device information
-            iotClient->displayDeviceInfo();
-            break;
-        case 2:  // Network information
-            Globals::wiFiController.displayNetworkInfo();
-            break;
+        Screen.print(0, buff);
+    }
+    break;
+    case 1: // Device information
+        iotClient->displayDeviceInfo();
+        break;
+    case 2: // Network information
+        Globals::wiFiController.displayNetworkInfo();
+        break;
     }
 
     iotClient->hubClientYield();
-    delay(1);  // good practice to help prevent lockups
+    delay(1); // good practice to help prevent lockups
 }
 
-TelemetryController::~TelemetryController() {
+TelemetryController::~TelemetryController()
+{
     initializeCompleted = false;
 
-    if (iotClient != NULL) {
+    if (iotClient != NULL)
+    {
         // cleanup the Azure IoT client
         delete iotClient;
         iotClient = NULL;
@@ -241,13 +272,15 @@ TelemetryController::~TelemetryController() {
     Globals::wiFiController.shutdownWiFi();
 }
 
-void TelemetryController::buildTelemetryPayload(String *payload) {
+void TelemetryController::buildTelemetryPayload(String *payload)
+{
     *payload = "{";
 
 #ifndef DISABLE_HUMIDITY
     // HTS221
     float humidity = 0.0;
-    if ((telemetryState & HUMIDITY_CHECKED) == HUMIDITY_CHECKED) {
+    if ((telemetryState & HUMIDITY_CHECKED) == HUMIDITY_CHECKED)
+    {
         humidity = Globals::sensorController.readHumidity();
         payload->concat(",\"humidity\":");
         payload->concat(String(humidity));
@@ -256,7 +289,8 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
 
 #ifndef DISABLE_TEMPERATURE
     float temp = 0.0;
-    if ((telemetryState & TEMP_CHECKED) == TEMP_CHECKED) {
+    if ((telemetryState & TEMP_CHECKED) == TEMP_CHECKED)
+    {
         temp = Globals::sensorController.readTemperature();
         payload->concat(",\"temp\":");
         payload->concat(String(temp));
@@ -266,7 +300,8 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
 #ifndef DISABLE_PRESSURE
     // LPS22HB
     float pressure = 0.0;
-    if ((telemetryState & PRESSURE_CHECKED) == PRESSURE_CHECKED) {
+    if ((telemetryState & PRESSURE_CHECKED) == PRESSURE_CHECKED)
+    {
         pressure = Globals::sensorController.readPressure();
         payload->concat(",\"pressure\":");
         payload->concat(String(pressure));
@@ -276,7 +311,8 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
 #ifndef DISABLE_MAGNETOMETER
     // LIS2MDL
     int magAxes[3];
-    if ((telemetryState & MAG_CHECKED) == MAG_CHECKED) {
+    if ((telemetryState & MAG_CHECKED) == MAG_CHECKED)
+    {
         Globals::sensorController.readMagnetometer(magAxes);
         payload->concat(",\"magnetometerX\":");
         payload->concat(String(magAxes[0]));
@@ -290,7 +326,8 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
 #ifndef DISABLE_ACCELEROMETER
     // LSM6DSL
     int accelAxes[3];
-    if ((telemetryState & ACCEL_CHECKED) == ACCEL_CHECKED) {
+    if ((telemetryState & ACCEL_CHECKED) == ACCEL_CHECKED)
+    {
         Globals::sensorController.readAccelerometer(accelAxes);
         payload->concat(",\"accelerometerX\":");
         payload->concat(String(accelAxes[0]));
@@ -303,7 +340,8 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
 
 #ifndef DISABLE_GYROSCOPE
     int gyroAxes[3];
-    if ((telemetryState & GYRO_CHECKED) == GYRO_CHECKED) {
+    if ((telemetryState & GYRO_CHECKED) == GYRO_CHECKED)
+    {
         Globals::sensorController.readGyroscope(gyroAxes);
         payload->concat(",\"gyroscopeX\":");
         payload->concat(String(gyroAxes[0]));
@@ -318,15 +356,19 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
     payload->replace("{,", "{");
 }
 
-void TelemetryController::sendTelemetryPayload(const char *payload) {
+void TelemetryController::sendTelemetryPayload(const char *payload)
+{
     LOG_VERBOSE("TelemetryController::sendTelemetryPayload");
-    if (iotClient->sendTelemetry(payload)) {
+    if (iotClient->sendTelemetry(payload))
+    {
         // flash the Azure LED
         digitalWrite(LED_AZURE, 1);
         delay(500);
         digitalWrite(LED_AZURE, 0);
         StatsController::incrementTelemetryCount();
-    } else {
+    }
+    else
+    {
         digitalWrite(LED_USER, 1);
         delay(500);
         digitalWrite(LED_USER, 0);
@@ -334,11 +376,12 @@ void TelemetryController::sendTelemetryPayload(const char *payload) {
     }
 }
 
-void TelemetryController::sendStateChange() {
+void TelemetryController::sendStateChange()
+{
     // SEND State example
-    assert (iotClient != NULL && iotClient->wasInitialized());
-    const char * stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
+    assert(iotClient != NULL && iotClient->wasInitialized());
+    const char *stateMessage = (STATE_MESSAGE(DeviceControl::getDeviceState()));
     sendTelemetryPayload(stateMessage);
     iotClient->hubClientYield();
-    delay(1);  // good practice to help prevent lockups
+    delay(1); // good practice to help prevent lockups
 }

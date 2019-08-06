@@ -98,18 +98,19 @@ void PairingController::loop()
 
 void PairingController::pair()
 {
+    LOG_VERBOSE("Init pair");
     resetController.initialize(30000);
     if (!PairingController::startPairing())
     {
         errorAndReset();
         return;
     }
-    if (PairingController::receiveData())
+    if (!PairingController::receiveData())
     {
         errorAndReset();
         return;
     }
-    if (PairingController::storeConfig())
+    if (!PairingController::storeConfig())
     {
         errorAndReset();
         return;
@@ -261,7 +262,7 @@ bool PairingController::startPairing()
     int length = 0;
 
     char triggerMessage[PAIRING_TRIGGER_LENGTH] = {0};
-    while (length == 0)
+    while (length <= 0)
     {
         LOG_VERBOSE("Reading");
         length = udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
@@ -287,11 +288,11 @@ bool PairingController::startPairing()
                 short tries = 0;
                 char msgText[8] = "PAIRING";
                 byte msg[8];
-                memcpy(msg, msgText, strlen(msgText) + 1);
+                memcpy(msg, msgText, strlen(msgText));
                 while (tries < 5)
                 {
                     udpClient->beginPacket(address, port);
-                    udpClient->write(msg, strlen(msgText) + 1);
+                    udpClient->write(msg, strlen(msgText));
                     udpClient->endPacket();
                     tries++;
                 }
@@ -302,10 +303,6 @@ bool PairingController::startPairing()
                 return false;
             }
         }
-        else{
-            LOG_VERBOSE("nothing");
-            LOG_VERBOSE("length: %d",length);
-        }
         delay(50);
     }
 }
@@ -314,13 +311,13 @@ bool PairingController::receiveData()
 {
     char buff[STRING_BUFFER_1024];
     int length = 0;
-    while (length == 0)
+    while (length <= 0)
     {
         LOG_VERBOSE("Waiting for data");
         length = udpClient->read(buff, STRING_BUFFER_1024);
         if (length > 0)
         {
-            LOG_VERBOSE("Data received");
+            LOG_VERBOSE("Data received: %s", buff);
             resetController.reset();
             if (strncmp(buff, "IOTC", length) == 0)
             { // sender is trying to start pairing again. could be just a delay in the handshake. let's continue
@@ -333,7 +330,6 @@ bool PairingController::receiveData()
             char data[length] = {0};
             memcpy(data, buff, length);
             char *pch = strtok(data, ";");
-            StringBuffer ssid, password, auth, scopeId, regId, sasKey;
             while (pch != NULL)
             {
                 String pair = String(pch);
@@ -376,7 +372,6 @@ bool PairingController::receiveData()
                 }
                 pch = strtok(NULL, ";");
             }
-
             if (ssid.getLength() == 0)
             {
                 LOG_ERROR("Missing ssid or connStr");
@@ -413,6 +408,7 @@ bool PairingController::storeConfig()
     snprintf(*configData, 3, "%d", 7);
     ConfigController::storeIotCentralConfig(configData);
     resetController.reset();
+    return true;
 }
 
 // bool PairingController::broadcastSuccess()

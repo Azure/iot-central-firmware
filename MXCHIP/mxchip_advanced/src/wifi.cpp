@@ -171,8 +171,9 @@ void WiFiController::broadcastId()
                                mac[4] % 26 + 65, mac[5] % 26 + 65);
     char msg[STRING_BUFFER_16];
     byte buf[STRING_BUFFER_16];
-    unsigned msgLength = snprintf(msg, STRING_BUFFER_16, "%s:%s", id, getIPAddress());
+    unsigned msgLength = snprintf(msg, STRING_BUFFER_16, "%s:%s", id, WiFiController::getIPAddress());
     memcpy(buf, msg, msgLength + 1);
+    LOG_VERBOSE("Broadcast %s", WiFiController::getBroadcastIp());
     udpClient = new WiFiUDP();
     short tries = 0;
     while (tries < 5)
