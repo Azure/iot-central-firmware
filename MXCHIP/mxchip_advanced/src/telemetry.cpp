@@ -22,6 +22,7 @@ void TelemetryController::initializeTelemetryController(const char *iotCentralCo
     randomSeed(analogRead(0));
 
     // connect to the WiFi in config
+    Globals::wiFiController.shutdownApWiFi();
     Globals::wiFiController.initWiFi();
     WatchdogController::reset();
 

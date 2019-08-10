@@ -25,12 +25,15 @@ void PairingController::listen()
 {
     LOG_VERBOSE("PairingController::listen");
     // enter AP mode
-    bool initWiFi = Globals::wiFiController.initApWiFi();
+    bool initWiFi = Globals::wiFiController.initApWiFi("12345678");
     LOG_VERBOSE("initApWifi: %d", initWiFi);
     if (initWiFi)
     {
-        udpClient = new WiFiUDP();
-        bool initSock = udpClient->begin(4000);
+        if (Globals::udpClient == NULL)
+        {
+            Globals::udpClient = new WiFiUDP();
+        }
+        bool initSock = Globals::udpClient->begin(4000);
         LOG_VERBOSE("Initsock %d\n", initSock);
         initializeCompleted = true;
     }
@@ -74,7 +77,7 @@ void PairingController::loop()
             digitalWrite(LED_WIFI, ledState);
         }
         // int readln;
-        // readln = udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
+        // readln = Globals::udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
         // if (readln > 0)
         // {
         //     LOG_VERBOSE("Pairing message received: %s, length: %d", triggerMessage, readln);
@@ -135,7 +138,7 @@ void PairingController::pair()
 //         resetController.reset();
 //         LOG_VERBOSE("Waiting for data");
 
-//         length = udpClient->read(buff, STRING_BUFFER_1024);
+//         length = Globals::udpClient->read(buff, STRING_BUFFER_1024);
 //         if (length > 0)
 //         {
 //             if (strncmp(buff, "IOTC", length) == 0)
@@ -213,7 +216,7 @@ void PairingController::pair()
 //             ConfigController::storeIotCentralConfig(configData);
 //             resetController.reset();
 //             delay(3000);
-//             udpClient->stop();
+//             Globals::udpClient->stop();
 //             delete udpClient;
 //             udpClient = NULL;
 //             Globals::wiFiController.shutdownApWiFi();
@@ -259,17 +262,19 @@ void PairingController::cleanup()
 bool PairingController::startPairing()
 {
     LOG_VERBOSE("Start pairing");
+    resetController.reset();
     int length = 0;
 
     char triggerMessage[PAIRING_TRIGGER_LENGTH] = {0};
     while (length <= 0)
     {
+        resetController.reset();
         LOG_VERBOSE("Reading");
-        length = udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
+        length = Globals::udpClient->read(triggerMessage, PAIRING_TRIGGER_LENGTH);
         if (length > 0)
         {
             LOG_VERBOSE("length %d\n", length);
-            resetController.reset();
+
             LOG_VERBOSE("Pairing message received: %s, length: %d", triggerMessage, length);
             if (strncmp(triggerMessage, "IOTC", 4) == 0)
             {
@@ -291,9 +296,9 @@ bool PairingController::startPairing()
                 memcpy(msg, msgText, strlen(msgText));
                 while (tries < 5)
                 {
-                    udpClient->beginPacket(address, port);
-                    udpClient->write(msg, strlen(msgText));
-                    udpClient->endPacket();
+                    Globals::udpClient->beginPacket(address, port);
+                    Globals::udpClient->write(msg, strlen(msgText));
+                    Globals::udpClient->endPacket();
                     tries++;
                 }
                 return true;
@@ -314,7 +319,7 @@ bool PairingController::receiveData()
     while (length <= 0)
     {
         LOG_VERBOSE("Waiting for data");
-        length = udpClient->read(buff, STRING_BUFFER_1024);
+        length = Globals::udpClient->read(buff, STRING_BUFFER_1024);
         if (length > 0)
         {
             LOG_VERBOSE("Data received: %s", buff);
@@ -383,9 +388,9 @@ bool PairingController::receiveData()
             memcpy(msg, msgText, strlen(msgText) + 1);
             while (tries < 5)
             {
-                udpClient->beginPacket(address, port);
-                udpClient->write(msg, strlen(msgText) + 1);
-                udpClient->endPacket();
+                Globals::udpClient->beginPacket(address, port);
+                Globals::udpClient->write(msg, strlen(msgText) + 1);
+                Globals::udpClient->endPacket();
                 tries++;
             }
             return true;
@@ -414,7 +419,7 @@ bool PairingController::storeConfig()
 // bool PairingController::broadcastSuccess()
 // {
 //     LOG_VERBOSE("Stop current udp client");
-//     udpClient->stop();
+//     Globals::udpClient->stop();
 //     delete udpClient;
 //     udpClient = NULL;
 //     Globals::wiFiController.shutdownApWiFi();
@@ -432,17 +437,17 @@ bool PairingController::storeConfig()
 //         memcpy(text, addr, length);
 //         resetController.reset();
 //         udpClient = new WiFiUDP();
-//         udpClient->begin(4000);
+//         Globals::udpClient->begin(4000);
 //         while (tries < 5)
 //         {
 
 //             LOG_VERBOSE("Sending broadcast");
 //             // LOG_VERBOSE("Begin packets");
-//             udpClient->beginPacket("192.168.1.255", 9000);
-//             udpClient->write(addr, length);
-//             udpClient->endPacket();
+//             Globals::udpClient->beginPacket("192.168.1.255", 9000);
+//             Globals::udpClient->write(addr, length);
+//             Globals::udpClient->endPacket();
 //             delay(5);
-//             msgLength = udpClient->read(res, 2);
+//             msgLength = Globals::udpClient->read(res, 2);
 //             if (msgLength > 0)
 //             {
 //                 LOG_VERBOSE("Received %s\n", res);
@@ -453,7 +458,7 @@ bool PairingController::storeConfig()
 //                 }
 //             }
 //             tries++;
-//             // udpClient->stop();
+//             // Globals::udpClient->stop();
 //             delay(2000);
 //         }
 //         LOG_VERBOSE("Returning from broadcasting");

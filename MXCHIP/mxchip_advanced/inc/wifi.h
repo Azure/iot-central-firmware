@@ -3,8 +3,6 @@
 
 #ifndef WIFI_H
 #define WIFI_H
-#include "AZ3166WiFi.h"
-#include "AZ3166WiFiUdp.h"
 
 class WiFiUDP;
 class WiFiController
@@ -12,13 +10,14 @@ class WiFiController
     char apName[STRING_BUFFER_16];
     char macAddress[STRING_BUFFER_16];
     char password[4];
-    WiFiUDP *udpClient;
     bool isConnected;
 
 public:
-    WiFiController() : isConnected(false) {}
-
+    WiFiController() : isConnected(false)
+    {
+    }
     bool initApWiFi();
+    bool initApWiFi(char *pwd);
     bool initWiFi();
 
     void shutdownWiFi();
@@ -26,8 +25,8 @@ public:
 
     String *getWifiNetworks(int &count);
     void displayNetworkInfo();
-    char *getIPAddress();
-    char *getBroadcastIp();
+    void getIPAddress(char *addr);
+    void getBroadcastIp(char *addr);
     void broadcastId();
 
     bool getIsConnected();

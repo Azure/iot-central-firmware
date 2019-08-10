@@ -2,11 +2,23 @@
 // Licensed under the MIT license.
 
 #include "../inc/globals.h"
+#include <AZ3166WiFi.h>
+#include <AZ3166WiFiUdp.h>
 #include "../inc/wifi.h"
 
 #include "../inc/config.h"
+#include "../inc/watchdogController.h"
+
+static WatchdogController resetController;
+
 
 bool WiFiController::initApWiFi()
+{
+    char pwd[] = "";
+    return WiFiController::initApWiFi(pwd);
+}
+
+bool WiFiController::initApWiFi(char *pwd)
 {
     LOG_VERBOSE("WiFiController::initApWiFi");
 
@@ -26,7 +38,7 @@ bool WiFiController::initApWiFi()
     password[4] = 0;
 
     // passcode below is not widely compatible. See the password is used as pincode for onboarding
-    int ret = WiFi.beginAP(apName, "");
+    int ret = WiFi.beginAP(apName, pwd);
 
     if (ret != WL_CONNECTED)
     {
@@ -146,41 +158,68 @@ void WiFiController::displayNetworkInfo()
     Screen.print(0, buff);
 }
 
-char *WiFiController::getIPAddress()
+void WiFiController::getIPAddress(char *address)
 {
     LOG_VERBOSE("WiFiController::getIPAddress");
     IPAddress ip = WiFi.localIP();
-
-    return ip.get_address();
+    strcpy(address, ip.get_address());
 }
 
-char *WiFiController::getBroadcastIp()
+void WiFiController::getBroadcastIp(char *address)
 {
     IPAddress broadcastIp;
     broadcastIp = WiFi.localIP() | (~WiFi.subnetMask());
-    return broadcastIp.get_address();
+    strcpy(address, broadcastIp.get_address());
 }
+
+// void WiFiController::broadcastId()
+// {
+//     byte mac[6] = {0};
+//     WiFi.macAddress(mac);
+//     char id[7];
+//     int length = snprintf(id, 6, "%c%c%c%c%c%c",
+//                           mac[0] % 26 + 65, mac[1] % 26 + 65, mac[2] % 26 + 65, mac[3] % 26 + 65,
+//                           mac[4] % 26 + 65, mac[5] % 26 + 65);
+//     char msg[STRING_BUFFER_32] = {0};
+//     char ipAddr[STRING_BUFFER_16] = {0};
+//     WiFiController::getIPAddress(ipAddr);
+//     int msgLength = snprintf(msg, STRING_BUFFER_32, "%s:%s", id, ipAddr);
+//     LOG_VERBOSE("Message length %d", msgLength);
+//     byte buf[msgLength];
+//     memcpy(buf, msg, msgLength);
+//     LOG_VERBOSE("Broadcast %s", (char *)buf);
+//     char broadcastAddr[STRING_BUFFER_16] = {0};
+//     WiFiController::getBroadcastIp(broadcastAddr);
+
+//     short tries = 0;
+//     while (tries < 5)
+//     {
+//         resetController.reset();
+//         LOG_VERBOSE("Sending to %s", broadcastAddr);
+//         udpClient->beginPacket("192.168.1.255", 9000);
+//         udpClient->write(buf, msgLength);
+//         udpClient->endPacket();
+//         tries++;
+//         delay(500);
+//     }
+//     LOG_VERBOSE("stop sending");
+
+//     // udpClient->stop();
+//     // delete udpClient;
+// }
 
 void WiFiController::broadcastId()
 {
-    byte mac[6] = {0};
-    WiFi.macAddress(mac);
-    char id[7];
-    unsigned length = snprintf(id, 6, "%c%c%c%c%c%c",
-                               mac[0] % 26 + 65, mac[1] % 26 + 65, mac[2] % 26 + 65, mac[3] % 26 + 65,
-                               mac[4] % 26 + 65, mac[5] % 26 + 65);
-    char msg[STRING_BUFFER_16];
-    byte buf[STRING_BUFFER_16];
-    unsigned msgLength = snprintf(msg, STRING_BUFFER_16, "%s:%s", id, WiFiController::getIPAddress());
-    memcpy(buf, msg, msgLength + 1);
-    LOG_VERBOSE("Broadcast %s", WiFiController::getBroadcastIp());
-    udpClient = new WiFiUDP();
+    // char ipAddr[STRING_BUFFER_16] = {0};
+    // WiFiController::getIPAddress(ipAddr);
+    // LOG_VERBOSE("IP: %s", ipAddr);
     short tries = 0;
     while (tries < 5)
     {
-        udpClient->beginPacket(WiFiController::getBroadcastIp(), 9000);
-        udpClient->write(buf, msgLength);
-        udpClient->endPacket();
+        Globals::udpClient->beginPacket("192.168.1.255", 9000);
+        Globals::udpClient->write((const unsigned char *)"pippo", 6);
+        Globals::udpClient->endPacket();
         tries++;
     }
+    LOG_VERBOSE("Finito");
 }
