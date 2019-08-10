@@ -46,13 +46,12 @@ bool ApplicationController::initialize()
         Screen.print(1, "  please wait   ");
         Screen.print(2, "or press A and B");
         Screen.print(3, "for 'hard' RESET");
-        // int wait_count = 0;
-        // while (wait_count++ < 6000)
-        // {
-        //     loop(); // listen for A + B button press
-        //     wait_ms(2);
-        // }
-
+        int wait_count = 0;
+        while (wait_count++ < 6000)
+        {
+            loop(); // listen for A + B button press
+            wait_ms(2);
+        }
         Globals::loopController = TelemetryController::New(iotCentralConfig);
     }
 }

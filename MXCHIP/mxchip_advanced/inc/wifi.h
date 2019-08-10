@@ -26,7 +26,7 @@ public:
     String *getWifiNetworks(int &count);
     void displayNetworkInfo();
     void getIPAddress(char *addr);
-    void getBroadcastIp(char *addr);
+    void getBroadcastIp(char *braddress);
     void broadcastId();
 
     bool getIsConnected();

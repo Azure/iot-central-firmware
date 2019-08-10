@@ -25,7 +25,6 @@ void TelemetryController::initializeTelemetryController(const char *iotCentralCo
     Globals::wiFiController.shutdownApWiFi();
     Globals::wiFiController.initWiFi();
     WatchdogController::reset();
-
     //broadcast ip address and Id
     Globals::wiFiController.broadcastId();
 

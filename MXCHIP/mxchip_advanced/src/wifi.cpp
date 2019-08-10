@@ -11,7 +11,6 @@
 
 static WatchdogController resetController;
 
-
 bool WiFiController::initApWiFi()
 {
     char pwd[] = "";
@@ -165,11 +164,12 @@ void WiFiController::getIPAddress(char *address)
     strcpy(address, ip.get_address());
 }
 
-void WiFiController::getBroadcastIp(char *address)
+void WiFiController::getBroadcastIp(char *braddress)
 {
+    LOG_VERBOSE("WiFiController::getBroadcastAddress");
     IPAddress broadcastIp;
     broadcastIp = WiFi.localIP() | (~WiFi.subnetMask());
-    strcpy(address, broadcastIp.get_address());
+    strcpy(braddress, broadcastIp.get_address());
 }
 
 // void WiFiController::broadcastId()
@@ -210,15 +210,35 @@ void WiFiController::getBroadcastIp(char *address)
 
 void WiFiController::broadcastId()
 {
-    // char ipAddr[STRING_BUFFER_16] = {0};
-    // WiFiController::getIPAddress(ipAddr);
-    // LOG_VERBOSE("IP: %s", ipAddr);
+
+    byte mac[6] = {0};
+    WiFi.macAddress(mac);
+    char id[7];
+    unsigned length = snprintf(id, 6, "%c%c%c%c%c%c",
+                               mac[0] % 26 + 65, mac[1] % 26 + 65, mac[2] % 26 + 65, mac[3] % 26 + 65,
+                               mac[4] % 26 + 65, mac[5] % 26 + 65);
+    char ipAddr[STRING_BUFFER_16] = {0};
+    WiFiController::getIPAddress(ipAddr);
+    unsigned ipsize = strlen(ipAddr) + 8;
+    char msg[ipsize];
+    unsigned msgLength = snprintf(msg, ipsize, "%s:%s", id, ipAddr);
+
+    if (Globals::udpClient == NULL)
+    {
+        Globals::udpClient = new WiFiUDP();
+    }
     short tries = 0;
+    byte data[msgLength];
+    memcpy(data, msg, msgLength);
+
+    char baddr[STRING_BUFFER_16] = {0};
+    WiFiController::getBroadcastIp(baddr);
     while (tries < 5)
     {
-        Globals::udpClient->beginPacket("192.168.1.255", 9000);
-        Globals::udpClient->write((const unsigned char *)"pippo", 6);
+        Globals::udpClient->beginPacket(baddr, 9000);
+        Globals::udpClient->write(data, msgLength);
         Globals::udpClient->endPacket();
+        delay(1000);
         tries++;
     }
     LOG_VERBOSE("Finito");
