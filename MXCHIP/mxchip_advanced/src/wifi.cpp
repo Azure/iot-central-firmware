@@ -172,49 +172,13 @@ void WiFiController::getBroadcastIp(char *braddress)
     strcpy(braddress, broadcastIp.get_address());
 }
 
-// void WiFiController::broadcastId()
-// {
-//     byte mac[6] = {0};
-//     WiFi.macAddress(mac);
-//     char id[7];
-//     int length = snprintf(id, 6, "%c%c%c%c%c%c",
-//                           mac[0] % 26 + 65, mac[1] % 26 + 65, mac[2] % 26 + 65, mac[3] % 26 + 65,
-//                           mac[4] % 26 + 65, mac[5] % 26 + 65);
-//     char msg[STRING_BUFFER_32] = {0};
-//     char ipAddr[STRING_BUFFER_16] = {0};
-//     WiFiController::getIPAddress(ipAddr);
-//     int msgLength = snprintf(msg, STRING_BUFFER_32, "%s:%s", id, ipAddr);
-//     LOG_VERBOSE("Message length %d", msgLength);
-//     byte buf[msgLength];
-//     memcpy(buf, msg, msgLength);
-//     LOG_VERBOSE("Broadcast %s", (char *)buf);
-//     char broadcastAddr[STRING_BUFFER_16] = {0};
-//     WiFiController::getBroadcastIp(broadcastAddr);
-
-//     short tries = 0;
-//     while (tries < 5)
-//     {
-//         resetController.reset();
-//         LOG_VERBOSE("Sending to %s", broadcastAddr);
-//         udpClient->beginPacket("192.168.1.255", 9000);
-//         udpClient->write(buf, msgLength);
-//         udpClient->endPacket();
-//         tries++;
-//         delay(500);
-//     }
-//     LOG_VERBOSE("stop sending");
-
-//     // udpClient->stop();
-//     // delete udpClient;
-// }
-
 void WiFiController::broadcastId()
 {
 
     byte mac[6] = {0};
     WiFi.macAddress(mac);
     char id[7];
-    unsigned length = snprintf(id, 6, "%c%c%c%c%c%c",
+    unsigned length = snprintf(id, 7, "%c%c%c%c%c%c",
                                mac[0] % 26 + 65, mac[1] % 26 + 65, mac[2] % 26 + 65, mac[3] % 26 + 65,
                                mac[4] % 26 + 65, mac[5] % 26 + 65);
     char ipAddr[STRING_BUFFER_16] = {0};
@@ -238,8 +202,7 @@ void WiFiController::broadcastId()
         Globals::udpClient->beginPacket(baddr, 9000);
         Globals::udpClient->write(data, msgLength);
         Globals::udpClient->endPacket();
-        delay(1000);
+        delay(1500);
         tries++;
     }
-    LOG_VERBOSE("Finito");
 }
