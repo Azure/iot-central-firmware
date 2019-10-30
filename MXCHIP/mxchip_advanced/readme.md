@@ -117,9 +117,6 @@ finally, copy `BUILD/iotCentral.ino.bin` into mxchip disk drive
 This firmware uses the following libraries:
 
 - Libraries installed by the MXChip IoT DevKit (https://microsoft.github.io/azure-iot-developer-kit/):
-    - AureIoTHub - https://github.com/Azure/azure-iot-arduino
-    - AzureIoTUtility - https://github.com/Azure/azure-iot-arduino-utility
-    - AzureIoTProtocol_MQTT - https://github.com/Azure/azure-iot-arduino-protocol-mqtt
 
 -   Third party libraries used:
     - Parson ( http://kgabis.github.com/parson/ ) Copyright (c) 2012 - 2017 Krzysztof Gabis
