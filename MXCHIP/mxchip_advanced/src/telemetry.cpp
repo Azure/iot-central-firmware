@@ -254,7 +254,7 @@ void TelemetryController::buildTelemetryPayload(String *payload) {
     float temp = 0.0;
     if ((telemetryState & TEMP_CHECKED) == TEMP_CHECKED) {
         temp = Globals::sensorController.readTemperature();
-        payload->concat(",\"temp\":");
+        payload->concat(",\"temperature\":");
         payload->concat(String(temp));
     }
 #endif // DISABLE_TEMPERATURE
