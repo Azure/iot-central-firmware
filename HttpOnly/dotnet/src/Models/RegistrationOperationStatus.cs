@@ -1,6 +1,7 @@
-public struct RegistrationOperationStatus {
+public struct RegistrationOperationStatus
+{
     public string operationId { get; set; }
-    public DeviceRegistrationResult registrationState { get; set; } 
+    public DeviceRegistrationResult registrationState { get; set; }
     public DeviceEnrollmentStatus? status { get; set; }
 }
 
@@ -21,13 +22,15 @@ public class DeviceRegistrationResult
     //unimplemented: symmetricKey, tpm, x509
 }
 
-public enum DeviceEnrollmentSubStatus {
+public enum DeviceEnrollmentSubStatus
+{
     deviceDataMigrated,
-deviceDataReset,
-initialAssignment
+    deviceDataReset,
+    initialAssignment
 }
 
-public enum DeviceEnrollmentStatus {
+public enum DeviceEnrollmentStatus
+{
     assigned,
     assigning,
     disabled,

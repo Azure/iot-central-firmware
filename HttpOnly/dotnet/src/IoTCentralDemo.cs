@@ -34,16 +34,16 @@ namespace iotCentral.Http
                     
                     //todo check on "error"
 
-                    if (result.registrationState != null)
-                    {
-                        if (result.registrationState.assignedHub != null)
-                            break;
+                    if (result.registrationState != null && 
+                        result.registrationState.assignedHub != null)
+                    {    
+                        break;
                     }
                 }
             }
             if (!string.IsNullOrEmpty(result.registrationState.errorMessage))
             {
-                Console.WriteLine("ERROR: " + result.registrationState.errorMessage);
+                Console.WriteLine($"ERROR: {result.registrationState.errorMessage}");
                 return;
             }
 

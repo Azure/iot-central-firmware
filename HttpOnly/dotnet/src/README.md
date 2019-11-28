@@ -1,4 +1,4 @@
-### Connecting to Azure IoT Central via HTTP (C#)
+# Connecting to Azure IoT Central via HTTP (C#)
 
 To Run;
 ```

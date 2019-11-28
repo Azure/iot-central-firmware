@@ -26,7 +26,7 @@ namespace iotCentral.Http
 
             string authTarget = "&skn=registration";
             string reason = "registrations";
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("SharedAccessSignature", AuthHelper.getAuth(authScope, reason, deviceId, deviceKey) + authTarget);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("SharedAccessSignature", AuthHelper.GetAuthenticationValue(authScope, reason, deviceId, deviceKey) + authTarget);
 
             var response = await httpClient.PutAsync(address, requestBody);
 
@@ -41,7 +41,7 @@ namespace iotCentral.Http
             var httpClient = factory.CreateClient();
             string authTarget = "&skn=registration";
             string reason = "registrations";
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("SharedAccessSignature", AuthHelper.getAuth(authScope, reason, deviceId, deviceKey) + authTarget);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("SharedAccessSignature", AuthHelper.GetAuthenticationValue(authScope, reason, deviceId, deviceKey) + authTarget);
             var response = await httpClient.GetAsync(address);
             
             return await JsonSerializer.DeserializeAsync<RegistrationOperationStatus>(
@@ -56,8 +56,8 @@ namespace iotCentral.Http
             requestBody.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
             string reason = "devices";
-            //httpClient.DefaultRequestHeaders.Add("iothub-to", $"/devices/{deviceId}/messages/events");
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("SharedAccessSignature", AuthHelper.getAuth(hostName, reason, deviceId, deviceKey));
+            httpClient.DefaultRequestHeaders.Add("iothub-to", $"/devices/{deviceId}/messages/events");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("SharedAccessSignature", AuthHelper.GetAuthenticationValue(hostName, reason, deviceId, deviceKey));
             var response = await httpClient.PostAsync(address, requestBody);
 
             return response.IsSuccessStatusCode;
