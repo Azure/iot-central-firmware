@@ -1,18 +1,22 @@
 using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace iotCentral.Http
 {
     public class IoTCentralDemo
     {
         private readonly IRequestHelper requestHelper;
-        string scopeId = "ENTER SCOPE ID HERE";
-        string deviceId = "ENTER DEVICE ID HERE";
-        string deviceKey = "ENTER DEVICE KEY HERE=";
+        string scopeId = "";
+        string deviceId = "";
+        string deviceKey = "";
 
-        public IoTCentralDemo(IRequestHelper requestHelper)
+        public IoTCentralDemo(IRequestHelper requestHelper, IConfiguration config)
         {
             this.requestHelper = requestHelper;
+            this.scopeId = config["scopeId"];
+            this.deviceId = config["deviceId"];
+            this.deviceKey = config["deviceKey"];
         }
 
         public async Task Run()
@@ -47,16 +51,20 @@ namespace iotCentral.Http
                 return;
             }
 
-            var successfullySentTelemetry = await requestHelper.PostTelemetryAsync("{\"temp\" : 15}", result.registrationState.assignedHub, deviceId, deviceKey);
-            
-            if (successfullySentTelemetry)
-            {
-                Console.WriteLine("Success!! Check the new temperature telemetry on Azure IoT Central Device window");
-            }
-            else
-            {
-                Console.WriteLine("Unable to send telemetry.");
-            }
+            bool successfullySentTelemetry = true;
+            do {
+                var random = (new Random().NextDouble()*3d) + 15d;
+                successfullySentTelemetry = await requestHelper.PostTelemetryAsync($"{{\"temp\" : {random}}}", result.registrationState.assignedHub, deviceId, deviceKey);
+                
+                if (successfullySentTelemetry)
+                {
+                    Console.WriteLine($"Success!! Sent to IoT Central {{\"temp\" : {random}}}");
+                }
+                else
+                {
+                    Console.WriteLine("Unable to send telemetry.");
+                }
+            } while (successfullySentTelemetry);
             
         }
     }
