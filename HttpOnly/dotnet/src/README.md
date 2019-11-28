@@ -5,11 +5,13 @@ To Run;
 dotnet run 
 ```
 
-Don't forget filling the required variables under `IoTCentralDemo.cs`
+Don't forget filling the required variables in `appsettings.json`
 ```
-string scopeId = "ENTER SCOPE ID HERE";
-string deviceId = "ENTER DEVICE ID HERE";
-string deviceKey = "ENTER DEVICE KEY HERE=";
+{
+    "scopeId": "",
+    "deviceId": "",
+    "deviceKey": ""
+}
 ```
 
 Open [apps.azureiotcentral.com](apps.azureiotcentral.com) `>` Device Explorer (explorer)
