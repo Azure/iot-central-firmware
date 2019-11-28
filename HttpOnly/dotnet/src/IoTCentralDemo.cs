@@ -24,8 +24,6 @@ namespace iotCentral.Http
             // get operationId from Azure IoT DPS
             var result = await requestHelper.AddRegistrationAsync("{\"registrationId\":\"" + deviceId + "\"}", scopeId, deviceId, deviceKey);
             
-            //todo check on "error"
-
             if (result.status == DeviceEnrollmentStatus.assigning) {
                 // Using the operationId and the rest of the credentials, get hostname for the Azure IoT hub
                 // The reason for the loop is that the async op. we had triggered with the operationId request
@@ -36,8 +34,6 @@ namespace iotCentral.Http
                     System.Threading.Thread.Sleep(2500);
                     result = await requestHelper.GetRegistrationAsync(scopeId, result.operationId, deviceId, deviceKey);
                     
-                    //todo check on "error"
-
                     if (result.registrationState != null && 
                         result.registrationState.assignedHub != null)
                     {    
