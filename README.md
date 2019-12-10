@@ -5,6 +5,10 @@ Reference firmware / sample implementation repository for some of the supported 
 - **Are you looking for a particular device sample?**
 Create an issue on this repository and let us know.
 
+### A quick note about DPS endpoint
+
+The Device Provisioning Service (DPS) endpoint used in these samples are all coded to work with the DPS public cloud endpoint at **global.azure-devices-provisioning.net**.  For China and other sovereign clouds that do not allow access to this DPS public endpoint.  For these samples to work it is necessary to change this value the correct DPS endpoint for the private or sovereign cloud being used.
+
 ### Contents
 
 - [Arduino MKR1000/MKR1010](https://github.com/firedog1024/mkr1000-iotc)
