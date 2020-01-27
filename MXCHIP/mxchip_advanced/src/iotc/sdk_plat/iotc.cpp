@@ -398,6 +398,33 @@ static void register_device_callback(PROV_DEVICE_RESULT register_result, const c
     }
 }
 
+static int register_product_info(IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle)
+{
+    static const char *PRODUCT_INFO = "IoT_DevKit_%s_IOTC_%s";
+    char *product_info = NULL;
+    int result = 0;
+
+    int len = snprintf(NULL, 0, PRODUCT_INFO, getDevkitVersion(), AZIOTC_VERSION);
+    product_info = (char *)malloc(len + 1);
+    if (product_info == NULL)
+    {
+        IOTC_LOG(F("ERROR: (register_product_info) Out of memory!"));
+        result = -1;
+    }
+    else
+    {   
+        snprintf(product_info, len + 1, PRODUCT_INFO, getDevkitVersion(), AZIOTC_VERSION);
+        if (IoTHubClient_LL_SetOption(iotHubClientHandle, "product_info", product_info) != IOTHUB_CLIENT_OK)
+        {
+            IOTC_LOG(F("ERROR: (register_product_info) Failed to set option \"product_info\"!"));
+            result = -2;
+        }
+        free(product_info);
+    }
+    
+    return result;
+}
+
 /* extern */
 int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
   const char* deviceId, IOTConnectType type) {
@@ -510,6 +537,8 @@ int iotc_connect(IOTContext ctx, const char* scope, const char* keyORcert,
 
     traceOn = getLogLevel() > IOTC_LOGGING_API_ONLY;
     IoTHubClient_LL_SetOption(internal->clientHandle, "logtrace", &traceOn);
+
+    register_product_info(internal->clientHandle);
 
     if (IoTHubClient_LL_SetDeviceTwinCallback(internal->clientHandle, deviceTwinGetStateCallback,
         internal) != IOTHUB_CLIENT_OK) {
