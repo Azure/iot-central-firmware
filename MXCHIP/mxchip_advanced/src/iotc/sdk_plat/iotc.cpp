@@ -71,6 +71,11 @@ static EVENT_INSTANCE *createEventInstance(IOTContextInternal *internal,
         *errorCode = 9;
         return NULL;
     }
+
+    // set the message content type to application/json and utf-8
+    (void)IoTHubMessage_SetContentTypeSystemProperty(currentMessage->messageHandle, "application%2fjson");
+    (void)IoTHubMessage_SetContentEncodingSystemProperty(currentMessage->messageHandle, "utf-8");
+
     currentMessage->internal = internal;
     currentMessage->appContext = applicationContext;
 
