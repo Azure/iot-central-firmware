@@ -1,3 +1,5 @@
+# Note: The code in this repository is provided as an example of how to connect a device to IoT Central. It is not production ready code, and is not supported by the Azure IoT Central team.
+
 ## Azure IoT Central Device / Platform Sample projects
 
 Reference firmware / sample implementation repository for some of the supported devices / frameworks.
