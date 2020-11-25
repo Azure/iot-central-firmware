@@ -405,20 +405,25 @@ static void deviceTwinGetStateCallback(DEVICE_TWIN_UPDATE_STATE update_state,
             const char * itemName = desired.getNameAt(i);
             if (itemName != NULL && itemName[0] != '$') {
                 AzureIOTC::JSObject keyObject;
-                const char * version = NULL, * desiredVersion = NULL,
-                           * value = NULL, * desiredValue = NULL;
+                bool versionsMatch = false;
+                int version = NULL, desiredVersion = NULL;
+                           
                 bool containsKey = reported.getObjectByName(itemName, &keyObject);
 
                 if (containsKey) {
-                    desiredVersion = reported.getStringByName("desiredVersion");
-                    version = desired.getStringByName("$version");
-                    desiredValue = reported.getStringByName("desiredValue");
-                    value = desired.getStringByName("value");
+                    desiredVersion = (int)reported.getNumberByName("desiredVersion");
+                    version = (int)desired.getNumberByName("$version");
+
+                    AzureIOTC::JSObject desiredValue, value;
+                    reported.getObjectByName("desiredValue", &desiredValue);
+                    reported.getObjectByName("value", &value);
+
+                    versionsMatch = AzureIOTC::JSObject::objectValuesAreEqual(&desiredValue, &value);
                 }
 
-                if (containsKey && strcmp(desiredVersion, version) == 0) {
+                if (containsKey && desiredVersion == version) {
                     LOG_VERBOSE("key: %s found in reported and versions match", itemName);
-                } else if (containsKey && strcmp(desiredValue, value) != 0){
+                } else if (containsKey && !versionsMatch){
                     LOG_VERBOSE("key: %s either not found in reported or versions do not match\r\n", itemName);
                     AzureIOTC::JSObject itemValue;
                     if (desired.getObjectAt(i, &itemValue) && itemValue.toString() != NULL) {

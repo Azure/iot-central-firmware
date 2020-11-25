@@ -117,6 +117,14 @@ namespace AzureIOTC
       // fail discovery strategy
       return json_object_get_number(object, name);
     }
+    
+    static bool objectValuesAreEqual(JSObject * object1, JSObject * object2) {
+      assert(object1 != NULL);
+      assert(object2 != NULL);
+
+      return json_value_equals(object1->value, object2->value) == 1;
+    }
+
   };
 } // namespace AzureIOTC
 
