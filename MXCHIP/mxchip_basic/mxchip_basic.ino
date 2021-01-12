@@ -6,6 +6,11 @@
 #include "src/iotc/common/string_buffer.h"
 #include <EEPROMInterface.h>
 #include "AZ3166WiFi.h"
+#include "LSM6DSLSensor.h"
+#include "LIS2MDLSensor.h"
+#include "HTS221Sensor.h"
+#include "LPS22HBSensor.h"
+#include "IoT_DevKit_HW.h"
 
 static IOTContext context = NULL;
 
@@ -48,6 +53,13 @@ void onEvent(IOTContext ctx, IOTCallbackInfo *callbackInfo) {
 }
 
 static unsigned prevMillis = 0, loopId = 0;
+
+static DevI2C *i2c;
+static LSM6DSLSensor *accelerometerGyroscopeSensor;
+static HTS221Sensor *humidityTemperatureSensor;
+static LIS2MDLSensor *magnetometerSensor;
+static LPS22HBSensor *pressureSensor;
+
 void setup()
 {
     Serial.begin(9600);
@@ -61,9 +73,27 @@ void setup()
     eeprom.write((uint8_t*) WIFI_PASSWORD, strlen(WIFI_PASSWORD), WIFI_PWD_ZONE_IDX);
 
     if(WiFi.begin() == WL_CONNECTED) {
+
         LOG_VERBOSE("WiFi WL_CONNECTED");
         digitalWrite(LED_WIFI, 1);
         Screen.print(2, "Connected");
+
+        i2c = new DevI2C(D14, D15);
+
+        accelerometerGyroscopeSensor = new LSM6DSLSensor(*i2c, D4, D5);
+        accelerometerGyroscopeSensor->init(NULL);
+        accelerometerGyroscopeSensor->enableAccelerator();
+        accelerometerGyroscopeSensor->enableGyroscope();
+
+        magnetometerSensor = new LIS2MDLSensor(*i2c);
+        magnetometerSensor->init(NULL);
+
+        humidityTemperatureSensor = new HTS221Sensor(*i2c);
+        humidityTemperatureSensor->init(NULL);
+
+        pressureSensor = new LPS22HBSensor(*i2c);
+        pressureSensor->init(NULL);
+
     } else {
         Screen.print("WiFi\r\nNot Connected\r\nWIFI_SSID?\r\n");
         return;
@@ -101,12 +131,46 @@ void loop()
         unsigned long ms = millis();
         if (ms - prevMillis > 15000) { // send telemetry every 15 seconds
             char msg[64] = {0};
+
             int pos = 0, errorCode = 0;
+
+            int accelerometerAxes[3]; // [0]=X [1]=Y [2]=XZ
+            int gyroscopAxes[3]; // [0]=X [1]=Y [2]=Z
+            float temperature = 0.0, humidity = 0.0, pressure = 0.0;
+
+            accelerometerGyroscopeSensor->resetStepCounter();
+            accelerometerGyroscopeSensor->getXAxes(accelerometerAxes);
+            accelerometerGyroscopeSensor->getGAxes(gyroscopAxes);
+            humidityTemperatureSensor->reset();
+            humidityTemperatureSensor->getTemperature(&temperature);
+            humidityTemperatureSensor->reset();
+            humidityTemperatureSensor->getHumidity(&humidity);
+            pressureSensor->getPressure(&pressure);
 
             prevMillis = ms;
             if (loopId++ % 2 == 0) { // send telemetry
-                pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometerX\":%d}", 10 + (rand() % 20));
+                Screen.clean();
+                char buffer[10];
+                sprintf(buffer, "%d", loopId);
+                Screen.print(0, "Messages Sent: ");
+                Screen.print(1, buffer);
+
+                char axes[3] = {'X', 'Y', 'Z'};
+                for (int i = 0; i < 3; i++) {
+                    pos = snprintf(msg, sizeof(msg) - 1, "{\"accelerometer%c\":%d}", axes[i], accelerometerAxes[i]);
+                    errorCode = iotc_send_telemetry(context, msg, pos);
+                }
+                for (int i = 0; i < 3; i++) {
+                    pos = snprintf(msg, sizeof(msg) - 1, "{\"gyroscope%c\":%d}", axes[i], accelerometerAxes[i]);
+                    errorCode = iotc_send_telemetry(context, msg, pos);
+                }
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\":%f}", temperature);
                 errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"humidity\":%f}", humidity);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+                pos = snprintf(msg, sizeof(msg) - 1, "{\"pressure\":%f}", pressure);
+                errorCode = iotc_send_telemetry(context, msg, pos);
+
             } else { // send property
                 pos = snprintf(msg, sizeof(msg) - 1, "{\"dieNumber\":%d}", 1 + (rand() % 5));
                 errorCode = iotc_send_property(context, msg, pos);
@@ -119,6 +183,8 @@ void loop()
         }
     }
 
-    if (context)
+    if (context) {
         iotc_do_work(context); // do background work for iotc
+    }
+
 }
