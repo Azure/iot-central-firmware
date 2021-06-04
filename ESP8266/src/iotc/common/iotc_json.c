@@ -71,7 +71,7 @@ int jsobject_get_object_by_name(jsobject_t *object, const char *name,
                                 jsobject_t *out) {
   int index = jsobject_get_index_by_name(object, name);
   if (index == -1) {
-    return 1;  // let consumer file the log
+    return -1;  // let consumer file the log
   }
 
   jsmntok_t token = object->tokens[index + 1];
