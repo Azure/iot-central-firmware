@@ -21,6 +21,7 @@ def onconnect(info):
   if info.getStatusCode() == 0:
      if iotc.isConnected():
        gCanSend = True
+       iotc.sendProperty('{"dieNumber":' + str(randint(1, 6)) + '}')
 
 def onmessagesent(info):
   print("\t- [onmessagesent] => " + str(info.getPayload()))
@@ -46,8 +47,16 @@ while iotc.isConnected():
       print("Sending telemetry..")
       iotc.sendTelemetry("{ \
 \"temp\": " + str(randint(20, 45)) + ", \
+\"pressure\": " + str(randint(900, 1100)) + ", \
+\"humidity\": " + str(randint(50, 75)) + ", \
 \"accelerometerX\": " + str(randint(2, 15)) + ", \
 \"accelerometerY\": " + str(randint(3, 9)) + ", \
-\"accelerometerZ\": " + str(randint(1, 4)) + "}")
+\"accelerometerZ\": " + str(randint(1, 4)) + ", \
+\"magnetometerX\": " + str(randint(100, 120)) + ", \
+\"magnetometerY\": " + str(randint(90, 110)) + ", \
+\"magnetometerZ\": " + str(randint(200, 220)) + ", \
+\"gyroscopeX\": " + str(randint(110, 130)) + ", \
+\"gyroscopeY\": " + str(randint(50, 70)) + ", \
+\"gyroscopeZ\": " + str(randint(190, 210)) + "}")
 
     gCounter += 1
